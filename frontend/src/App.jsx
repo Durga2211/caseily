@@ -15,8 +15,8 @@ function App() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/track?tracking_number=${trackingNumber}`
-      )
+  `${import.meta.env.VITE_API_URL}/api/track?tracking_number=${trackingNumber}`
+)
       const data = await response.json()
       setResult(data)
     } catch (err) {
