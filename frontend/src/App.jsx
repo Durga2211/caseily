@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 // Convert 2-letter ISO to flag emoji
@@ -9,54 +9,16 @@ function isoToFlag(iso) {
 }
 
 function App() {
-  const [carriers, setCarriers] = useState([])
-  const [carriersLoading, setCarriersLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCarrier, setSelectedCarrier] = useState(null)
   const [trackingNumber, setTrackingNumber] = useState('')
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [showDropdown, setShowDropdown] = useState(false)
   const [showResults, setShowResults] = useState(false)
-  const dropdownRef = useRef(null)
+  const [theme, setTheme] = useState('light')
 
-  // Fetch carriers on mount
   useEffect(() => {
-    async function fetchCarriers() {
-      try {
-        const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/carriers`)
-        const data = await resp.json()
-        setCarriers(data.carriers || [])
-      } catch {
-        setCarriers([])
-      } finally {
-        setCarriersLoading(false)
-      }
-    }
-    fetchCarriers()
-  }, [])
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  // Filter carriers by search query
-  const filteredCarriers = useMemo(() => {
-    if (!searchQuery.trim()) return carriers
-    const q = searchQuery.toLowerCase()
-    return carriers.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      c.country_iso.toLowerCase().includes(q)
-    )
-  }, [carriers, searchQuery])
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   async function handleTrack() {
     if (!trackingNumber.trim()) return
@@ -66,10 +28,7 @@ function App() {
     setShowResults(true)
 
     try {
-      let url = `${import.meta.env.VITE_API_URL}/api/track?tracking_number=${trackingNumber.trim()}`
-      if (selectedCarrier) {
-        url += `&carrier_code=${selectedCarrier.key}`
-      }
+      const url = `${import.meta.env.VITE_API_URL}/api/track?tracking_number=${trackingNumber.trim()}`
       const response = await fetch(url)
       const data = await response.json()
       setResult(data)
@@ -81,11 +40,9 @@ function App() {
   }
 
   function handleReset() {
-    setSelectedCarrier(null)
     setTrackingNumber('')
     setResult(null)
     setError(null)
-    setSearchQuery('')
     setShowResults(false)
   }
 
@@ -106,7 +63,17 @@ function App() {
             <path d="M9 12L11 14L15 10" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-track">Contact us</a>
+        <div className="navbar-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            className="theme-toggle" 
+            onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+            aria-label="Toggle theme"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px' }}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+          <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-track">Contact us</a>
+        </div>
       </nav>
 
       {/* ─── MAIN CONTENT ─── */}
@@ -138,71 +105,6 @@ function App() {
                 onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
               />
 
-              {/* ─── COURIER DROPDOWN ─── */}
-              <div className="courier-dropdown-wrap" ref={dropdownRef}>
-                <button
-                  className="courier-dropdown-trigger"
-                  onClick={() => setShowDropdown(!showDropdown)}
-                  type="button"
-                >
-                  <svg className="truck-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="1" y="3" width="15" height="13" rx="2" />
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                    <circle cx="5.5" cy="18.5" r="2.5" />
-                    <circle cx="18.5" cy="18.5" r="2.5" />
-                  </svg>
-                  <span className="courier-dropdown-text">
-                    {selectedCarrier ? selectedCarrier.name : 'Select Courier (optional, e.g., USPS, FedEx)'}
-                  </span>
-                  <svg className="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
-
-                {showDropdown && (
-                  <div className="courier-dropdown-menu">
-                    <div className="courier-dropdown-search">
-                      <input
-                        type="text"
-                        placeholder="Search couriers…"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        autoFocus
-                      />
-                    </div>
-                    {carriersLoading ? (
-                      <div className="dropdown-loading">
-                        <div className="spinner-small" />
-                        <span>Loading…</span>
-                      </div>
-                    ) : filteredCarriers.length === 0 ? (
-                      <div className="dropdown-empty">No couriers found</div>
-                    ) : (
-                      <div className="courier-dropdown-list">
-                        {filteredCarriers.map((carrier) => (
-                          <div
-                            key={carrier.key}
-                            className={`courier-dropdown-item ${selectedCarrier?.key === carrier.key ? 'selected' : ''}`}
-                            onClick={() => {
-                              setSelectedCarrier(carrier)
-                              setShowDropdown(false)
-                              setSearchQuery('')
-                            }}
-                          >
-                            <span className="flag">{isoToFlag(carrier.country_iso)}</span>
-                            <span className="item-name">{carrier.name}</span>
-                            {selectedCarrier?.key === carrier.key && (
-                              <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* ─── TRACK BUTTON ─── */}
@@ -239,12 +141,6 @@ function App() {
                 <div className="result-head">
                   <div className="oid">Tracking number</div>
                   <h2>{trackingNumber}</h2>
-                  {selectedCarrier && (
-                    <div className="selected-courier-badge">
-                      <span className="flag">{isoToFlag(selectedCarrier.country_iso)}</span>
-                      <span className="badge-name">{selectedCarrier.name}</span>
-                    </div>
-                  )}
                   <div className="status-pill">
                     <span className="dot" />
                     {result.status}

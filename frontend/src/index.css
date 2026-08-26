@@ -16,4 +16,13 @@ body {
   background-attachment: fixed;
   font-family: 'Inter', system-ui, sans-serif;
   color: #1c1c1e;
+  transition: background 0.5s ease, color 0.5s ease;
+}
+
+[data-theme="dark"] body {
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 0.9) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(30, 41, 59, 0.9) 0%, transparent 50%),
+    linear-gradient(135deg, #020617 0%, #090e17 100%);
+  color: #f8fafc;
 }
