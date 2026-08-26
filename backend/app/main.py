@@ -4,9 +4,9 @@ from app.routers import tracking
 app = FastAPI(title = "Caseily Backend")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["http://localhost:5173"],
-    allow_methods = ["*"],
-    allow_headers = ["*"],
+    allow_origins=["http://localhost:5173", "https://caseily.vercel.app"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.include_router(tracking.router)
 @app.get("/")
