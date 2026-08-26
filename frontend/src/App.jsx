@@ -1,29 +1,92 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import './App.css'
 
+// Convert 2-letter ISO to flag emoji
+function isoToFlag(iso) {
+  if (!iso || iso.length !== 2) return '📦'
+  const codePoints = [...iso.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)
+  return String.fromCodePoint(...codePoints)
+}
+
 function App() {
+  const [carriers, setCarriers] = useState([])
+  const [carriersLoading, setCarriersLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCarrier, setSelectedCarrier] = useState(null)
   const [trackingNumber, setTrackingNumber] = useState('')
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [showResults, setShowResults] = useState(false)
+  const dropdownRef = useRef(null)
+
+  // Fetch carriers on mount
+  useEffect(() => {
+    async function fetchCarriers() {
+      try {
+        const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/carriers`)
+        const data = await resp.json()
+        setCarriers(data.carriers || [])
+      } catch {
+        setCarriers([])
+      } finally {
+        setCarriersLoading(false)
+      }
+    }
+    fetchCarriers()
+  }, [])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Filter carriers by search query
+  const filteredCarriers = useMemo(() => {
+    if (!searchQuery.trim()) return carriers
+    const q = searchQuery.toLowerCase()
+    return carriers.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.country_iso.toLowerCase().includes(q)
+    )
+  }, [carriers, searchQuery])
 
   async function handleTrack() {
     if (!trackingNumber.trim()) return
     setLoading(true)
     setError(null)
     setResult(null)
+    setShowResults(true)
 
     try {
-      const response = await fetch(
-  `${import.meta.env.VITE_API_URL}/api/track?tracking_number=${trackingNumber}`
-)
+      let url = `${import.meta.env.VITE_API_URL}/api/track?tracking_number=${trackingNumber}`
+      if (selectedCarrier) {
+        url += `&carrier_code=${selectedCarrier.key}`
+      }
+      const response = await fetch(url)
       const data = await response.json()
       setResult(data)
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleReset() {
+    setSelectedCarrier(null)
+    setTrackingNumber('')
+    setResult(null)
+    setError(null)
+    setSearchQuery('')
+    setShowResults(false)
   }
 
   // Find the index of the current (most recent, done) step
@@ -33,65 +96,190 @@ function App() {
 
   return (
     <>
-      <nav>
-        <div className="logo">Caseily</div>
-        <div className="navlinks">
-          <a href="#">Shop</a>
-          <a href="#">Wholesale</a>
-          <a href="#" className="active">Track order</a>
-          <a href="#">Contact</a>
+      {/* ─── NAVBAR ─── */}
+      <nav className="navbar">
+        <div className="navbar-left">
+          <img src="/logo.png" alt="Caseily" className="navbar-logo" />
+          <span className="navbar-brand">Caseilytracking</span>
         </div>
+        <a href="#" className="navbar-track">Track order</a>
       </nav>
 
-      <div className="hero">
-        <div className="eyebrow">Order tracking</div>
-        <h1>Where's your order?</h1>
-        <p>Enter your tracking number below to see live delivery status — no matter which courier is carrying it.</p>
-      </div>
+      {/* ─── MAIN CONTENT ─── */}
+      <main className="main-content">
+        {/* ─── TRACKING CARD ─── */}
+        <div className="tracking-card">
+          <div className="tracking-card-inner">
+            <span className="order-tracking-label">ORDER TRACKING</span>
 
-      <div className="wrap">
-        <div className="lookup">
-          <input
-            type="text"
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
-            placeholder="Enter tracking number, e.g. CX051903781IN"
-            onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
-          />
-          <button onClick={handleTrack} disabled={loading}>
-            {loading ? 'Tracking...' : 'Track order'}
-          </button>
-        </div>
+            <h1 className="tracking-heading">
+              Where's your order?<br />
+              Track your happiness.<br />
+              We're on it.
+            </h1>
 
-        {error && <p className="status-text error">{error}</p>}
+            <p className="tracking-subtitle">
+              Enter your tracking number below to see your<br className="br-desktop" />
+              live delivery status
+            </p>
 
-        {result && (
-          <div className="result">
-            <div className="result-head">
-              <div className="oid">Tracking number</div>
-              <h2>{trackingNumber}</h2>
-              <div className="status-pill">
-                <span className="dot"></span>
-                {result.status}
+            {/* ─── TRACKING INPUT ─── */}
+            <div className="tracking-input-area">
+              <input
+                type="text"
+                className="tracking-number-input"
+                placeholder="Enter your tracking number"
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
+              />
+
+              {/* ─── COURIER DROPDOWN ─── */}
+              <div className="courier-dropdown-wrap" ref={dropdownRef}>
+                <button
+                  className="courier-dropdown-trigger"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  type="button"
+                >
+                  <svg className="truck-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="3" width="15" height="13" rx="2" />
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                    <circle cx="5.5" cy="18.5" r="2.5" />
+                    <circle cx="18.5" cy="18.5" r="2.5" />
+                  </svg>
+                  <span className="courier-dropdown-text">
+                    {selectedCarrier ? selectedCarrier.name : 'Select Courier (optional, e.g., USPS, FedEx)'}
+                  </span>
+                  <svg className="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {showDropdown && (
+                  <div className="courier-dropdown-menu">
+                    <div className="courier-dropdown-search">
+                      <input
+                        type="text"
+                        placeholder="Search couriers…"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    {carriersLoading ? (
+                      <div className="dropdown-loading">
+                        <div className="spinner-small" />
+                        <span>Loading…</span>
+                      </div>
+                    ) : filteredCarriers.length === 0 ? (
+                      <div className="dropdown-empty">No couriers found</div>
+                    ) : (
+                      <div className="courier-dropdown-list">
+                        {filteredCarriers.map((carrier) => (
+                          <div
+                            key={carrier.key}
+                            className={`courier-dropdown-item ${selectedCarrier?.key === carrier.key ? 'selected' : ''}`}
+                            onClick={() => {
+                              setSelectedCarrier(carrier)
+                              setShowDropdown(false)
+                              setSearchQuery('')
+                            }}
+                          >
+                            <span className="flag">{isoToFlag(carrier.country_iso)}</span>
+                            <span className="item-name">{carrier.name}</span>
+                            {selectedCarrier?.key === carrier.key && (
+                              <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="timeline">
-              {result.steps?.map((step, i) => (
-                <div
-                  key={i}
-                  className={`step ${step.done ? '' : 'pending'} ${i === currentIndex ? 'current' : ''}`}
-                >
-                  <h3>{step.label}</h3>
-                  <p>{step.timestamp ? step.timestamp : 'Pending'}</p>
-                </div>
-              ))}
+            {/* ─── TRACK BUTTON ─── */}
+            <div className="tracking-input-area">
+              <button
+                className="track-now-btn"
+                onClick={handleTrack}
+                disabled={loading || !trackingNumber.trim()}
+              >
+                {loading ? (
+                  <div className="spinner-small white" />
+                ) : (
+                  'Track now'
+                )}
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
 
-      <footer>© Caseily · Shipping · Returns · Contact · Wholesale</footer>
+        {/* ─── RESULTS ─── */}
+        {showResults && (
+          <div className="results-section">
+            {loading && (
+              <div className="loading-container">
+                <div className="spinner" />
+                <p>Fetching tracking info…</p>
+              </div>
+            )}
+
+            {error && <p className="status-text error">{error}</p>}
+
+            {result && (
+              <div className="result">
+                <div className="result-head">
+                  <div className="oid">Tracking number</div>
+                  <h2>{trackingNumber}</h2>
+                  {selectedCarrier && (
+                    <div className="selected-courier-badge">
+                      <span className="flag">{isoToFlag(selectedCarrier.country_iso)}</span>
+                      <span className="badge-name">{selectedCarrier.name}</span>
+                    </div>
+                  )}
+                  <div className="status-pill">
+                    <span className="dot" />
+                    {result.status}
+                  </div>
+                </div>
+
+                <div className="timeline">
+                  {result.steps?.map((step, i) => (
+                    <div
+                      key={i}
+                      className={`tl-step ${step.done ? '' : 'pending'} ${i === currentIndex ? 'current' : ''}`}
+                    >
+                      <h3>{step.label}</h3>
+                      <p>{step.timestamp ? step.timestamp : 'Pending'}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="result-actions">
+                  <button className="btn-track-another" onClick={handleReset}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="23 4 23 10 17 10" />
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    </svg>
+                    Track another
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── PROMO BANNER ─── */}
+        <div className="promo-banner-container">
+          <img src="/promo-banner.jpg" alt="Raksha Bandhan Caseilyplus" className="promo-banner-image" />
+        </div>
+      </main>
+
+      <footer>© {new Date().getFullYear()} Caseily · All rights reserved</footer>
     </>
   )
 }
