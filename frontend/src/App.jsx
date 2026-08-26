@@ -66,7 +66,7 @@ function App() {
     setShowResults(true)
 
     try {
-      let url = `${import.meta.env.VITE_API_URL}/api/track?tracking_number=${trackingNumber}`
+      let url = `${import.meta.env.VITE_API_URL}/api/track?tracking_number=${trackingNumber.trim()}`
       if (selectedCarrier) {
         url += `&carrier_code=${selectedCarrier.key}`
       }
@@ -95,14 +95,14 @@ function App() {
     : -1
 
   return (
-    <>
+    <div className="app-wrapper">
       {/* ─── NAVBAR ─── */}
       <nav className="navbar">
         <div className="navbar-left">
           <img src="/logo.png" alt="Caseily" className="navbar-logo" />
           <span className="navbar-brand">Caseilytracking</span>
         </div>
-        <a href="#" className="navbar-track">Track order</a>
+        <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-track">Contact us</a>
       </nav>
 
       {/* ─── MAIN CONTENT ─── */}
@@ -274,13 +274,13 @@ function App() {
         )}
 
         {/* ─── PROMO BANNER ─── */}
-        <div className="promo-banner-container">
+        <a href="https://www.instagram.com/caseilyplusstore/" target="_blank" rel="noopener noreferrer" className="promo-banner-container">
           <img src="/promo-banner.jpg" alt="Raksha Bandhan Caseilyplus" className="promo-banner-image" />
-        </div>
+        </a>
       </main>
 
       <footer>© {new Date().getFullYear()} Caseily · All rights reserved</footer>
-    </>
+    </div>
   )
 }
 

@@ -7,4 +7,6 @@
 body {
   min-width: 320px;
   min-height: 100vh;
+  background-color: #e4edf5;
+  font-family: 'Inter', system-ui, sans-serif;
 }
