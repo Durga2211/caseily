@@ -61,23 +61,27 @@ async def normalise_tracking_data(raw_response: dict, tracking_number: str):
         "delivered": "Delivered"
     }
     
-    milestone_times = {}
+    milestone_data = {}
     for event in events:
         m = event.get("statusMilestone")
         t = event.get("datetime") or event.get("eventTime")
+        loc = event.get("location")
         if m and t:
-            if m not in milestone_times:
-                milestone_times[m] = t
+            if m not in milestone_data:
+                milestone_data[m] = {"timestamp": t, "location": loc}
 
     steps = []
     if events and current_index < 0 and current_milestone != "pending":
          current_index = 0
          
     for i, key in enumerate(milestone_order):
-        timestamp = milestone_times.get(key)
+        data = milestone_data.get(key, {})
+        timestamp = data.get("timestamp")
+        location = data.get("location")
         steps.append({
             "label": stage_map[key], 
-            "timestamp": timestamp, 
+            "timestamp": timestamp,
+            "location": location,
             "done": i <= current_index and bool(events)
         })
         

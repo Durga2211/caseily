@@ -730,6 +730,13 @@ a {
   padding-left: 24px; /* align with text, skipping icon */
 }
 
+.tl-step p.step-location {
+  margin-top: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
 .tl-step.pending .tl-step-header h3,
 .tl-step.pending .tl-step-header svg {
   color: var(--muted);
