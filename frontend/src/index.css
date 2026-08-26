@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -7,6 +9,9 @@
 body {
   min-width: 320px;
   min-height: 100vh;
-  background-color: #e4edf5;
+  background-color: #05080f;
+  background-image: radial-gradient(#1e293b 1px, transparent 1px);
+  background-size: 20px 20px;
   font-family: 'Inter', system-ui, sans-serif;
+  color: #f8fafc;
 }

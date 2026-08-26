@@ -101,6 +101,10 @@ function App() {
         <div className="navbar-left">
           <img src="/logo.png" alt="Caseily" className="navbar-logo" />
           <span className="navbar-brand">Caseilytracking</span>
+          <svg className="security-badge" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="#00B4D8"/>
+            <path d="M9 12L11 14L15 10" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
         <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-track">Contact us</a>
       </nav>
@@ -248,15 +252,27 @@ function App() {
                 </div>
 
                 <div className="timeline">
-                  {result.steps?.map((step, i) => (
-                    <div
-                      key={i}
-                      className={`tl-step ${step.done ? '' : 'pending'} ${i === currentIndex ? 'current' : ''}`}
-                    >
-                      <h3>{step.label}</h3>
-                      <p>{step.timestamp ? step.timestamp : 'Pending'}</p>
-                    </div>
-                  ))}
+                  {result.steps?.map((step, i) => {
+                    const stepIcons = {
+                      "Order Placed": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>,
+                      "In Transit": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>,
+                      "Out For Delivery": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>,
+                      "Delivered": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    };
+                    return (
+                      <div
+                        key={i}
+                        className={`tl-step ${step.done ? '' : 'pending'} ${i === currentIndex ? 'current' : ''}`}
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      >
+                        <div className="tl-step-header">
+                          {stepIcons[step.label]}
+                          <h3>{step.label}</h3>
+                        </div>
+                        <p>{step.timestamp ? step.timestamp : 'Pending'}</p>
+                      </div>
+                    )
+                  })}
                 </div>
 
                 <div className="result-actions">
