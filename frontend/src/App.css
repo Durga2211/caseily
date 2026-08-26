@@ -1,22 +1,22 @@
 /* ─── DESIGN TOKENS ─── */
 :root {
-  --bg: #05080f;
-  --white: #0a0f1c; /* Replaces main white with dark card */
-  --ink: #e2e8f0; /* Text */
-  --ink-dark: #f8fafc; /* Bright text */
-  --navy: #cbd5e1;
-  --blue: #00B4D8;
-  --blue-light: #48CAE4;
-  --blue-dark: #0077B6;
-  --blue-glow: rgba(0, 180, 216, 0.2);
-  --muted: #94a3b8;
-  --line: #1e293b;
-  --card: #111827; /* Inner elements */
+  --bg: transparent;
+  --white: rgba(255, 255, 255, 0.75); /* Glass main card */
+  --ink: #1c1c1e;
+  --ink-dark: #000000;
+  --navy: #3a3a3c;
+  --blue: #007aff;
+  --blue-light: #5ac8fa;
+  --blue-dark: #0056b3;
+  --blue-glow: rgba(0, 122, 255, 0.2);
+  --muted: #8e8e93;
+  --line: rgba(0, 0, 0, 0.1);
+  --card: rgba(255, 255, 255, 0.5); /* Inner elements */
   
-  /* Neumorphic Shadows for Dark Mode */
-  --shadow-app: 0 40px 80px rgba(0, 0, 0, 0.6);
-  --shadow-neu-out: -4px -4px 12px rgba(255, 255, 255, 0.03), 4px 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-neu-in: inset 2px 2px 6px rgba(0, 0, 0, 0.6), inset -2px -2px 6px rgba(255, 255, 255, 0.03);
+  /* Glassmorphic Shadows */
+  --shadow-app: 0 20px 40px rgba(0, 0, 0, 0.08);
+  --shadow-neu-out: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --shadow-neu-in: inset 0 2px 4px rgba(0,0,0,0.02), inset 0 0 0 1px rgba(255,255,255,0.5);
   
   --radius: 16px;
   --radius-lg: 24px;
@@ -51,6 +51,9 @@ a {
 /* ─── APP WRAPPER (The 3D Phone Container) ─── */
 .app-wrapper {
   background: var(--white);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   max-width: 440px;
   margin: 40px auto;
   border-radius: var(--radius-xl);
@@ -99,20 +102,40 @@ a {
   box-shadow: 0 4px 12px rgba(11, 29, 58, 0.18);
 }
 
+.c-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: var(--transition);
+}
+
+.c-logo:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
 .navbar-brand {
   font-family: 'Outfit', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--ink-dark);
-  letter-spacing: 0.02em;
+  font-size: 20px;
+  font-weight: 900;
+  color: #000000;
+  background: #ffffff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  line-height: 1.1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .security-badge {
   width: 20px;
   height: 20px;
-  margin-left: 2px;
+  margin-left: 4px;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 4px rgba(0, 180, 216, 0.4));
+  filter: drop-shadow(0 2px 4px rgba(0, 122, 255, 0.4));
 }
 
 .navbar-track {
@@ -137,12 +160,14 @@ a {
 /* ─── TRACKING CARD ─── */
 .tracking-card {
   background: var(--card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-neu-out);
   margin-bottom: 32px;
   position: relative;
   transition: var(--transition);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .tracking-card-inner {
@@ -216,9 +241,8 @@ a {
   font-family: 'Inter', sans-serif;
   outline: none;
   transition: var(--transition);
-  /* 3D inset effect */
   box-shadow: var(--shadow-neu-in);
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .tracking-number-input:focus {
@@ -249,9 +273,8 @@ a {
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   transition: var(--transition);
-  /* 3D inset effect */
   box-shadow: var(--shadow-neu-in);
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .courier-dropdown-trigger:hover {
