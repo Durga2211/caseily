@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Outfit:wght@900&display=swap');
 
 * {
   margin: 0;
@@ -14,7 +14,7 @@ body {
     radial-gradient(circle at 90% 80%, rgba(255, 218, 233, 0.8) 0%, transparent 40%),
     linear-gradient(135deg, #e9eff5 0%, #f4f5f8 100%);
   background-attachment: fixed;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Comfortaa', system-ui, sans-serif;
   color: #1c1c1e;
   transition: background 0.5s ease, color 0.5s ease;
 }
