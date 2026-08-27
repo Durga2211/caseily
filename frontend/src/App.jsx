@@ -57,7 +57,7 @@ function App() {
       <nav className="navbar">
         <div className="navbar-left">
           <img src="/c-logo.png" alt="C Logo" className="c-logo" />
-          <span className="navbar-brand">CASEILY</span>
+          <span className="navbar-brand">Caseily</span>
           <svg className="security-badge" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="#007aff"/>
             <path d="M9 12L11 14L15 10" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
