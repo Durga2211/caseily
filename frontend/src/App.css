@@ -333,6 +333,10 @@ a {
   color: var(--muted);
 }
 
+.courier-dropdown-text.selected {
+  color: var(--ink-dark);
+}
+
 .chevron-icon {
   width: 18px;
   height: 18px;
@@ -639,6 +643,143 @@ a {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
+}
+
+.loading-hint {
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.7;
+  margin-top: -8px;
+}
+
+/* ── Status pill variants ── */
+.status-pill.status-transit {
+  background: #e8f0fe;
+  color: #007aff;
+}
+.status-pill.status-transit .dot { background: #007aff; }
+
+.status-pill.status-delivered {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.status-pill.status-delivered .dot {
+  background: #16a34a;
+  animation: none;
+}
+
+.status-pill.status-info {
+  background: #e8f0fe;
+  color: #007aff;
+}
+.status-pill.status-info .dot { background: #007aff; }
+
+.status-pill.status-awaiting {
+  background: #fef3c7;
+  color: #d97706;
+}
+.status-pill.status-awaiting .dot { background: #d97706; }
+
+.status-pill.status-exception {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.status-pill.status-exception .dot { background: #dc2626; }
+
+[data-theme="dark"] .status-pill.status-delivered {
+  background: rgba(22, 163, 74, 0.15);
+}
+[data-theme="dark"] .status-pill.status-awaiting {
+  background: rgba(217, 119, 6, 0.15);
+}
+[data-theme="dark"] .status-pill.status-exception {
+  background: rgba(220, 38, 38, 0.15);
+}
+
+/* ── Tracking message banner ── */
+.tracking-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  animation: fadeSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.tracking-message.awaiting {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.tracking-message.not_found {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.tracking-message.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+[data-theme="dark"] .tracking-message.awaiting {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.25);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .tracking-message.not_found,
+[data-theme="dark"] .tracking-message.error {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.25);
+  color: #fca5a5;
+}
+
+.tracking-message-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tracking-message p {
+  margin: 0;
+}
+
+/* ── Refresh button ── */
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: var(--transition);
+  box-shadow: 0 4px 12px var(--blue-glow);
+}
+
+.btn-refresh:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px var(--blue-glow);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-refresh svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* ---------- TIMELINE ---------- */
