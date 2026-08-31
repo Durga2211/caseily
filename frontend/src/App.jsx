@@ -19,12 +19,18 @@ const REVIEWS_B2B = [
   { tag: 'E-commerce brand', stars: 5, quote: 'We plugged Caseily tracking into our Shopify store and "where is my order?" tickets dropped by 60% in the first month. Customers love the live status page.', name: 'Renu Thakkar', role: 'Founder, StyleCraft Co.', color: '#f97316' },
   { tag: 'Logistics partner', stars: 5, quote: 'Handling 3,000+ AWBs daily across Delhivery and BlueDart — Caseily normalises all the scan events into one clean timeline. Our ops dashboard finally makes sense.', name: 'Arjun Mehta', role: 'Ops Lead, QuickShip 3PL', color: '#14b8a6' },
   { tag: 'D2C brand', stars: 4, quote: 'Our customers used to call us every day asking about their orders. Now they just check the tracking page. Onboarding was seamless — took less than an afternoon.', name: 'Priya Sharma', role: 'Head of CX, GlowBox', color: '#3b82f6' },
+  { tag: 'E-commerce brand', stars: 5, quote: 'The API is incredibly stable and the webhook responses are near-instant. We have integrated it across our entire custom ERP with zero downtime.', name: 'Vikram Singh', role: 'CTO, UrbanCart', color: '#8b5cf6' },
+  { tag: 'Logistics partner', stars: 5, quote: 'What used to take 3 support agents to track down missing parcels now takes seconds. The unified tracking interface is a game-changer for our B2B ops.', name: 'Neha Patel', role: 'Operations Mgr, SwiftLog', color: '#eab308' },
+  { tag: 'D2C brand', stars: 5, quote: 'Best investment we made this quarter. Customers feel more in control, and our NPS score jumped 15 points simply because tracking is transparent.', name: 'Aman Gupta', role: 'CEO, FitGear', color: '#ef4444' },
 ]
 
 const REVIEWS_B2C = [
   { tag: 'Verified buyer', stars: 5, quote: "Got my phone case delivered in 3 days! The tracking page showed every step — from warehouse to my doorstep. So much better than checking the courier's janky site.", name: 'Sneha R.', role: 'Mumbai, MH', color: '#14b8a6' },
   { tag: 'Verified buyer', stars: 5, quote: "Love how I can see the exact location of my package. Got a notification when it was out for delivery. The case itself is gorgeous too — perfect fit on my iPhone.", name: 'Karthik V.', role: 'Bangalore, KA', color: '#f97316' },
   { tag: 'Verified buyer', stars: 4, quote: "Ordered a custom case and was anxious about delivery time. The live tracker calmed my nerves — I could see it moving across the country. Great experience overall!", name: 'Anjali P.', role: 'Delhi, DL', color: '#3b82f6' },
+  { tag: 'Verified buyer', stars: 5, quote: "The timeline was spot on. I knew exactly when to be home to receive my parcel. No more waiting around all day guessing when the delivery guy will show up.", name: 'Rohit K.', role: 'Pune, MH', color: '#8b5cf6' },
+  { tag: 'Verified buyer', stars: 5, quote: "Usually I have to copy-paste tracking numbers across 3 different sites. This is so much easier. Just enter the number and boom, the whole history is right there.", name: 'Meera M.', role: 'Chennai, TN', color: '#eab308' },
+  { tag: 'Verified buyer', stars: 5, quote: "Fast updates! The moment my package was out for delivery, the status changed. Really reassuring when you're ordering expensive items.", name: 'Rahul S.', role: 'Hyderabad, TS', color: '#ef4444' },
 ]
 
 const BLOGS = [
@@ -79,6 +85,60 @@ function App() {
   const [openFaq, setOpenFaq] = useState(0)
   const [activeSection, setActiveSection] = useState('track')
   const dropdownRef = useRef(null)
+  const cursorRef = useRef(null)
+  
+  // ─── Custom Cursor & Magnetic Buttons ─────────────────────────────────
+  useEffect(() => {
+    const cursor = cursorRef.current
+    if (!cursor) return
+
+    const onMouseMove = (e) => {
+      cursor.style.setProperty('--x', `${e.clientX}px`)
+      cursor.style.setProperty('--y', `${e.clientY}px`)
+      cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`
+    }
+    
+    const onMouseDown = () => cursor.classList.add('clicking')
+    const onMouseUp = () => cursor.classList.remove('clicking')
+    
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mousedown', onMouseDown)
+    window.addEventListener('mouseup', onMouseUp)
+
+    const magneticElements = document.querySelectorAll('.magnetic')
+    
+    const onMagneticMove = (e) => {
+      const el = e.currentTarget
+      const rect = el.getBoundingClientRect()
+      const x = e.clientX - rect.left - rect.width / 2
+      const y = e.clientY - rect.top - rect.height / 2
+      
+      // Pull element towards mouse (subtle effect)
+      el.style.transform = `translate3d(${x * 0.2}px, ${y * 0.2}px, 0)`
+      cursor.classList.add('hovering-magnetic')
+    }
+    
+    const onMagneticLeave = (e) => {
+      const el = e.currentTarget
+      el.style.transform = `translate3d(0px, 0px, 0px)`
+      cursor.classList.remove('hovering-magnetic')
+    }
+
+    magneticElements.forEach(el => {
+      el.addEventListener('mousemove', onMagneticMove)
+      el.addEventListener('mouseleave', onMagneticLeave)
+    })
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mousedown', onMouseDown)
+      window.removeEventListener('mouseup', onMouseUp)
+      magneticElements.forEach(el => {
+        el.removeEventListener('mousemove', onMagneticMove)
+        el.removeEventListener('mouseleave', onMagneticLeave)
+      })
+    }
+  }, [])
 
   // ─── Dropdown outside-click ───────────────────────────────────────────
   useEffect(() => {
@@ -163,6 +223,7 @@ function App() {
   // ═════════════════════════════════════════════════════════════════════
   return (
     <div className="app-wrapper">
+      <div className="custom-cursor" ref={cursorRef}></div>
 
       {/* ─── NAVBAR ─── */}
       <nav className="navbar">
@@ -179,10 +240,10 @@ function App() {
           ))}
         </div>
         <div className="navbar-right">
-          <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme">
+          <button className="theme-toggle magnetic" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme">
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
-          <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta">Contact us</a>
+          <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta magnetic">Contact us</a>
         </div>
       </nav>
 
@@ -232,7 +293,7 @@ function App() {
               </div>
 
               <div className="tracking-input-area">
-                <button className="track-now-btn" onClick={handleTrack} disabled={loading || !trackingNumber.trim()}>
+                <button className="track-now-btn magnetic" onClick={handleTrack} disabled={loading || !trackingNumber.trim()}>
                   {loading ? <div className="spinner-small" /> : 'Track now'}
                 </button>
               </div>
@@ -313,21 +374,24 @@ function App() {
             <button className={`review-tab ${reviewTab === 'b2c' ? 'active' : ''}`} onClick={() => setReviewTab('b2c')}>For shoppers</button>
           </div>
 
-          <div className="review-grid">
-            {activeReviews.map((r, i) => (
-              <div key={`${reviewTab}-${i}`} className="review-card" style={{ animationDelay: `${i * 0.1}s` }}>
-                <span className={`review-tag ${reviewTab === 'b2b' ? 'b2b' : 'b2c'}`}>{r.tag}</span>
-                <Stars count={r.stars} />
-                <p className="review-quote">"{r.quote}"</p>
-                <div className="review-author">
-                  <div className="review-avatar" style={{ background: r.color }}>{r.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</div>
-                  <div className="review-author-info">
-                    <span className="review-author-name">{r.name}</span>
-                    <span className="review-author-role">{r.role}</span>
+          <div className="marquee-container">
+            <div className={`marquee-track ${reviewTab}`}>
+              {/* Render active reviews twice for infinite seamless scrolling */}
+              {[...activeReviews, ...activeReviews].map((r, i) => (
+                <div key={`${reviewTab}-${i}`} className="review-card" style={{ backgroundColor: r.color + '15', borderTopColor: r.color }}>
+                  <span className={`review-tag ${reviewTab === 'b2b' ? 'b2b' : 'b2c'}`} style={{ color: r.color }}>{r.tag}</span>
+                  <Stars count={r.stars} />
+                  <p className="review-quote">"{r.quote}"</p>
+                  <div className="review-author">
+                    <div className="review-avatar" style={{ background: r.color }}>{r.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</div>
+                    <div className="review-author-info">
+                      <span className="review-author-name">{r.name}</span>
+                      <span className="review-author-role">{r.role}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>

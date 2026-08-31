@@ -47,8 +47,8 @@
   --transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
   --transition-fast: all 0.15s ease;
   
-  --font-brand: 'Outfit', sans-serif;
-  --font-base: 'Inter', sans-serif;
+  --font-brand: 'Roboto Condensed', sans-serif;
+  --font-base: 'Roboto', sans-serif;
 }
 
 /* ─── DESIGN TOKENS (DARK MODE) ─── */
@@ -94,6 +94,37 @@
 html { scroll-behavior: smooth; }
 a { color: inherit; text-decoration: none; }
 
+/* ─── CUSTOM CURSOR ─── */
+.custom-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate3d(0, 0, 0); /* set dynamically by JS */
+  margin-top: -12px;
+  margin-left: -12px;
+  mix-blend-mode: difference; /* Looks cool on light and dark backgrounds */
+  transition: transform 0.15s ease-out, width 0.3s, height 0.3s, margin 0.3s, background 0.3s;
+}
+
+.custom-cursor.clicking {
+  transform: translate3d(var(--x), var(--y), 0) scale(0.6) !important;
+}
+
+.custom-cursor.hovering-magnetic {
+  width: 48px;
+  height: 48px;
+  margin-top: -24px;
+  margin-left: -24px;
+  background: rgba(255, 255, 255, 0.8);
+  mix-blend-mode: overlay;
+}
+
 /* ─── APP WRAPPER ─── */
 .app-wrapper {
   width: 100%;
@@ -101,7 +132,38 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   padding-bottom: 0;
-  transition: background 0.3s ease;
+  transition: background 0.5s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ─── AURORA BACKGROUND ─── */
+.app-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, var(--accent-glow) 0%, transparent 40%),
+              radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.15) 0%, transparent 30%),
+              radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.15) 0%, transparent 40%);
+  z-index: -1;
+  animation: aurora 25s ease-in-out infinite alternate;
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+[data-theme="dark"] .app-wrapper::before {
+  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
+              radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.1) 0%, transparent 30%),
+              radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
+}
+
+@keyframes aurora {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
 }
 
 @media (max-width: 768px) {
@@ -278,8 +340,16 @@ a { color: inherit; text-decoration: none; }
 #faq { animation-delay: 0.5s; }
 
 @keyframes fadeUpIn {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { 
+    opacity: 0; 
+    transform: translateY(60px) scale(0.95); 
+    filter: blur(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+    filter: blur(0px); 
+  }
 }
 
 .section-header {
@@ -413,24 +483,66 @@ a { color: inherit; text-decoration: none; }
   max-width: 600px;
 }
 
-/* ─── TRACKING CARD (3D Realistic) ─── */
+/* ─── TRACKING CARD (Glassmorphism 2.0 with Animated Border) ─── */
 .tracking-card {
+  position: relative;
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-radius: var(--radius-xl);
   padding: 40px;
   box-shadow: var(--shadow-3d);
   width: 100%;
   max-width: 600px;
   transform: perspective(1000px) rotateX(0deg);
-  transition: var(--transition);
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
+  overflow: hidden; /* For shimmer and animated border */
+}
+
+/* Animated Gradient Border using pseudo-element */
+.tracking-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(transparent, transparent, transparent, var(--accent), transparent);
+  animation: rotateBorder 4s linear infinite;
+  z-index: -2;
+}
+.tracking-card::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  background: var(--bg-card);
+  border-radius: calc(var(--radius-xl) - 1px);
+  z-index: -1;
+}
+
+@keyframes rotateBorder {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Shimmer effect on hover */
+.tracking-card:hover::after {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255,255,255,0.05) 50%, var(--bg-card) 100%);
+  background-size: 200% 200%;
+  animation: shimmer 2s ease infinite;
+}
+[data-theme="dark"] .tracking-card:hover::after {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255,255,255,0.02) 50%, var(--bg-card) 100%);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .tracking-card:hover {
   transform: perspective(1000px) translateY(-5px);
-  box-shadow: 16px 16px 32px var(--shadow-color), -16px -16px 32px var(--highlight-color);
+  box-shadow: 16px 16px 40px var(--shadow-color), -16px -16px 40px var(--highlight-color);
 }
 
 [data-theme="dark"] .tracking-card:hover {
@@ -589,7 +701,19 @@ a { color: inherit; text-decoration: none; }
 .loading-hint { font-size: 13px; color: var(--ink-faint); margin-top: -8px; font-weight: 400; }
 
 /* ─── RESULTS ─── */
-.results-section { margin-top: 32px; width: 100%; max-width: 600px; animation: fadeUpIn 0.5s ease both; }
+.results-section { 
+  margin-top: 32px; 
+  width: 100%; 
+  max-width: 600px; 
+  /* Fluid height transition handled by React normally, but CSS animation adds cinematic pop */
+  animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; 
+  transform-origin: top center;
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scaleY(0.5) scaleX(0.9); filter: blur(10px); }
+  100% { opacity: 1; transform: scaleY(1) scaleX(1); filter: blur(0px); }
+}
 
 .status-text.error {
   text-align: center; color: var(--red);
@@ -671,12 +795,52 @@ a { color: inherit; text-decoration: none; }
 .review-tab:hover { color: var(--ink-strong); }
 .review-tab.active { background: var(--bg-card); color: var(--accent); box-shadow: var(--shadow-btn); }
 
-.review-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.review-card { background: var(--bg-card); border-radius: var(--radius-xl); padding: 36px 32px; box-shadow: var(--shadow-card); transition: var(--transition); display: flex; flex-direction: column; opacity: 0; animation: fadeUpIn 0.6s forwards ease; }
+.marquee-container {
+  overflow: hidden;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 16px 0 48px;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 24px;
+  animation: marquee 35s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-50% - 12px)); /* -50% of total width, minus half the gap */ }
+}
+
+.review-card {
+  background: var(--bg-card); /* Default, overridden by JS */
+  border-radius: var(--radius-xl);
+  padding: 36px 32px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  width: 420px; /* Fixed width for marquee items */
+  flex-shrink: 0;
+  white-space: normal;
+  border-top-width: 4px;
+  border-top-style: solid;
+}
 .review-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-card-hover); }
-.review-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: var(--radius-pill); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; align-self: flex-start; }
-.review-tag.b2b { background: rgba(0, 122, 255, 0.1); color: var(--accent); }
-.review-tag.b2c { background: rgba(13, 148, 136, 0.1); color: var(--teal); }
+.review-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: var(--radius-pill); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; align-self: flex-start; background: rgba(255, 255, 255, 0.5); }
+[data-theme="dark"] .review-tag { background: rgba(0, 0, 0, 0.3); }
 .review-stars { display: flex; gap: 4px; margin-bottom: 20px; color: var(--amber); font-size: 16px; }
 .review-quote { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.6; margin-bottom: 32px; flex: 1; font-style: italic; }
 .review-author { display: flex; align-items: center; gap: 16px; margin-top: auto; }
@@ -772,7 +936,7 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 1024px) {
-  .review-grid, .blog-grid { grid-template-columns: repeat(2, 1fr); }
+  .blog-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
   .section, .section-alt { padding: 64px 0; }
@@ -781,9 +945,10 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
   .hero-heading { font-size: 40px; }
   .tracking-card { padding: 28px 20px; }
   .tracking-number-input, .courier-dropdown-trigger { padding: 16px 20px; }
-  .review-grid, .blog-grid, .community-grid { grid-template-columns: 1fr; }
+  .blog-grid, .community-grid { grid-template-columns: 1fr; }
   .result { padding: 24px 20px; }
   .faq-list { padding: 16px; }
+  .review-card { width: 340px; padding: 28px 24px; }
 }
 @media (max-width: 480px) {
   .navbar { padding: 12px 16px; }
