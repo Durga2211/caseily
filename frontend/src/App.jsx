@@ -85,60 +85,6 @@ function App() {
   const [openFaq, setOpenFaq] = useState(0)
   const [activeSection, setActiveSection] = useState('track')
   const dropdownRef = useRef(null)
-  const cursorRef = useRef(null)
-  
-  // ─── Custom Cursor & Magnetic Buttons ─────────────────────────────────
-  useEffect(() => {
-    const cursor = cursorRef.current
-    if (!cursor) return
-
-    const onMouseMove = (e) => {
-      cursor.style.setProperty('--x', `${e.clientX}px`)
-      cursor.style.setProperty('--y', `${e.clientY}px`)
-      cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`
-    }
-    
-    const onMouseDown = () => cursor.classList.add('clicking')
-    const onMouseUp = () => cursor.classList.remove('clicking')
-    
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mousedown', onMouseDown)
-    window.addEventListener('mouseup', onMouseUp)
-
-    const magneticElements = document.querySelectorAll('.magnetic')
-    
-    const onMagneticMove = (e) => {
-      const el = e.currentTarget
-      const rect = el.getBoundingClientRect()
-      const x = e.clientX - rect.left - rect.width / 2
-      const y = e.clientY - rect.top - rect.height / 2
-      
-      // Pull element towards mouse (subtle effect)
-      el.style.transform = `translate3d(${x * 0.2}px, ${y * 0.2}px, 0)`
-      cursor.classList.add('hovering-magnetic')
-    }
-    
-    const onMagneticLeave = (e) => {
-      const el = e.currentTarget
-      el.style.transform = `translate3d(0px, 0px, 0px)`
-      cursor.classList.remove('hovering-magnetic')
-    }
-
-    magneticElements.forEach(el => {
-      el.addEventListener('mousemove', onMagneticMove)
-      el.addEventListener('mouseleave', onMagneticLeave)
-    })
-
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mousedown', onMouseDown)
-      window.removeEventListener('mouseup', onMouseUp)
-      magneticElements.forEach(el => {
-        el.removeEventListener('mousemove', onMagneticMove)
-        el.removeEventListener('mouseleave', onMagneticLeave)
-      })
-    }
-  }, [])
 
   // ─── Dropdown outside-click ───────────────────────────────────────────
   useEffect(() => {
@@ -223,7 +169,6 @@ function App() {
   // ═════════════════════════════════════════════════════════════════════
   return (
     <div className="app-wrapper">
-      <div className="custom-cursor" ref={cursorRef}></div>
 
       {/* ─── NAVBAR ─── */}
       <nav className="navbar">
@@ -240,10 +185,10 @@ function App() {
           ))}
         </div>
         <div className="navbar-right">
-          <button className="theme-toggle magnetic" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme">
+          <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme">
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
-          <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta magnetic">Contact us</a>
+          <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta">Contact us</a>
         </div>
       </nav>
 
@@ -293,7 +238,7 @@ function App() {
               </div>
 
               <div className="tracking-input-area">
-                <button className="track-now-btn magnetic" onClick={handleTrack} disabled={loading || !trackingNumber.trim()}>
+                <button className="track-now-btn" onClick={handleTrack} disabled={loading || !trackingNumber.trim()}>
                   {loading ? <div className="spinner-small" /> : 'Track now'}
                 </button>
               </div>
@@ -436,14 +381,14 @@ function App() {
 
           <div className="community-grid">
             <div className="community-card whatsapp">
-              <div className="community-icon">💬</div>
-              <h3>Join our WhatsApp community</h3>
+              <div className="community-icon">📸</div>
+              <h3>Join our Instagram community</h3>
               <p>Get shipping tips, exclusive deals on phone cases, and direct support from the Caseily team.</p>
               <div className="community-stats">
                 <div><div className="community-stat-value">2,400+</div><div className="community-stat-label">Members</div></div>
                 <div><div className="community-stat-value">Daily</div><div className="community-stat-label">Active support</div></div>
               </div>
-              <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="community-cta">Join the community →</a>
+              <a href="https://www.instagram.com/channel/AbZBvjA3CZscunR1/" target="_blank" rel="noopener noreferrer" className="community-cta">Join the community →</a>
             </div>
 
             <div className="community-card youtube">
@@ -454,7 +399,7 @@ function App() {
                 <div><div className="community-stat-value">5,800+</div><div className="community-stat-label">Subscribers</div></div>
                 <div><div className="community-stat-value">Weekly</div><div className="community-stat-label">New videos</div></div>
               </div>
-              <a href="https://www.youtube.com/@caseily" target="_blank" rel="noopener noreferrer" className="community-cta">Watch the channel →</a>
+              <a href="https://youtube.com/@caseilyplus?si=5JSExZZNh3IC2EwV" target="_blank" rel="noopener noreferrer" className="community-cta">Watch the channel →</a>
             </div>
           </div>
         </div>

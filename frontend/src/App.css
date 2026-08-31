@@ -94,37 +94,6 @@
 html { scroll-behavior: smooth; }
 a { color: inherit; text-decoration: none; }
 
-/* ─── CUSTOM CURSOR ─── */
-.custom-cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--accent);
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate3d(0, 0, 0); /* set dynamically by JS */
-  margin-top: -12px;
-  margin-left: -12px;
-  mix-blend-mode: difference; /* Looks cool on light and dark backgrounds */
-  transition: transform 0.15s ease-out, width 0.3s, height 0.3s, margin 0.3s, background 0.3s;
-}
-
-.custom-cursor.clicking {
-  transform: translate3d(var(--x), var(--y), 0) scale(0.6) !important;
-}
-
-.custom-cursor.hovering-magnetic {
-  width: 48px;
-  height: 48px;
-  margin-top: -24px;
-  margin-left: -24px;
-  background: rgba(255, 255, 255, 0.8);
-  mix-blend-mode: overlay;
-}
-
 /* ─── APP WRAPPER ─── */
 .app-wrapper {
   width: 100%;
