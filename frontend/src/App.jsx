@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
+import { useTilt } from './useTilt'
+import { TiltCard } from './TiltCard'
 
 // ─── DATA ───────────────────────────────────────────────────────────────
 const COURIERS = [
@@ -80,7 +82,14 @@ function App() {
   const [showResults, setShowResults] = useState(false)
 
   // ─── UI state ─────────────────────────────────────────────────────────
-  const [theme, setTheme] = useState('light')
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('caseily-theme') || 'light'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('caseily-theme', theme)
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
   const [reviewTab, setReviewTab] = useState('b2b')
   const [openFaq, setOpenFaq] = useState(0)
   const [activeSection, setActiveSection] = useState('track')
@@ -173,9 +182,7 @@ function App() {
       {/* ─── NAVBAR ─── */}
       <nav className="navbar">
         <div className="navbar-left">
-          <img src="/c-logo.png" alt="Caseily" className="c-logo" />
-          <span className="navbar-brand">Caseily</span>
-          <svg className="security-badge" viewBox="0 0 24 24" fill="none"><path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="#f97316"/><path d="M9 12L11 14L15 10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <img src="/logo.png" alt="Caseily" className="c-logo-full" style={{ height: '32px', width: 'auto' }} />
         </div>
         <div className="navbar-links">
           {['track','reviews','blog','community','faq'].map(id => (
@@ -198,107 +205,184 @@ function App() {
       <section id="track" className="hero-section">
         <div className="container">
           <div className="hero-inner">
-            <div className="hero-badge"><span className="section-label" style={{ marginBottom: 0 }}>ORDER TRACKING</span></div>
-            <h1 className="hero-heading">
-              Where's your order?<br/>Track your happiness.<br/>We're on it.
-            </h1>
-            <p className="hero-subtitle">
-              Enter your tracking number below to see<br/>your live delivery status
-            </p>
+            <div className="hero-left">
+              <div className="mobile-app-header" style={{ justifyContent: 'center' }}>
+                <h2>Caseily</h2>
+              </div>
+              <div className="hero-badge desktop-only">
+                <span className="dot-live" /> 
+                <span className="section-label" style={{ marginBottom: 0 }}>LIVE ORDER TRACKING</span>
+              </div>
+              <h1 className="hero-heading">
+                Where's your order?<br/>Track your happiness.<br/>We're on it.
+              </h1>
+              <p className="hero-subtitle desktop-only">
+                Enter your tracking number below to see<br/>your live delivery status
+              </p>
 
-            {/* ─── TRACKING CARD ─── */}
-            <div className="tracking-card">
-              <div className="tracking-input-area">
-                <input type="text" className="tracking-number-input" placeholder="Enter your tracking number" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTrack()} />
+              {/* ─── TRACKING CARD ─── */}
+              <div className="tracking-card">
+                <div className="tracking-input-area">
+                  <input type="text" className="tracking-number-input" placeholder="Enter your tracking number" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTrack()} />
+                </div>
+
+                <div className="tracking-input-area">
+                  <div className="courier-dropdown-wrap" ref={dropdownRef}>
+                    <button type="button" className="courier-dropdown-trigger" onClick={() => { setCourierOpen(o => !o); setCourierSearch('') }}>
+                      <svg className="truck-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                      <span className={`courier-dropdown-text ${selectedCourier ? 'selected' : ''}`}>{courierDisplayText}</span>
+                      <svg className="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: courierOpen ? 'rotate(180deg)' : '' }}><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    {courierOpen && (
+                      <div className="courier-dropdown-menu">
+                        <div className="courier-dropdown-search"><input type="text" placeholder="Search courier…" value={courierSearch} onChange={e => setCourierSearch(e.target.value)} autoFocus /></div>
+                        <div className="courier-dropdown-list">
+                          {filteredCouriers.map(c => (
+                            <div key={c.key} className={`courier-dropdown-item ${selectedCourier === c.key ? 'selected' : ''}`} onClick={() => { setSelectedCourier(c.key); setCourierOpen(false) }}>
+                              <span className="flag">{c.country ? isoToFlag(c.country) : '🔍'}</span>
+                              <span className="item-name">{c.name}</span>
+                              {selectedCourier === c.key && <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                            </div>
+                          ))}
+                          {filteredCouriers.length === 0 && <div className="dropdown-empty">No couriers found</div>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="tracking-input-area">
+                  <button className="track-now-btn btn-glossy" onClick={handleTrack} disabled={loading || !trackingNumber.trim()}>
+                    {loading ? <div className="spinner-small" /> : 'Track now'}
+                  </button>
+                </div>
               </div>
 
-              <div className="tracking-input-area">
-                <div className="courier-dropdown-wrap" ref={dropdownRef}>
-                  <button type="button" className="courier-dropdown-trigger" onClick={() => { setCourierOpen(o => !o); setCourierSearch('') }}>
-                    <svg className="truck-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                    <span className={`courier-dropdown-text ${selectedCourier ? 'selected' : ''}`}>{courierDisplayText}</span>
-                    <svg className="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: courierOpen ? 'rotate(180deg)' : '' }}><polyline points="6 9 12 15 18 9"/></svg>
-                  </button>
-                  {courierOpen && (
-                    <div className="courier-dropdown-menu">
-                      <div className="courier-dropdown-search"><input type="text" placeholder="Search courier…" value={courierSearch} onChange={e => setCourierSearch(e.target.value)} autoFocus /></div>
-                      <div className="courier-dropdown-list">
-                        {filteredCouriers.map(c => (
-                          <div key={c.key} className={`courier-dropdown-item ${selectedCourier === c.key ? 'selected' : ''}`} onClick={() => { setSelectedCourier(c.key); setCourierOpen(false) }}>
-                            <span className="flag">{c.country ? isoToFlag(c.country) : '🔍'}</span>
-                            <span className="item-name">{c.name}</span>
-                            {selectedCourier === c.key && <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+              {/* ─── RESULTS ─── */}
+              {showResults && (
+                <div className="results-section">
+                  {loading && <div className="loading-container"><div className="spinner" /><p>Fetching tracking info…</p><p className="loading-hint">This may take up to a minute for new shipments</p></div>}
+                  {error && <p className="status-text error">{error}</p>}
+                  {result && (
+                    <div className="result">
+                      <div className="result-head">
+                        <div className="oid">Tracking number</div>
+                        <h2>{trackingNumber}</h2>
+                        {result.courier_name && <div className="selected-courier-badge"><span className="badge-name">{result.courier_name}</span></div>}
+                        <div className={getStatusPillClass(result.status_tag)}><span className="dot" />{result.status}</div>
+                      </div>
+                      {hasMessage && (isAwaiting || isNotFound || isError) && (
+                        <div className={`tracking-message ${result.status_tag}`}>
+                          <div className="tracking-message-icon">
+                            {isAwaiting && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+                            {isNotFound && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
+                            {isError && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
                           </div>
-                        ))}
-                        {filteredCouriers.length === 0 && <div className="dropdown-empty">No couriers found</div>}
+                          <p>{result.message}</p>
+                        </div>
+                      )}
+                      {!isError && !isNotFound && (
+                        <div className="timeline">
+                          {result.steps?.map((step, i) => {
+                            const icons = {
+                              "Order Placed": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+                              "In Transit": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
+                              "Out For Delivery": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+                              "Delivered": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            }
+                            return (
+                              <div key={i} className={`tl-step ${step.done ? '' : 'pending'} ${i === currentIndex ? 'current' : ''}`} style={{ animationDelay: `${i * 0.12}s` }}>
+                                <div className="tl-step-header">{icons[step.label]}<h3>{step.label}</h3></div>
+                                <p>{step.done ? (step.timestamp ? new Date(step.timestamp).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Completed') : '—'}</p>
+                                {step.location && <p className="step-location"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight:'4px'}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{step.location}</p>}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                      <div className="result-actions">
+                        {(isAwaiting || isNotFound) && (
+                          <button className="btn-refresh btn-glossy" onClick={handleTrack} disabled={loading}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            Refresh Status
+                          </button>
+                        )}
+                        <button className="btn-track-another btn-glossy" onClick={handleReset}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Track another</button>
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div className="tracking-input-area">
-                <button className="track-now-btn" onClick={handleTrack} disabled={loading || !trackingNumber.trim()}>
-                  {loading ? <div className="spinner-small" /> : 'Track now'}
-                </button>
-              </div>
+              )}
             </div>
 
-            {/* ─── RESULTS ─── */}
-            {showResults && (
-              <div className="results-section">
-                {loading && <div className="loading-container"><div className="spinner" /><p>Fetching tracking info…</p><p className="loading-hint">This may take up to a minute for new shipments</p></div>}
-                {error && <p className="status-text error">{error}</p>}
-                {result && (
-                  <div className="result">
-                    <div className="result-head">
-                      <div className="oid">Tracking number</div>
-                      <h2>{trackingNumber}</h2>
-                      {result.courier_name && <div className="selected-courier-badge"><span className="badge-name">{result.courier_name}</span></div>}
-                      <div className={getStatusPillClass(result.status_tag)}><span className="dot" />{result.status}</div>
-                    </div>
-                    {hasMessage && (isAwaiting || isNotFound || isError) && (
-                      <div className={`tracking-message ${result.status_tag}`}>
-                        <div className="tracking-message-icon">
-                          {isAwaiting && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-                          {isNotFound && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
-                          {isError && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-                        </div>
-                        <p>{result.message}</p>
-                      </div>
-                    )}
-                    {!isError && !isNotFound && (
-                      <div className="timeline">
-                        {result.steps?.map((step, i) => {
-                          const icons = {
-                            "Order Placed": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-                            "In Transit": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
-                            "Out For Delivery": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
-                            "Delivered": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                          }
-                          return (
-                            <div key={i} className={`tl-step ${step.done ? '' : 'pending'} ${i === currentIndex ? 'current' : ''}`} style={{ animationDelay: `${i * 0.12}s` }}>
-                              <div className="tl-step-header">{icons[step.label]}<h3>{step.label}</h3></div>
-                              <p>{step.done ? (step.timestamp ? new Date(step.timestamp).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Completed') : '—'}</p>
-                              {step.location && <p className="step-location"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight:'4px'}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{step.location}</p>}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                    <div className="result-actions">
-                      {(isAwaiting || isNotFound) && <button className="btn-refresh" onClick={handleTrack} disabled={loading}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>{loading ? 'Refreshing…' : 'Refresh'}</button>}
-                      <button className="btn-track-another" onClick={handleReset}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Track another</button>
-                    </div>
+            {/* ─── MOBILE ONLY DASHBOARD ─── */}
+            <div className="mobile-dashboard">
+              <div className="mobile-action-grid">
+                <div className="action-tile" onClick={() => { document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' }); }}>
+                  <div className="action-icon" style={{ background: '#1e5fd1', color: 'white' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                   </div>
-                )}
+                  <span>Write a review</span>
+                </div>
+                <div className="action-tile" onClick={() => { document.getElementById('blog')?.scrollIntoView({ behavior: 'smooth' }); }}>
+                  <div className="action-icon" style={{ background: '#1e5fd1', color: 'white' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                  </div>
+                  <span>Blog & guides</span>
+                </div>
+                <div className="action-tile" onClick={() => { document.getElementById('community')?.scrollIntoView({ behavior: 'smooth' }); }}>
+                  <div className="action-icon" style={{ background: '#1e5fd1', color: 'white' }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                  </div>
+                  <span>Bulk pricing</span>
+                </div>
               </div>
-            )}
 
-            {/* ─── PROMO BANNER ─── */}
-            <a href="https://www.instagram.com/caseilyplusstore/" target="_blank" rel="noopener noreferrer" className="promo-banner-container">
-              <img src="/promo-banner.jpg" alt="Caseily Plus" className="promo-banner-image" />
-            </a>
+              <div className="mobile-about-card">
+                <div className="about-header">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#1e5fd1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <h3>About Caseily</h3>
+                </div>
+                <p>Started after one too many cracked screens. Every case is drop-tested before it ships, fitted precisely per model, and backed by a real person on WhatsApp if something isn't right.</p>
+                <div className="about-stats">
+                  <div className="stat"><h4>4.8</h4><span>avg rating</span></div>
+                  <div className="stat"><h4>42K+</h4><span>orders protected</span></div>
+                  <div className="stat"><h4>380+</h4><span>cities served</span></div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="hero-right">
+              <TiltCard className="floating-tile tile-1" options={{ max: 15, scale: 1.05 }}>
+                <div className="floating-tile-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div className="floating-tile-text">
+                  <h4>Delivered Today</h4>
+                  <p>12,482 packages</p>
+                </div>
+              </TiltCard>
+
+              <TiltCard className="floating-tile tile-2" options={{ max: 15, scale: 1.05 }}>
+                <div className="floating-tile-icon" style={{ background: 'linear-gradient(135deg, #3FA9F5, #1E5FD1)' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                </div>
+                <div className="floating-tile-text">
+                  <h4>Live Map</h4>
+                  <p>Tracking active routes</p>
+                </div>
+              </TiltCard>
+
+              <TiltCard className="floating-tile tile-3" options={{ max: 15, scale: 1.05 }}>
+                <div className="floating-tile-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div className="floating-tile-text">
+                  <h4>Active Members</h4>
+                  <p>150,000+ businesses</p>
+                </div>
+              </TiltCard>
+            </div>
           </div>
         </div>
       </section>
@@ -323,7 +407,7 @@ function App() {
             <div className={`marquee-track ${reviewTab}`}>
               {/* Render active reviews twice for infinite seamless scrolling */}
               {[...activeReviews, ...activeReviews].map((r, i) => (
-                <div key={`${reviewTab}-${i}`} className="review-card" style={{ backgroundColor: r.color + '15', borderTopColor: r.color }}>
+                <TiltCard key={`${reviewTab}-${i}`} className="review-card" style={{ backgroundColor: r.color + '15', borderTopColor: r.color }}>
                   <span className={`review-tag ${reviewTab === 'b2b' ? 'b2b' : 'b2c'}`} style={{ color: r.color }}>{r.tag}</span>
                   <Stars count={r.stars} />
                   <p className="review-quote">"{r.quote}"</p>
@@ -334,7 +418,7 @@ function App() {
                       <span className="review-author-role">{r.role}</span>
                     </div>
                   </div>
-                </div>
+                </TiltCard>
               ))}
             </div>
           </div>
@@ -354,7 +438,7 @@ function App() {
 
           <div className="blog-grid">
             {BLOGS.map((b, i) => (
-              <div key={i} className="blog-card" style={{ animationDelay: `${i * 0.1}s` }}>
+              <TiltCard key={i} className="blog-card" style={{ animationDelay: `${i * 0.1}s` }}>
                 <div className={`blog-thumb ${b.gradient}`} />
                 <div className="blog-body">
                   <span className="blog-category">{b.category}</span>
@@ -362,7 +446,7 @@ function App() {
                   <p className="blog-excerpt">{b.excerpt}</p>
                   <div className="blog-meta"><span>{b.time}</span><span>{b.date}</span></div>
                 </div>
-              </div>
+              </TiltCard>
             ))}
           </div>
         </div>
@@ -380,27 +464,31 @@ function App() {
           </div>
 
           <div className="community-grid">
-            <div className="community-card whatsapp">
-              <div className="community-icon">📸</div>
+            <TiltCard className="community-card whatsapp">
+              <div className="community-icon glossy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              </div>
               <h3>Join our Instagram community</h3>
               <p>Get shipping tips, exclusive deals on phone cases, and direct support from the Caseily team.</p>
               <div className="community-stats">
-                <div><div className="community-stat-value">2,400+</div><div className="community-stat-label">Members</div></div>
+                <div><div className="community-stat-value pulse">2,400+</div><div className="community-stat-label">Members</div></div>
                 <div><div className="community-stat-value">Daily</div><div className="community-stat-label">Active support</div></div>
               </div>
-              <a href="https://www.instagram.com/channel/AbZBvjA3CZscunR1/" target="_blank" rel="noopener noreferrer" className="community-cta">Join the community →</a>
-            </div>
+              <a href="https://www.instagram.com/channel/AbZBvjA3CZscunR1/" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy">Join the community →</a>
+            </TiltCard>
 
-            <div className="community-card youtube">
-              <div className="community-icon">▶️</div>
+            <TiltCard className="community-card youtube">
+              <div className="community-icon glossy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+              </div>
               <h3>Watch on YouTube</h3>
               <p>Unboxings, case reviews, behind-the-scenes of how we build, and shipping tutorials.</p>
               <div className="community-stats">
-                <div><div className="community-stat-value">5,800+</div><div className="community-stat-label">Subscribers</div></div>
+                <div><div className="community-stat-value pulse">5,800+</div><div className="community-stat-label">Subscribers</div></div>
                 <div><div className="community-stat-value">Weekly</div><div className="community-stat-label">New videos</div></div>
               </div>
-              <a href="https://youtube.com/@caseilyplus?si=5JSExZZNh3IC2EwV" target="_blank" rel="noopener noreferrer" className="community-cta">Watch the channel →</a>
-            </div>
+              <a href="https://youtube.com/@caseilyplus?si=5JSExZZNh3IC2EwV" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy">Watch the channel →</a>
+            </TiltCard>
           </div>
         </div>
       </section>
@@ -425,7 +513,9 @@ function App() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </span>
                 </button>
-                <div className="faq-answer"><p>{f.a}</p></div>
+                <div className="faq-answer-wrapper">
+                  <div className="faq-answer"><p>{f.a}</p></div>
+                </div>
               </div>
             ))}
           </div>
@@ -433,9 +523,17 @@ function App() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer>
+      <footer className="footer">
         <div className="container">
-          © {new Date().getFullYear()} Caseily · All rights reserved
+          <div className="footer-content">
+            <div className="footer-brand" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+              <img src="/logo.png" alt="Caseily" className="c-logo-full" style={{ height: '32px', width: 'auto' }} />
+              <p style={{ color: 'var(--ink-muted)' }}>Making global shipping transparent, reliable, and beautifully simple.</p>
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '32px', color: 'var(--ink-faint)', fontSize: '14px' }}>
+            © {new Date().getFullYear()} Caseily · All rights reserved
+          </div>
         </div>
       </footer>
 
