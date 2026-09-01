@@ -161,7 +161,7 @@ function App() {
   const hasMessage = !!result?.message
   const filteredCouriers = COURIERS.filter(c => c.name.toLowerCase().includes(courierSearch.toLowerCase()))
   const selectedCourierObj = COURIERS.find(c => c.key === selectedCourier)
-  const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Courier (optional — improves accuracy)'
+  const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Select Courier (optional, e.g., US...'
   const activeReviews = reviewTab === 'b2b' ? REVIEWS_B2B : REVIEWS_B2C
 
   // ═════════════════════════════════════════════════════════════════════
@@ -198,12 +198,12 @@ function App() {
       <section id="track" className="hero-section">
         <div className="container">
           <div className="hero-inner">
-            <div className="hero-badge"><span className="dot-live" /> Track across 1,000+ carriers</div>
+            <div className="hero-badge"><span className="section-label" style={{ marginBottom: 0 }}>ORDER TRACKING</span></div>
             <h1 className="hero-heading">
-              Know where it is,<br /><span className="accent">always.</span>
+              Where's your order?<br/>Track your happiness.<br/>We're on it.
             </h1>
             <p className="hero-subtitle">
-              Caseily follows every shipment from the warehouse to your doorstep, so you're never the one asking "where's my package?"
+              Enter your tracking number below to see<br/>your live delivery status
             </p>
 
             {/* ─── TRACKING CARD ─── */}
@@ -444,7 +444,7 @@ function App() {
          ═══════════════════════════════════════════════════════════════ */}
       <nav className="mobile-nav">
         {[
-          { id: 'track', label: 'Track', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> },
+          { id: 'track', label: 'Track', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> },
           { id: 'reviews', label: 'Reviews', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
           { id: 'blog', label: 'Blog', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> },
           { id: 'community', label: 'Connect', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
