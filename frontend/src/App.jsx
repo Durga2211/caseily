@@ -92,6 +92,7 @@ function App() {
   }, [theme])
   const [reviewTab, setReviewTab] = useState('b2b')
   const [openFaq, setOpenFaq] = useState(0)
+  const [openSupportItem, setOpenSupportItem] = useState(null)
   const [activeSection, setActiveSection] = useState('track')
   const dropdownRef = useRef(null)
 
@@ -151,6 +152,13 @@ function App() {
     setTrackingNumber(''); setSelectedCourier(''); setResult(null); setError(null); setShowResults(false)
   }
 
+  function translateToHindi() {
+    // Robust way to force Google Translate to Hindi: set the cookie and reload
+    document.cookie = 'googtrans=/en/hi; path=/';
+    document.cookie = 'googtrans=/en/hi; domain=' + window.location.hostname + '; path=/';
+    window.location.reload();
+  }
+
   function scrollTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -192,12 +200,24 @@ function App() {
           ))}
         </div>
         <div className="navbar-right">
+          <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" title="Translate to Hindi" style={{ marginRight: '8px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          </button>
           <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme">
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
           <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta">Contact us</a>
         </div>
       </nav>
+
+      {/* ─── MOBILE HEADER ─── */}
+      <div className="mobile-app-header" style={{ justifyContent: 'space-between', backgroundColor: '#bfdbfe', padding: '16px 20px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ width: '32px' }}></div>
+        <h2 style={{ margin: 0, color: '#1e3a8a' }}>Caseily</h2>
+        <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" style={{ background: 'transparent', border: 'none', color: 'var(--ink-strong)' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+        </button>
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════════
          HERO / TRACKING
@@ -206,9 +226,6 @@ function App() {
         <div className="container">
           <div className="hero-inner">
             <div className="hero-left">
-              <div className="mobile-app-header" style={{ justifyContent: 'center' }}>
-                <h2>Caseily</h2>
-              </div>
               <div className="hero-badge desktop-only">
                 <span className="dot-live" /> 
                 <span className="section-label" style={{ marginBottom: 0 }}>LIVE ORDER TRACKING</span>
@@ -319,19 +336,19 @@ function App() {
             <div className="mobile-dashboard">
               <div className="mobile-action-grid">
                 <div className="action-tile" onClick={() => { document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  <div className="action-icon" style={{ background: '#1e5fd1', color: 'white' }}>
+                  <div className="action-icon" style={{ background: '#ffffff', color: '#1e5fd1', border: '1px solid var(--border)' }}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                   </div>
                   <span>Write a review</span>
                 </div>
                 <div className="action-tile" onClick={() => { document.getElementById('blog')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  <div className="action-icon" style={{ background: '#1e5fd1', color: 'white' }}>
+                  <div className="action-icon" style={{ background: '#ffffff', color: '#1e5fd1', border: '1px solid var(--border)' }}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
                   </div>
                   <span>Blog & guides</span>
                 </div>
                 <div className="action-tile" onClick={() => { document.getElementById('community')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  <div className="action-icon" style={{ background: '#1e5fd1', color: 'white' }}>
+                  <div className="action-icon" style={{ background: '#ffffff', color: '#1e5fd1', border: '1px solid var(--border)' }}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                   </div>
                   <span>Bulk pricing</span>
@@ -354,7 +371,7 @@ function App() {
             
             <div className="hero-right">
               <TiltCard className="floating-tile tile-1" options={{ max: 15, scale: 1.05 }}>
-                <div className="floating-tile-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                <div className="floating-tile-icon" style={{ background: 'var(--accent)' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </div>
                 <div className="floating-tile-text">
@@ -364,7 +381,7 @@ function App() {
               </TiltCard>
 
               <TiltCard className="floating-tile tile-2" options={{ max: 15, scale: 1.05 }}>
-                <div className="floating-tile-icon" style={{ background: 'linear-gradient(135deg, #3FA9F5, #1E5FD1)' }}>
+                <div className="floating-tile-icon" style={{ background: 'var(--blue)' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
                 </div>
                 <div className="floating-tile-text">
@@ -374,7 +391,7 @@ function App() {
               </TiltCard>
 
               <TiltCard className="floating-tile tile-3" options={{ max: 15, scale: 1.05 }}>
-                <div className="floating-tile-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                <div className="floating-tile-icon" style={{ background: 'var(--ink-strong)' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
                 <div className="floating-tile-text">
@@ -425,6 +442,35 @@ function App() {
         </div>
       </section>
 
+      {/* ─── WHAT WE PROVIDE ─── */}
+      <section id="what-we-provide" className="section" style={{ padding: '60px 20px', maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+        <h2 className="section-title" style={{ marginBottom: '32px' }}>What we provide</h2>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+          gap: '16px' 
+        }}>
+          {[1, 2, 3, 4].map((num) => (
+            <div key={num} style={{ 
+              borderRadius: '16px', 
+              overflow: 'hidden', 
+              backgroundColor: 'var(--bg-elevated)', 
+              boxShadow: 'var(--shadow-card)',
+              border: '1px solid var(--border)'
+            }}>
+              <video 
+                src={`/promo${num}.mp4`} 
+                muted
+                autoPlay
+                loop
+                playsInline
+                style={{ width: '100%', display: 'block', backgroundColor: '#000' }}
+              ></video>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ═══════════════════════════════════════════════════════════════
          BLOG
          ═══════════════════════════════════════════════════════════════ */}
@@ -459,68 +505,110 @@ function App() {
         <div className="container">
           <div className="section-header">
             <span className="section-label">Community</span>
-            <h2 className="section-title">Connect with us</h2>
-            <p className="section-subtitle">Two places to go deeper than a tracking number.</p>
+            <h2 className="section-title">Welcome to CASEILYplus!+</h2>
+            <p className="section-subtitle">
+              Guess who just became part of the coolest club on the internet? That’s right, YOU. 🌟<br />
+              We promise to make your feed better, your day brighter, and your wallet slightly more active.<br />
+              Grab a seat and follow the links:
+            </p>
           </div>
 
-          <div className="community-grid">
-            <TiltCard className="community-card whatsapp">
-              <div className="community-icon glossy">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-              </div>
-              <h3>Join our Instagram community</h3>
-              <p>Get shipping tips, exclusive deals on phone cases, and direct support from the Caseily team.</p>
-              <div className="community-stats">
-                <div><div className="community-stat-value pulse">2,400+</div><div className="community-stat-label">Members</div></div>
-                <div><div className="community-stat-value">Daily</div><div className="community-stat-label">Active support</div></div>
-              </div>
-              <a href="https://www.instagram.com/channel/AbZBvjA3CZscunR1/" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy">Join the community →</a>
-            </TiltCard>
-
-            <TiltCard className="community-card youtube">
-              <div className="community-icon glossy">
+          <div className="community-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+            
+            <TiltCard className="community-card">
+              <div className="community-icon" style={{ background: '#ffffff', color: 'var(--accent)', border: '1px solid var(--border)' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
               </div>
-              <h3>Watch on YouTube</h3>
-              <p>Unboxings, case reviews, behind-the-scenes of how we build, and shipping tutorials.</p>
-              <div className="community-stats">
-                <div><div className="community-stat-value pulse">5,800+</div><div className="community-stat-label">Subscribers</div></div>
-                <div><div className="community-stat-value">Weekly</div><div className="community-stat-label">New videos</div></div>
-              </div>
-              <a href="https://youtube.com/@caseilyplus?si=5JSExZZNh3IC2EwV" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy">Watch the channel →</a>
+              <h3>YouTube</h3>
+              <p>Subscribe or we’ll cry</p>
+              <a href="https://youtube.com/@caseilyplus?si=RfzX4okGCWZ_9yKq" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy" style={{ marginTop: 'auto' }}>Watch the channel →</a>
             </TiltCard>
+
+            <TiltCard className="community-card">
+              <div className="community-icon" style={{ background: '#ffffff', color: 'var(--accent)', border: '1px solid var(--border)' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              </div>
+              <h3>Instagram</h3>
+              <p>Come say hi!</p>
+              <a href="https://www.instagram.com/channel/AbZBvjA3CZscunR1/" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy" style={{ marginTop: 'auto' }}>Join the community →</a>
+            </TiltCard>
+
+            <TiltCard className="community-card">
+              <div className="community-icon" style={{ background: '#ffffff', color: 'var(--accent)', border: '1px solid var(--border)' }}>
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              </div>
+              <h3>WhatsApp</h3>
+              <p>The VIP Insider Channel</p>
+              <a href="https://whatsapp.com/channel/0029VbApzgg9cDDUfdHPdQ2z" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy" style={{ marginTop: 'auto' }}>Join WhatsApp →</a>
+            </TiltCard>
+
+            <TiltCard className="community-card">
+              <div className="community-icon" style={{ background: '#ffffff', color: 'var(--accent)', border: '1px solid var(--border)' }}>
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.12 1.75C11.53 1.76 10.96 1.83 10.43 1.95C8.83 2.32 7.72 3.4 7.21 4.75C6.98 5.37 6.88 5.96 6.84 6.32C6.72 7.24 6.8 8.08 7.02 8.7C6.7 8.68 6.34 8.6 5.94 8.44C5.58 8.3 5.25 8.12 4.96 7.91C4.7 7.73 4.46 7.51 4.25 7.27L4.17 7.18L4.01 7.28C3.76 7.45 3.55 7.64 3.39 7.86C3.09 8.27 2.94 8.76 2.95 9.32C2.96 9.84 3.12 10.35 3.42 10.82C3.84 11.49 4.54 12.05 5.51 12.5C5.8 12.63 6.1 12.75 6.43 12.85V13.06C6.43 13.56 6.1 14.1 5.53 14.64C5.03 15.11 4.34 15.5 3.49 15.8C2.55 16.14 1.54 16.32 0.5 16.35L0.08 16.36L0.21 16.75C0.37 17.22 0.61 17.65 0.93 18.02C1.29 18.42 1.74 18.73 2.26 18.91C2.88 19.12 3.52 19.15 4.13 18.99C4.54 18.89 4.94 18.72 5.32 18.49L5.34 18.48C5.56 18.79 5.86 19.06 6.25 19.29C6.88 19.66 7.7 19.95 8.7 20.14C9.72 20.33 10.83 20.43 12.03 20.43C13.23 20.43 14.35 20.33 15.37 20.14C16.38 19.95 17.2 19.66 17.83 19.29C18.23 19.05 18.53 18.78 18.75 18.47C19.14 18.71 19.55 18.88 19.97 18.99C20.59 19.15 21.24 19.12 21.87 18.91C22.38 18.73 22.84 18.42 23.2 18.02C23.53 17.65 23.77 17.22 23.94 16.75L24.06 16.36L23.65 16.35C22.6 16.32 21.58 16.14 20.64 15.8C19.78 15.5 19.09 15.11 18.59 14.64C18.01 14.1 17.68 13.56 17.68 13.06V12.85C18 12.75 18.31 12.63 18.6 12.5C19.57 12.05 20.27 11.49 20.69 10.82C20.99 10.35 21.15 9.84 21.16 9.32C21.17 8.76 21.02 8.27 20.72 7.86C20.56 7.64 20.35 7.45 20.1 7.28L19.94 7.18L19.86 7.27C19.65 7.51 19.41 7.73 19.15 7.91C18.86 8.12 18.53 8.3 18.17 8.44C17.77 8.6 17.41 8.68 17.09 8.7C17.31 8.08 17.39 7.24 17.27 6.32C17.23 5.96 17.13 5.37 16.9 4.75C16.39 3.4 15.28 2.32 13.68 1.95C13.15 1.83 12.58 1.76 11.99 1.75Z"/></svg>
+              </div>
+              <h3>Snapchat</h3>
+              <p>More connectivity personal approach</p>
+              <a href="https://www.snapchat.com/add/caseilyplus?share_id=3_wuMeBfo3M&locale=en-IN" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy" style={{ marginTop: 'auto' }}>Add on Snap →</a>
+            </TiltCard>
+
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '32px', fontSize: '18px', fontWeight: 'bold', color: 'var(--ink-muted)' }}>
+            See ya there ✌️
           </div>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-         FAQ
+         SUPPORT & LINKS
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="faq" className="section">
-        <div className="container">
-          <div className="section-header">
-            <span className="section-label">FAQ</span>
-            <h2 className="section-title">Questions, answered</h2>
-            <p className="section-subtitle">Still stuck? The community and support team are both a click away.</p>
-          </div>
-
-          <div className="faq-list">
-            {FAQS.map((f, i) => (
-              <div key={i} className={`faq-item ${openFaq === i ? 'open' : ''}`}>
-                <button className="faq-question" onClick={() => setOpenFaq(openFaq === i ? -1 : i)}>
-                  {f.q}
-                  <span className="faq-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <section id="support-links" className="section" style={{ padding: '40px 20px', maxWidth: '800px', margin: '0 auto' }}>
+        <div className="support-list" style={{ borderTop: '1px solid var(--border)' }}>
+          {[
+            { label: 'Shipping Policies', id: 'shipping', icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>, content: 'Orders are processed within 1-2 business days. Standard shipping takes 3-5 days. We provide tracking information for all shipments.' },
+            { label: 'Returns & Exchanges', id: 'returns', icon: <><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="14" x2="21" y2="3"></line><polyline points="8 21 3 21 3 16"></polyline><line x1="20" y1="10" x2="3" y2="21"></line></>, content: 'We offer a 30-day return policy for unused items in original packaging. Exchanges are processed immediately upon receipt of the returned item.' },
+            { label: 'Bulk Pricing (B2B)', id: 'b2b', icon: <><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>, content: 'For orders of 50 units or more, please contact our wholesale team for discounted pricing and priority fulfillment.' },
+            { label: 'Contact Us', id: 'contact', isLink: true, icon: <><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></> }
+          ].map((item) => {
+            const isOpen = openSupportItem === item.id;
+            return (
+            <div key={item.id} className="support-list-item" style={{ borderBottom: '1px solid var(--border)' }}>
+              <div 
+                style={{ 
+                  display: 'flex', alignItems: 'center', justifyContent: 'flex-start', padding: '24px 0', 
+                  cursor: 'pointer', textAlign: 'left', color: 'var(--ink-strong)', fontWeight: '600', 
+                  fontSize: '18px', transition: 'color 0.2s'
+                }}
+                onClick={() => {
+                  if (item.isLink) {
+                    window.open('https://wa.me/919987759591', '_blank');
+                  } else {
+                    setOpenSupportItem(isOpen ? null : item.id);
+                  }
+                }}
+              >
+                <span style={{ marginRight: '16px', display: 'flex', color: 'var(--ink-muted)' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {item.icon}
+                  </svg>
+                </span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {!item.isLink && (
+                  <span style={{ marginLeft: 'auto', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                   </span>
-                </button>
-                <div className="faq-answer-wrapper">
-                  <div className="faq-answer"><p>{f.a}</p></div>
-                </div>
+                )}
               </div>
-            ))}
-          </div>
+              {isOpen && item.content && (
+                <div style={{ padding: '0 0 24px 40px', color: 'var(--ink-muted)', lineHeight: '1.6' }}>
+                  {item.content}
+                </div>
+              )}
+            </div>
+          )})}
         </div>
       </section>
+
+
 
       {/* ─── FOOTER ─── */}
       <footer className="footer">

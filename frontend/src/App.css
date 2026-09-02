@@ -4,17 +4,17 @@
 
 /* ─── DESIGN TOKENS (LIGHT MODE DEFAULT) ─── */
 :root {
-  --bg-primary: #F5F7FA;
-  --bg-secondary: #E9EEF5;
+  --bg-primary: #F5F5F7; /* Very subtle off-white */
+  --bg-secondary: #FAFAFA;
   --bg-card: #ffffff;
   --bg-card-hover: #F8FAFC;
   --bg-card-solid: #ffffff;
-  --bg-input: #F0F4F8;
+  --bg-input: #F1F3F5;
 
-  --ink: #334155;
-  --ink-strong: #0B1730;
-  --ink-muted: #64748b;
-  --ink-faint: #94a3b8;
+  --ink: #1D1D1F; /* High contrast dark grey/black */
+  --ink-strong: #000000;
+  --ink-muted: #515154;
+  --ink-faint: #86868B;
 
   --accent: #1E5FD1;
   --accent-light: #3FA9F5;
@@ -33,14 +33,14 @@
   --shadow-color: rgba(0, 0, 0, 0.04);
   --highlight-color: transparent;
 
-  /* Soft Drop Shadows */
-  --shadow-card: 0 10px 30px var(--shadow-color);
-  --shadow-card-hover: 0 20px 40px rgba(0, 0, 0, 0.08);
-  --shadow-3d: 0 15px 35px rgba(0, 0, 0, 0.06);
-  --shadow-btn: 0 6px 16px rgba(30, 95, 209, 0.25);
-  --shadow-btn-hover: 0 12px 24px rgba(30, 95, 209, 0.35);
-  --shadow-inset: inset 0 2px 4px rgba(0,0,0,0.1);
-  --shadow-glow-accent: 0 4px 16px var(--accent-glow);
+  /* Simple crisp shadows for the box layout */
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-card-hover: 0 12px 24px rgba(0, 0, 0, 0.08);
+  --shadow-3d: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-btn: 0 2px 4px rgba(30, 95, 209, 0.2);
+  --shadow-btn-hover: 0 4px 8px rgba(30, 95, 209, 0.3);
+  --shadow-inset: inset 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-glow-accent: 0 4px 12px var(--accent-glow);
 
   --radius: 16px;
   --radius-lg: 24px;
@@ -99,6 +99,10 @@
 html { scroll-behavior: smooth; }
 a { color: inherit; text-decoration: none; }
 
+/* Hide Google Translate Banner */
+.goog-te-banner-frame.skiptranslate { display: none !important; }
+body { top: 0px !important; }
+
 /* ─── APP WRAPPER ─── */
 .app-wrapper {
   width: 100%;
@@ -119,19 +123,13 @@ a { color: inherit; text-decoration: none; }
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at 50% 50%, var(--accent-glow) 0%, transparent 40%),
-              radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.15) 0%, transparent 30%),
-              radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.15) 0%, transparent 40%);
+  display: none;
   z-index: -1;
-  animation: aurora 25s ease-in-out infinite alternate;
   pointer-events: none;
-  filter: blur(80px);
 }
 
 [data-theme="dark"] .app-wrapper::before {
-  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
-              radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.1) 0%, transparent 30%),
-              radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
+  display: none;
 }
 
 @keyframes aurora {
@@ -371,28 +369,7 @@ a { color: inherit; text-decoration: none; }
 
 /* Subtle animated background blobs */
 .hero-section::before, .hero-section::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  z-index: 0;
-  animation: float 20s ease-in-out infinite alternate;
-}
-
-.hero-section::before {
-  top: -10%; left: -10%; width: 50vw; height: 50vw;
-  background: var(--accent-glow);
-}
-
-.hero-section::after {
-  bottom: -20%; right: -10%; width: 40vw; height: 40vw;
-  background: rgba(14, 165, 233, 0.15); /* Sky blue glow */
-  animation-delay: -10s;
-}
-
-[data-theme="dark"] .hero-section::after {
-  background: rgba(14, 165, 233, 0.1);
+  display: none;
 }
 
 @keyframes float {
@@ -951,10 +928,9 @@ a { color: inherit; text-decoration: none; }
 }
 .blog-card:hover { transform: translateY(-8px) scale(1.01); box-shadow: var(--shadow-card-hover); z-index: 2; }
 .blog-thumb { width: 100%; height: 200px; position: relative; overflow: hidden; }
-.blog-thumb::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.05) 8px, rgba(255,255,255,0.05) 16px); }
-.blog-thumb.gradient-1 { background: linear-gradient(135deg, #007aff, #0284c7); }
-.blog-thumb.gradient-2 { background: linear-gradient(135deg, #0d9488, #14b8a6); }
-.blog-thumb.gradient-3 { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.blog-thumb.gradient-1 { background: var(--accent); }
+.blog-thumb.gradient-2 { background: var(--blue); }
+.blog-thumb.gradient-3 { background: var(--ink-strong); }
 .blog-body { padding: 32px 28px; flex: 1; display: flex; flex-direction: column; }
 .blog-category { display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: var(--radius-pill); margin-bottom: 16px; background: rgba(0, 122, 255, 0.1); color: var(--accent); align-self: flex-start; text-transform: uppercase; letter-spacing: 0.05em; }
 .blog-title { font-family: var(--font-brand); font-size: 20px; font-weight: 800; color: var(--ink-strong); line-height: 1.3; margin-bottom: 12px; }
@@ -1127,25 +1103,16 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
   
   .desktop-only { display: none !important; }
   
-  /* The blue header backdrop on mobile */
+  /* The header backdrop on mobile should be clean white/transparent */
   .hero-section {
     background: transparent !important;
     padding-top: 24px !important;
-    padding-bottom: 0 !important;
+    padding-bottom: 24px !important;
     position: relative;
     z-index: 1;
     overflow: visible;
   }
-  .hero-section::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; 
-    height: 380px;
-    background: var(--accent);
-    border-radius: 0 0 32px 32px;
-    z-index: -1;
-  }
-  .hero-section::after { display: none; }
+  .hero-section::before, .hero-section::after { display: none; }
 
   /* The overlapping card */
   .tracking-card {
@@ -1222,30 +1189,27 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
 /* ─── FOCUS ─── */
 *:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 /* ─── GLOSSY 3D SKEUOMORPHIC STYLES ─── */
+/* ─── FLAT/MODERN STYLES INSTEAD OF 3D ─── */
 .btn-glossy {
-  background: var(--accent-gradient);
+  background: var(--accent);
   color: #fff;
   border: none;
-  box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), var(--shadow-btn);
-  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: var(--shadow-btn);
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s ease, background 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 .btn-glossy::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 50%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
-  border-radius: var(--radius-pill) var(--radius-pill) 0 0;
-  pointer-events: none;
+  display: none;
 }
 .btn-glossy:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: inset 0 2px 6px rgba(255,255,255,0.5), var(--shadow-btn-hover);
+  background: var(--blue);
+  box-shadow: var(--shadow-btn-hover);
 }
 .btn-glossy:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: inset 0 3px 6px rgba(0,0,0,0.2), 0 2px 4px rgba(30, 95, 209, 0.2);
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
 .glossy {
