@@ -1236,3 +1236,13 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
   50% { opacity: 0.6; text-shadow: none; }
 }
 
+
+/* Shop Banner Mobile Fix */
+.shop-banner-card { display: flex; align-items: center; background-color: #ffffff; border-radius: 32px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; cursor: pointer; }
+.shop-banner-text { flex: 1; padding: 16px 24px; min-width: 0; }
+.shop-banner-image { width: 45%; height: 180px; border-radius: 20px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+@media (max-width: 600px) {
+  .shop-banner-card { flex-direction: column; text-align: center; padding: 24px; }
+  .shop-banner-text { padding: 0 0 16px 0; }
+  .shop-banner-image { width: 100%; height: 200px; }
+}

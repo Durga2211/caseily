@@ -36,9 +36,10 @@ const REVIEWS_B2C = [
 ]
 
 const BLOGS = [
-  { category: 'Product', title: 'How we built real-time tracking for 10+ carriers', excerpt: 'A behind-the-scenes look at integrating Ship24, normalising scan events, and making every courier speak the same language.', time: '6 min read', date: 'Aug 28', gradient: 'gradient-1' },
-  { category: 'Guide', title: '5 tips to reduce "Where is my order?" support tickets', excerpt: 'From embedding tracking pages to proactive WhatsApp notifications — practical strategies for any e-commerce brand.', time: '4 min read', date: 'Aug 15', gradient: 'gradient-2' },
-  { category: 'Case study', title: 'How StyleCraft cut support costs by 60%', excerpt: 'A Shopify brand shipping 5,000 orders/month shares their journey from carrier chaos to a single tracking dashboard.', time: '8 min read', date: 'Aug 02', gradient: 'gradient-3' },
+  { category: 'Tips', title: 'How we built real-time tracking for 10+ carriers', color: '#d9a05b' },
+  { category: 'Guide', title: '5 tips to reduce "Where is my order?" support tickets', color: '#4a5556' },
+  { category: 'Case study', title: 'How StyleCraft cut support costs by 60%', color: '#889f97' },
+  { category: 'Updates', title: 'Introducing auto-notifications for delivery exceptions', color: '#ebdcd7' },
 ]
 
 const FAQS = [
@@ -95,12 +96,25 @@ function App() {
   const [openSupportItem, setOpenSupportItem] = useState(null)
   const [activeSection, setActiveSection] = useState('track')
   const dropdownRef = useRef(null)
+  const [shortcutMenuOpen, setShortcutMenuOpen] = useState(false)
+  const shortcutRef = useRef(null)
+
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentBannerIndex(prev => (prev === 0 ? 1 : 0))
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [])
 
   // ─── Dropdown outside-click ───────────────────────────────────────────
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setCourierOpen(false)
+      }
+      if (shortcutRef.current && !shortcutRef.current.contains(e.target)) {
+        setShortcutMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -187,93 +201,96 @@ function App() {
   return (
     <div className="app-wrapper">
 
-      {/* ─── NAVBAR ─── */}
-      <nav className="navbar">
-        <div className="navbar-left">
-          <img src="/logo.png" alt="Caseily" className="c-logo-full" style={{ height: '32px', width: 'auto' }} />
-        </div>
-        <div className="navbar-links">
-          {['track','reviews','blog','community','faq'].map(id => (
-            <button key={id} className={`navbar-link ${activeSection === id ? 'active' : ''}`} onClick={() => scrollTo(id)}>
-              {id.charAt(0).toUpperCase() + id.slice(1)}
+      <div style={{ backgroundColor: '#0f172a', position: 'relative', zIndex: 1, paddingBottom: '80px' }}>
+        {/* ─── NAVBAR ─── */}
+        <nav className="navbar" style={{ backgroundColor: 'transparent' }}>
+          <div className="navbar-left">
+            <img src="/logo.png" alt="Caseily" className="c-logo-full" style={{ height: '32px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+          </div>
+          <div className="navbar-links">
+            {['track','reviews','blog','community','faq'].map(id => (
+              <button key={id} className={`navbar-link ${activeSection === id ? 'active' : ''}`} onClick={() => scrollTo(id)} style={{ color: 'rgba(255,255,255,0.8)' }}>
+                {id.charAt(0).toUpperCase() + id.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="navbar-right">
+            <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" title="Translate to Hindi" style={{ marginRight: '8px', color: 'rgba(255,255,255,0.8)' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
             </button>
-          ))}
-        </div>
-        <div className="navbar-right">
-          <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" title="Translate to Hindi" style={{ marginRight: '8px' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
-          </button>
-          <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme">
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
-          <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta">Contact us</a>
-        </div>
-      </nav>
+            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ color: 'rgba(255,255,255,0.8)' }}>
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+            <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta" style={{ backgroundColor: '#bfdbfe', color: '#0f172a' }}>Contact us</a>
+          </div>
+        </nav>
 
-      {/* ─── MOBILE HEADER ─── */}
-      <div className="mobile-app-header" style={{ justifyContent: 'space-between', backgroundColor: '#bfdbfe', padding: '16px 20px', width: '100%', boxSizing: 'border-box' }}>
-        <div style={{ width: '32px' }}></div>
-        <h2 style={{ margin: 0, color: '#1e3a8a' }}>Caseily</h2>
-        <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" style={{ background: 'transparent', border: 'none', color: 'var(--ink-strong)' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
-        </button>
+        {/* ─── MOBILE HEADER ─── */}
+        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: 'transparent', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative' }}>
+          <h2 style={{ margin: 0, color: '#bfdbfe', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '24px', fontWeight: '800' }}>CASEILY</h2>
+          
+          <div style={{ position: 'absolute', right: '20px' }} ref={shortcutRef}>
+            <button className="theme-toggle" onClick={() => setShortcutMenuOpen(o => !o)} aria-label="Menu" style={{ backgroundColor: '#bfdbfe', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: '#0f172a' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+            </button>
+            {shortcutMenuOpen && (
+              <div style={{ position: 'absolute', right: 0, top: '44px', backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', padding: '8px', width: '160px', zIndex: 100, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+                <button type="button" onClick={() => { setShortcutMenuOpen(false); translateToHindi(); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: '#0f172a' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Change lang</button>
+                <button type="button" onClick={() => { setShortcutMenuOpen(false); scrollTo('what-we-provide'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: '#0f172a' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>About us</button>
+                <button type="button" onClick={() => { setShortcutMenuOpen(false); scrollTo('faq'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: '#0f172a' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Faq</button>
+                <button type="button" onClick={() => { setShortcutMenuOpen(false); window.open('https://twitter.com/caseily', '_blank'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: '#0f172a' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Follow us</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ─── HERO TITLE ─── */}
+        <div className="container" style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
+          <h1 className="hero-heading" style={{ color: '#ffffff', margin: 0, fontSize: '36px', lineHeight: '1.2' }}>
+            Where's your order?<br/>Track your happiness.<br/>We're on it.
+          </h1>
+          <p className="hero-subtitle desktop-only" style={{ color: '#94a3b8', marginTop: '16px' }}>
+            Enter your tracking number below to see your live delivery status
+          </p>
+        </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════
-         HERO / TRACKING
-         ═══════════════════════════════════════════════════════════════ */}
-      <section id="track" className="hero-section">
-        <div className="container">
-          <div className="hero-inner">
-            <div className="hero-left">
-              <div className="hero-badge desktop-only">
-                <span className="dot-live" /> 
-                <span className="section-label" style={{ marginBottom: 0 }}>LIVE ORDER TRACKING</span>
-              </div>
-              <h1 className="hero-heading">
-                Where's your order?<br/>Track your happiness.<br/>We're on it.
-              </h1>
-              <p className="hero-subtitle desktop-only">
-                Enter your tracking number below to see<br/>your live delivery status
-              </p>
+      <section id="track" style={{ position: 'relative', zIndex: 10, marginTop: '-64px', padding: '0 20px 40px' }}>
+        <div className="container" style={{ maxWidth: '600px', margin: '0 auto' }}>
+          {/* ─── TRACKING CARD ─── */}
+          <div className="tracking-card" style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: '32px', padding: '0 20px', marginBottom: '16px', border: '1px solid #f1f5f9' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" style={{ flex: 1, border: 'none', background: 'transparent', padding: '16px 12px', fontSize: '16px', outline: 'none' }} placeholder="Enter your tracking number" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTrack()} />
+            </div>
 
-              {/* ─── TRACKING CARD ─── */}
-              <div className="tracking-card">
-                <div className="tracking-input-area">
-                  <input type="text" className="tracking-number-input" placeholder="Enter your tracking number" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTrack()} />
-                </div>
-
-                <div className="tracking-input-area">
-                  <div className="courier-dropdown-wrap" ref={dropdownRef}>
-                    <button type="button" className="courier-dropdown-trigger" onClick={() => { setCourierOpen(o => !o); setCourierSearch('') }}>
-                      <svg className="truck-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                      <span className={`courier-dropdown-text ${selectedCourier ? 'selected' : ''}`}>{courierDisplayText}</span>
-                      <svg className="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: courierOpen ? 'rotate(180deg)' : '' }}><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    {courierOpen && (
-                      <div className="courier-dropdown-menu">
-                        <div className="courier-dropdown-search"><input type="text" placeholder="Search courier…" value={courierSearch} onChange={e => setCourierSearch(e.target.value)} autoFocus /></div>
-                        <div className="courier-dropdown-list">
-                          {filteredCouriers.map(c => (
-                            <div key={c.key} className={`courier-dropdown-item ${selectedCourier === c.key ? 'selected' : ''}`} onClick={() => { setSelectedCourier(c.key); setCourierOpen(false) }}>
-                              <span className="flag">{c.country ? isoToFlag(c.country) : '🔍'}</span>
-                              <span className="item-name">{c.name}</span>
-                              {selectedCourier === c.key && <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                            </div>
-                          ))}
-                          {filteredCouriers.length === 0 && <div className="dropdown-empty">No couriers found</div>}
-                        </div>
+            <div style={{ position: 'relative', marginBottom: '24px' }} ref={dropdownRef}>
+              <button type="button" onClick={() => { setCourierOpen(o => !o); setCourierSearch('') }} style={{ width: '100%', display: 'flex', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: '32px', padding: '16px 20px', border: '1px solid #f1f5f9', color: '#64748b', fontSize: '16px', cursor: 'pointer' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '12px' }}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                <span style={{ flex: 1, textAlign: 'left' }}>{courierDisplayText}</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: courierOpen ? 'rotate(180deg)' : '' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              {courierOpen && (
+                <div className="courier-dropdown-menu">
+                  <div className="courier-dropdown-search"><input type="text" placeholder="Search courier…" value={courierSearch} onChange={e => setCourierSearch(e.target.value)} autoFocus /></div>
+                  <div className="courier-dropdown-list">
+                    {filteredCouriers.map(c => (
+                      <div key={c.key} className={`courier-dropdown-item ${selectedCourier === c.key ? 'selected' : ''}`} onClick={() => { setSelectedCourier(c.key); setCourierOpen(false) }}>
+                        <span className="flag">{c.country ? isoToFlag(c.country) : '🔍'}</span>
+                        <span className="item-name">{c.name}</span>
+                        {selectedCourier === c.key && <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                       </div>
-                    )}
+                    ))}
+                    {filteredCouriers.length === 0 && <div className="dropdown-empty">No couriers found</div>}
                   </div>
                 </div>
+              )}
+            </div>
 
-                <div className="tracking-input-area">
-                  <button className="track-now-btn btn-glossy" onClick={handleTrack} disabled={loading || !trackingNumber.trim()}>
-                    {loading ? <div className="spinner-small" /> : 'Track now'}
-                  </button>
-                </div>
-              </div>
+            <button onClick={handleTrack} disabled={loading || !trackingNumber.trim()} style={{ width: '100%', backgroundColor: '#c7d2fe', color: '#ffffff', borderRadius: '32px', padding: '16px', fontSize: '18px', fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              {loading ? <div className="spinner-small" /> : 'Track now'}
+            </button>
 
               {/* ─── RESULTS ─── */}
               {showResults && (
@@ -332,76 +349,25 @@ function App() {
               )}
             </div>
 
-            {/* ─── MOBILE ONLY DASHBOARD ─── */}
-            <div className="mobile-dashboard">
-              <div className="mobile-action-grid">
-                <div className="action-tile" onClick={() => { document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  <div className="action-icon" style={{ background: '#ffffff', color: '#1e5fd1', border: '1px solid var(--border)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                  </div>
-                  <span>Write a review</span>
-                </div>
-                <div className="action-tile" onClick={() => { document.getElementById('blog')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  <div className="action-icon" style={{ background: '#ffffff', color: '#1e5fd1', border: '1px solid var(--border)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
-                  </div>
-                  <span>Blog & guides</span>
-                </div>
-                <div className="action-tile" onClick={() => { document.getElementById('community')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  <div className="action-icon" style={{ background: '#ffffff', color: '#1e5fd1', border: '1px solid var(--border)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                  </div>
-                  <span>Bulk pricing</span>
-                </div>
+            {/* ─── BOTTOM NAV PILL ─── */}
+            <div className="mobile-dashboard" style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#ffffff', borderRadius: '32px', padding: '12px 24px', display: 'flex', gap: '32px', alignItems: 'center', boxShadow: '0 12px 32px rgba(0,0,0,0.1)', zIndex: 100 }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => scrollTo('track')}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
               </div>
-
-              <div className="mobile-about-card">
-                <div className="about-header">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#1e5fd1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  <h3>About Caseily</h3>
-                </div>
-                <p>Started after one too many cracked screens. Every case is drop-tested before it ships, fitted precisely per model, and backed by a real person on WhatsApp if something isn't right.</p>
-                <div className="about-stats">
-                  <div className="stat"><h4>4.8</h4><span>avg rating</span></div>
-                  <div className="stat"><h4>42K+</h4><span>orders protected</span></div>
-                  <div className="stat"><h4>380+</h4><span>cities served</span></div>
-                </div>
+              <div style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => scrollTo('reviews')}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
               </div>
-            </div>
-            
-            <div className="hero-right">
-              <TiltCard className="floating-tile tile-1" options={{ max: 15, scale: 1.05 }}>
-                <div className="floating-tile-icon" style={{ background: 'var(--accent)' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                </div>
-                <div className="floating-tile-text">
-                  <h4>Delivered Today</h4>
-                  <p>12,482 packages</p>
-                </div>
-              </TiltCard>
-
-              <TiltCard className="floating-tile tile-2" options={{ max: 15, scale: 1.05 }}>
-                <div className="floating-tile-icon" style={{ background: 'var(--blue)' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                </div>
-                <div className="floating-tile-text">
-                  <h4>Live Map</h4>
-                  <p>Tracking active routes</p>
-                </div>
-              </TiltCard>
-
-              <TiltCard className="floating-tile tile-3" options={{ max: 15, scale: 1.05 }}>
-                <div className="floating-tile-icon" style={{ background: 'var(--ink-strong)' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </div>
-                <div className="floating-tile-text">
-                  <h4>Active Members</h4>
-                  <p>150,000+ businesses</p>
-                </div>
-              </TiltCard>
+              <div style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => scrollTo('blog')}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              </div>
+              <div style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => scrollTo('community')}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              </div>
+              <div style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => scrollTo('faq')}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </div>
             </div>
           </div>
-        </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -472,91 +438,75 @@ function App() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-         BLOG
+         SHOP BANNER
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="blog" className="section">
-        <div className="container">
-          <div className="section-header">
-            <span className="section-label">Blog</span>
-            <h2 className="section-title">From the Caseily blog</h2>
-            <p className="section-subtitle">Product updates, shipping tips, and the occasional story from behind the scenes.</p>
-          </div>
-
-          <div className="blog-grid">
-            {BLOGS.map((b, i) => (
-              <TiltCard key={i} className="blog-card" style={{ animationDelay: `${i * 0.1}s` }}>
-                <div className={`blog-thumb ${b.gradient}`} />
-                <div className="blog-body">
-                  <span className="blog-category">{b.category}</span>
-                  <h3 className="blog-title">{b.title}</h3>
-                  <p className="blog-excerpt">{b.excerpt}</p>
-                  <div className="blog-meta"><span>{b.time}</span><span>{b.date}</span></div>
+      <section id="shop-banner" style={{ padding: '0 20px', maxWidth: '800px', margin: '60px auto 40px auto' }}>
+        <div onClick={() => window.open('http://wa.me/c/919167788773', '_blank')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
+          <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>CaseilyPlus+ shop</h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+        
+        <div style={{ overflow: 'hidden', margin: '-10px', padding: '10px' }}>
+          <div 
+            style={{ 
+              display: 'flex', 
+              width: '200%', 
+              transform: `translateX(-${currentBannerIndex * 50}%)`, 
+              transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' 
+            }}
+          >
+            {/* Banner 1 */}
+            <div onClick={() => window.open('http://wa.me/c/919167788773', '_blank')} style={{ width: '50%', flexShrink: 0, padding: '0' }}>
+              <div className="shop-banner-card">
+                <div className="shop-banner-text">
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Accessorize your device...</h3>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#000000', lineHeight: 1.3 }}>Explore latest Caseily accessories</p>
                 </div>
-              </TiltCard>
-            ))}
+                <div className="shop-banner-image" style={{ backgroundColor: '#f1f5f9' }}>
+                  <img src="/cases_hero.jpg" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Banner 2 */}
+            <div onClick={() => window.open('http://wa.me/c/919167788773', '_blank')} style={{ width: '50%', flexShrink: 0, padding: '0' }}>
+              <div className="shop-banner-card">
+                <div className="shop-banner-text">
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Elevate your setup</h3>
+                  <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#000000', lineHeight: 1.3 }}>Simplify Connectivity. Boost Productivity.</p>
+                </div>
+                <div className="shop-banner-image" style={{ backgroundColor: '#e6e6e6' }}>
+                  <img src="/banner2_image.png" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-         COMMUNITY
+         BLOG
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="community" className="section-alt">
-        <div className="container">
-          <div className="section-header">
-            <span className="section-label">Community</span>
-            <h2 className="section-title">Welcome to CASEILYplus!+</h2>
-            <p className="section-subtitle">
-              Guess who just became part of the coolest club on the internet? That’s right, YOU. 🌟<br />
-              We promise to make your feed better, your day brighter, and your wallet slightly more active.<br />
-              Grab a seat and follow the links:
-            </p>
-          </div>
-
-          <div className="community-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-            
-            <TiltCard className="community-card">
-              <div className="community-icon" style={{ background: '#ffffff', color: 'var(--accent)', border: '1px solid var(--border)' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+      <section id="blog" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
+          <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>News and tips</h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+        
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+            {BLOGS.map((b, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '12px', backgroundColor: b.color }}>
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: '#94a3b8', marginBottom: '4px' }}>{b.category}</span>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{b.title}</h3>
               </div>
-              <h3>YouTube</h3>
-              <p>Subscribe or we’ll cry</p>
-              <a href="https://youtube.com/@caseilyplus?si=RfzX4okGCWZ_9yKq" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy" style={{ marginTop: 'auto' }}>Watch the channel →</a>
-            </TiltCard>
-
-            <TiltCard className="community-card">
-              <div className="community-icon" style={{ background: '#ffffff', color: 'var(--accent)', border: '1px solid var(--border)' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-              </div>
-              <h3>Instagram</h3>
-              <p>Come say hi!</p>
-              <a href="https://www.instagram.com/channel/AbZBvjA3CZscunR1/" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy" style={{ marginTop: 'auto' }}>Join the community →</a>
-            </TiltCard>
-
-            <TiltCard className="community-card">
-              <div className="community-icon" style={{ background: '#ffffff', color: 'var(--accent)', border: '1px solid var(--border)' }}>
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-              </div>
-              <h3>WhatsApp</h3>
-              <p>The VIP Insider Channel</p>
-              <a href="https://whatsapp.com/channel/0029VbApzgg9cDDUfdHPdQ2z" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy" style={{ marginTop: 'auto' }}>Join WhatsApp →</a>
-            </TiltCard>
-
-            <TiltCard className="community-card">
-              <div className="community-icon" style={{ background: '#ffffff', color: 'var(--accent)', border: '1px solid var(--border)' }}>
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.12 1.75C11.53 1.76 10.96 1.83 10.43 1.95C8.83 2.32 7.72 3.4 7.21 4.75C6.98 5.37 6.88 5.96 6.84 6.32C6.72 7.24 6.8 8.08 7.02 8.7C6.7 8.68 6.34 8.6 5.94 8.44C5.58 8.3 5.25 8.12 4.96 7.91C4.7 7.73 4.46 7.51 4.25 7.27L4.17 7.18L4.01 7.28C3.76 7.45 3.55 7.64 3.39 7.86C3.09 8.27 2.94 8.76 2.95 9.32C2.96 9.84 3.12 10.35 3.42 10.82C3.84 11.49 4.54 12.05 5.51 12.5C5.8 12.63 6.1 12.75 6.43 12.85V13.06C6.43 13.56 6.1 14.1 5.53 14.64C5.03 15.11 4.34 15.5 3.49 15.8C2.55 16.14 1.54 16.32 0.5 16.35L0.08 16.36L0.21 16.75C0.37 17.22 0.61 17.65 0.93 18.02C1.29 18.42 1.74 18.73 2.26 18.91C2.88 19.12 3.52 19.15 4.13 18.99C4.54 18.89 4.94 18.72 5.32 18.49L5.34 18.48C5.56 18.79 5.86 19.06 6.25 19.29C6.88 19.66 7.7 19.95 8.7 20.14C9.72 20.33 10.83 20.43 12.03 20.43C13.23 20.43 14.35 20.33 15.37 20.14C16.38 19.95 17.2 19.66 17.83 19.29C18.23 19.05 18.53 18.78 18.75 18.47C19.14 18.71 19.55 18.88 19.97 18.99C20.59 19.15 21.24 19.12 21.87 18.91C22.38 18.73 22.84 18.42 23.2 18.02C23.53 17.65 23.77 17.22 23.94 16.75L24.06 16.36L23.65 16.35C22.6 16.32 21.58 16.14 20.64 15.8C19.78 15.5 19.09 15.11 18.59 14.64C18.01 14.1 17.68 13.56 17.68 13.06V12.85C18 12.75 18.31 12.63 18.6 12.5C19.57 12.05 20.27 11.49 20.69 10.82C20.99 10.35 21.15 9.84 21.16 9.32C21.17 8.76 21.02 8.27 20.72 7.86C20.56 7.64 20.35 7.45 20.1 7.28L19.94 7.18L19.86 7.27C19.65 7.51 19.41 7.73 19.15 7.91C18.86 8.12 18.53 8.3 18.17 8.44C17.77 8.6 17.41 8.68 17.09 8.7C17.31 8.08 17.39 7.24 17.27 6.32C17.23 5.96 17.13 5.37 16.9 4.75C16.39 3.4 15.28 2.32 13.68 1.95C13.15 1.83 12.58 1.76 11.99 1.75Z"/></svg>
-              </div>
-              <h3>Snapchat</h3>
-              <p>More connectivity personal approach</p>
-              <a href="https://www.snapchat.com/add/caseilyplus?share_id=3_wuMeBfo3M&locale=en-IN" target="_blank" rel="noopener noreferrer" className="community-cta btn-glossy" style={{ marginTop: 'auto' }}>Add on Snap →</a>
-            </TiltCard>
-
-          </div>
-          <div style={{ textAlign: 'center', marginTop: '32px', fontSize: '18px', fontWeight: 'bold', color: 'var(--ink-muted)' }}>
-            See ya there ✌️
+            ))}
           </div>
         </div>
       </section>
+
 
       {/* ═══════════════════════════════════════════════════════════════
          SUPPORT & LINKS
