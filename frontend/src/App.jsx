@@ -51,6 +51,21 @@ const FAQS = [
   { q: 'How can I get notified about my delivery?', a: 'Join our WhatsApp community to get delivery tips and support. We are working on automatic delivery notifications — stay tuned!' },
 ]
 
+const HIGHLIGHTS = [
+  {
+    id: 'reviews',
+    label: 'Reviews',
+    cover: '/highlights/cover_reviews.jpg',
+    stories: [
+      '/highlights/review1.png',
+      '/highlights/review2.png',
+      '/highlights/review3.png',
+      '/highlights/review4.png',
+      '/highlights/review5.png',
+    ],
+  },
+]
+
 // ─── HELPERS ────────────────────────────────────────────────────────────
 function isoToFlag(iso) {
   if (!iso || iso.length !== 2) return '📦'
@@ -69,9 +84,388 @@ function Stars({ count }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════
+// INSTAGRAM STORY VIEWER
+// ═════════════════════════════════════════════════════════════════════════
+function StoryViewer({ highlight, onClose }) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const timerRef = useRef(null)
+  const startTimeRef = useRef(null)
+  const elapsedRef = useRef(0)
+  const DURATION = 3000 // 3 seconds per story
+
+  // Lock body scroll when open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  // Animation frame based timer for smooth progress
+  useEffect(() => {
+    if (isPaused) return
+
+    startTimeRef.current = performance.now() - elapsedRef.current
+
+    function tick(now) {
+      const elapsed = now - startTimeRef.current
+      const pct = Math.min(elapsed / DURATION, 1)
+      setProgress(pct)
+
+      if (pct >= 1) {
+        // Move to next story
+        elapsedRef.current = 0
+        if (currentIndex < highlight.stories.length - 1) {
+          setCurrentIndex(i => i + 1)
+        } else {
+          onClose()
+        }
+        return
+      }
+      timerRef.current = requestAnimationFrame(tick)
+    }
+
+    timerRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(timerRef.current)
+  }, [currentIndex, isPaused, highlight.stories.length, onClose])
+
+  // Reset progress on index change
+  useEffect(() => {
+    setProgress(0)
+    elapsedRef.current = 0
+  }, [currentIndex])
+
+  function handlePause() {
+    setIsPaused(true)
+    elapsedRef.current = performance.now() - startTimeRef.current
+  }
+
+  function handleResume() {
+    setIsPaused(false)
+  }
+
+  function goNext() {
+    elapsedRef.current = 0
+    if (currentIndex < highlight.stories.length - 1) {
+      setCurrentIndex(i => i + 1)
+    } else {
+      onClose()
+    }
+  }
+
+  function goPrev() {
+    elapsedRef.current = 0
+    if (currentIndex > 0) {
+      setCurrentIndex(i => i - 1)
+    }
+  }
+
+  return (
+    <div className="story-viewer-overlay" onClick={onClose}>
+      <div className="story-viewer-container" onClick={e => e.stopPropagation()}>
+        {/* Progress bars */}
+        <div className="story-progress-bar-container">
+          {highlight.stories.map((_, i) => (
+            <div key={i} className="story-progress-track">
+              <div
+                className="story-progress-fill"
+                style={{
+                  width: i < currentIndex ? '100%' : i === currentIndex ? `${progress * 100}%` : '0%',
+                  transition: i === currentIndex ? 'none' : 'none',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Header */}
+        <div className="story-header">
+          <div className="story-header-left">
+            <img src={highlight.cover} alt="" className="story-header-avatar" />
+            <span className="story-header-name">caseily</span>
+            <span className="story-header-time">• {highlight.label}</span>
+          </div>
+          <button className="story-close-btn" onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        {/* Story image */}
+        <img
+          src={highlight.stories[currentIndex]}
+          alt={`Story ${currentIndex + 1}`}
+          className="story-image"
+          draggable={false}
+        />
+
+        {/* Touch zones */}
+        <div
+          className="story-touch-left"
+          onClick={goPrev}
+          onMouseDown={handlePause}
+          onMouseUp={handleResume}
+          onTouchStart={handlePause}
+          onTouchEnd={handleResume}
+        />
+        <div
+          className="story-touch-right"
+          onClick={goNext}
+          onMouseDown={handlePause}
+          onMouseUp={handleResume}
+          onTouchStart={handlePause}
+          onTouchEnd={handleResume}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// SPLASH SCREEN
+// ═════════════════════════════════════════════════════════════════════════
+function SplashScreen() {
+  const [isVisible, setIsVisible] = useState(true)
+  const [isFadingOut, setIsFadingOut] = useState(false)
+  const [dots, setDots] = useState('')
+
+  useEffect(() => {
+    if (!isVisible) return
+
+    document.body.style.overflow = 'hidden'
+
+    const dotTimer = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.')
+    }, 400)
+
+    const fadeOutTimer = setTimeout(() => {
+      setIsFadingOut(true)
+    }, 2600)
+
+    const unmountTimer = setTimeout(() => {
+      setIsVisible(false)
+      document.body.style.overflow = ''
+    }, 3000)
+
+    return () => {
+      clearInterval(dotTimer)
+      clearTimeout(fadeOutTimer)
+      clearTimeout(unmountTimer)
+      document.body.style.overflow = ''
+    }
+  }, [isVisible])
+
+  if (!isVisible) return null
+
+  return (
+    <div className={`splash-v2 ${isFadingOut ? 'fade-out' : ''}`}>
+      <div className="splash-v2-tags">
+        <div className="splash-v2-tag tag-1" style={{ '--rotation': 'rotate(-8deg)' }}>SILICONE GRIP</div>
+        <div className="splash-v2-tag tag-2" style={{ '--rotation': 'rotate(12deg)' }}>MAGSAFE READY</div>
+        <div className="splash-v2-tag tag-3" style={{ '--rotation': 'rotate(5deg)' }}>DROP TESTED</div>
+        <div className="splash-v2-tag tag-4" style={{ '--rotation': 'rotate(-15deg)' }}>CUSTOM PRINTS</div>
+        <div className="splash-v2-tag tag-5" style={{ '--rotation': 'rotate(10deg)' }}>SLIM ARMOR</div>
+      </div>
+      
+      <div className="splash-v2-top">
+        <div className="splash-v2-mark">
+          <div className="splash-v2-mark-block"></div>
+          <div className="splash-v2-mark-block"></div>
+        </div>
+      </div>
+
+      <div className="splash-v2-center">
+        <div className="splash-v2-headline">
+          <div className="splash-v2-wordmark">caseily</div>
+        </div>
+        
+        <div className="splash-v2-bottom-shape">
+          <div className="splash-v2-circle"></div>
+          <div className="splash-v2-bar"></div>
+          <div className="splash-v2-circle"></div>
+        </div>
+      </div>
+
+      <div className="splash-v2-footer">
+        <div className="splash-v2-button">
+          Unboxing Your Case{dots}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const API_URL = import.meta.env.VITE_API_URL || ''
+
+// ═════════════════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ═════════════════════════════════════════════════════════════════════════
+function AdminDashboard() {
+  const [token, setToken] = useState(localStorage.getItem('caseily-admin-token') || '')
+  const [password, setPassword] = useState('')
+  const [reviews, setReviews] = useState([])
+  const [loginError, setLoginError] = useState('')
+  const [loadingReviews, setLoadingReviews] = useState(false)
+
+  const isLoggedIn = !!token
+
+  async function handleLogin(e) {
+    e.preventDefault()
+    setLoginError('')
+    try {
+      const form = new FormData()
+      form.append('password', password)
+      const res = await fetch(`${API_URL}/api/admin/login`, { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || 'Login failed')
+      setToken(data.token)
+      localStorage.setItem('caseily-admin-token', data.token)
+    } catch (err) {
+      setLoginError(err.message)
+    }
+  }
+
+  function handleLogout() {
+    setToken('')
+    localStorage.removeItem('caseily-admin-token')
+  }
+
+  async function fetchReviews() {
+    setLoadingReviews(true)
+    try {
+      const res = await fetch(`${API_URL}/api/admin/reviews`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) { handleLogout(); return }
+      setReviews(data.reviews || [])
+    } catch (err) { console.error(err) }
+    setLoadingReviews(false)
+  }
+
+  useEffect(() => {
+    if (isLoggedIn) fetchReviews()
+  }, [isLoggedIn])
+
+  async function handleAction(id, action) {
+    try {
+      await fetch(`${API_URL}/api/admin/reviews/${id}/${action}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      fetchReviews()
+    } catch (err) { console.error(err) }
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)' }}>
+        <form onSubmit={handleLogin} style={{ background: '#fff', padding: '48px 40px', borderRadius: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', maxWidth: '400px', width: '90%', textAlign: 'center' }}>
+          <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '32px', marginBottom: '8px', fontFamily: '"Poppins", sans-serif' }}>caseily</div>
+          <p style={{ color: '#64748b', marginBottom: '32px', fontSize: '15px' }}>Admin Dashboard</p>
+          {loginError && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{loginError}</p>}
+          <input
+            type="password"
+            placeholder="Enter admin password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '16px', marginBottom: '16px', boxSizing: 'border-box', outline: 'none' }}
+            autoFocus
+          />
+          <button type="submit" style={{ width: '100%', padding: '16px', borderRadius: '16px', background: '#1e3fd1', color: '#fff', fontSize: '16px', fontWeight: '700', border: 'none', cursor: 'pointer' }}>
+            Login
+          </button>
+        </form>
+      </div>
+    )
+  }
+
+  const pending = reviews.filter(r => r.status === 'pending')
+  const approved = reviews.filter(r => r.status === 'approved')
+  const rejected = reviews.filter(r => r.status === 'rejected')
+
+  function ReviewCard({ r }) {
+    return (
+      <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+          <div>
+            <div style={{ fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>{r.name}</div>
+            <div style={{ fontSize: '13px', color: '#64748b' }}>{r.city}</div>
+          </div>
+          <div style={{ color: '#f59e0b', fontSize: '16px' }}>{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</div>
+        </div>
+        <p style={{ color: '#334155', fontSize: '14px', lineHeight: 1.5, margin: '0 0 12px' }}>"{r.quote}"</p>
+        {r.photo && (
+          <img src={`${API_URL}/uploads/${r.photo}`} alt="Review" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
+        )}
+        <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>{new Date(r.created_at).toLocaleString()}</div>
+        {r.status === 'pending' && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => handleAction(r.id, 'approve')} style={{ flex: 1, padding: '10px', borderRadius: '12px', background: '#22c55e', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✓ Approve</button>
+            <button onClick={() => handleAction(r.id, 'reject')} style={{ flex: 1, padding: '10px', borderRadius: '12px', background: '#ef4444', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✕ Reject</button>
+          </div>
+        )}
+        {r.status !== 'pending' && (
+          <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', background: r.status === 'approved' ? '#dcfce7' : '#fee2e2', color: r.status === 'approved' ? '#16a34a' : '#dc2626' }}>
+            {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f1f5f9' }}>
+      <div style={{ background: '#fff', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '24px', fontFamily: '"Poppins", sans-serif' }}>caseily</div>
+          <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Admin</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button onClick={fetchReviews} style={{ padding: '8px 16px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
+          <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 16px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
+          <button onClick={handleLogout} style={{ padding: '8px 16px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px 16px' }}>
+        {loadingReviews ? (
+          <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Loading reviews...</p>
+        ) : (
+          <>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Pending Reviews ({pending.length})</h2>
+            {pending.length === 0 && <p style={{ color: '#94a3b8', marginBottom: '32px' }}>No pending reviews.</p>}
+            <div style={{ display: 'grid', gap: '16px', marginBottom: '40px' }}>
+              {pending.map(r => <ReviewCard key={r.id} r={r} />)}
+            </div>
+
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Approved ({approved.length})</h2>
+            <div style={{ display: 'grid', gap: '16px', marginBottom: '40px' }}>
+              {approved.map(r => <ReviewCard key={r.id} r={r} />)}
+            </div>
+
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Rejected ({rejected.length})</h2>
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {rejected.map(r => <ReviewCard key={r.id} r={r} />)}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ═════════════════════════════════════════════════════════════════════════
 // APP
 // ═════════════════════════════════════════════════════════════════════════
 function App() {
+  // ─── Routing ─────────────────────────────────────────────────────────
+  const [currentPath, setCurrentPath] = useState(window.location.pathname)
+  useEffect(() => {
+    function onPop() { setCurrentPath(window.location.pathname) }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+  if (currentPath === '/admin') return <AdminDashboard />
   // ─── Tracking state ───────────────────────────────────────────────────
   const [trackingNumber, setTrackingNumber] = useState('')
   const [selectedCourier, setSelectedCourier] = useState('')
@@ -98,6 +492,49 @@ function App() {
   const dropdownRef = useRef(null)
   const [shortcutMenuOpen, setShortcutMenuOpen] = useState(false)
   const shortcutRef = useRef(null)
+  const [exploreMenuOpen, setExploreMenuOpen] = useState(false)
+  const exploreRef = useRef(null)
+  const [activeStoryHighlight, setActiveStoryHighlight] = useState(null)
+
+  // ─── Review form state ───────────────────────────────────────────────
+  const [reviewForm, setReviewForm] = useState({ name: '', city: '', stars: 5, quote: '' })
+  const [reviewPhoto, setReviewPhoto] = useState(null)
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewSuccess, setReviewSuccess] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+
+  // ─── Approved reviews from backend ───────────────────────────────────
+  const [approvedReviews, setApprovedReviews] = useState([])
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/reviews/approved`)
+      .then(r => r.json())
+      .then(data => setApprovedReviews(data.reviews || []))
+      .catch(() => {})
+  }, [])
+
+  async function handleReviewSubmit(e) {
+    e.preventDefault()
+    setReviewSubmitting(true)
+    setReviewError('')
+    try {
+      const form = new FormData()
+      form.append('name', reviewForm.name)
+      form.append('city', reviewForm.city)
+      form.append('stars', reviewForm.stars)
+      form.append('quote', reviewForm.quote)
+      if (reviewPhoto) form.append('photo', reviewPhoto)
+      const res = await fetch(`${API_URL}/api/reviews`, { method: 'POST', body: form })
+      if (!res.ok) throw new Error('Submission failed')
+      setReviewSuccess(true)
+      setReviewForm({ name: '', city: '', stars: 5, quote: '' })
+      setReviewPhoto(null)
+      setTimeout(() => setReviewSuccess(false), 4000)
+    } catch (err) {
+      setReviewError(err.message)
+    }
+    setReviewSubmitting(false)
+  }
 
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
   useEffect(() => {
@@ -115,6 +552,9 @@ function App() {
       }
       if (shortcutRef.current && !shortcutRef.current.contains(e.target)) {
         setShortcutMenuOpen(false)
+      }
+      if (exploreRef.current && !exploreRef.current.contains(e.target)) {
+        setExploreMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -200,25 +640,26 @@ function App() {
   // ═════════════════════════════════════════════════════════════════════
   return (
     <div className="app-wrapper">
+      <SplashScreen />
 
-      <div style={{ backgroundColor: '#0f172a', position: 'relative', zIndex: 1, paddingBottom: '80px' }}>
+      <div style={{ backgroundColor: 'var(--accent)', position: 'relative', zIndex: 1, paddingBottom: '80px' }}>
         {/* ─── NAVBAR ─── */}
-        <nav className="navbar" style={{ backgroundColor: 'transparent' }}>
+        <nav className="navbar" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
           <div className="navbar-left">
-            <img src="/logo.png" alt="Caseily" className="c-logo-full" style={{ height: '32px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+            <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', letterSpacing: '-0.04em', fontFamily: '"Poppins", "Circular", "Plus Jakarta Sans", sans-serif' }}>caseily</div>
           </div>
           <div className="navbar-links">
             {['track','reviews','blog','community','faq'].map(id => (
-              <button key={id} className={`navbar-link ${activeSection === id ? 'active' : ''}`} onClick={() => scrollTo(id)} style={{ color: 'rgba(255,255,255,0.8)' }}>
+              <button key={id} className={`navbar-link ${activeSection === id ? 'active' : ''}`} onClick={() => scrollTo(id)} style={{ color: '#0f172a' }}>
                 {id.charAt(0).toUpperCase() + id.slice(1)}
               </button>
             ))}
           </div>
           <div className="navbar-right">
-            <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" title="Translate to Hindi" style={{ marginRight: '8px', color: 'rgba(255,255,255,0.8)' }}>
+            <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" title="Translate to Hindi" style={{ marginRight: '8px', color: '#0f172a' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
             </button>
-            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ color: 'rgba(255,255,255,0.8)' }}>
+            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ color: '#0f172a' }}>
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
             <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta" style={{ backgroundColor: '#bfdbfe', color: '#0f172a' }}>Contact us</a>
@@ -226,12 +667,12 @@ function App() {
         </nav>
 
         {/* ─── MOBILE HEADER ─── */}
-        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: 'transparent', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative' }}>
-          <h2 style={{ margin: 0, color: '#bfdbfe', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '24px', fontWeight: '800' }}>CASEILY</h2>
+        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: '#ffffff', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', letterSpacing: '-0.04em', fontFamily: '"Poppins", "Circular", "Plus Jakarta Sans", sans-serif' }}>caseily</div>
           
           <div style={{ position: 'absolute', right: '20px' }} ref={shortcutRef}>
-            <button className="theme-toggle" onClick={() => setShortcutMenuOpen(o => !o)} aria-label="Menu" style={{ backgroundColor: '#bfdbfe', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: '#0f172a' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+            <button className="theme-toggle" onClick={() => setShortcutMenuOpen(o => !o)} aria-label="Menu" style={{ backgroundColor: 'transparent', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: '#1e3fd1' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
             </button>
             {shortcutMenuOpen && (
               <div style={{ position: 'absolute', right: 0, top: '44px', backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', padding: '8px', width: '160px', zIndex: 100, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
@@ -288,7 +729,7 @@ function App() {
               )}
             </div>
 
-            <button onClick={handleTrack} disabled={loading || !trackingNumber.trim()} style={{ width: '100%', backgroundColor: '#c7d2fe', color: '#ffffff', borderRadius: '32px', padding: '16px', fontSize: '18px', fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <button onClick={handleTrack} disabled={loading || !trackingNumber.trim()} style={{ width: '100%', backgroundColor: 'var(--accent)', color: '#ffffff', borderRadius: '32px', padding: '16px', fontSize: '18px', fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               {loading ? <div className="spinner-small" /> : 'Track now'}
             </button>
 
@@ -350,21 +791,37 @@ function App() {
             </div>
 
             {/* ─── BOTTOM NAV PILL ─── */}
-            <div className="mobile-dashboard" style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#ffffff', borderRadius: '32px', padding: '12px 24px', display: 'flex', gap: '32px', alignItems: 'center', boxShadow: '0 12px 32px rgba(0,0,0,0.1)', zIndex: 100 }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => scrollTo('track')}>
+            <div className="mobile-dashboard" style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#ffffff', borderRadius: '32px', padding: '12px 24px', display: 'flex', alignItems: 'center', boxShadow: '0 12px 32px rgba(0,0,0,0.1)', zIndex: 100, width: 'max-content', maxWidth: '90vw', justifyContent: 'space-between' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: activeSection === 'track' ? 'var(--accent)' : 'transparent', color: activeSection === 'track' ? '#ffffff' : 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => scrollTo('track')}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
               </div>
-              <div style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => scrollTo('reviews')}>
+              <div style={{ color: activeSection === 'reviews' ? '#ffffff' : 'var(--accent)', backgroundColor: activeSection === 'reviews' ? 'var(--accent)' : 'transparent', borderRadius: '50%', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => scrollTo('reviews')}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
               </div>
-              <div style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => scrollTo('blog')}>
+              <div style={{ color: activeSection === 'blog' ? '#ffffff' : 'var(--accent)', backgroundColor: activeSection === 'blog' ? 'var(--accent)' : 'transparent', borderRadius: '50%', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => scrollTo('blog')}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
               </div>
-              <div style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => scrollTo('community')}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-              </div>
-              <div style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => scrollTo('faq')}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              
+              <div ref={exploreRef} style={{ position: 'relative' }}>
+                <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setExploreMenuOpen(!exploreMenuOpen)}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                </div>
+                {exploreMenuOpen && (
+                  <div style={{ position: 'absolute', bottom: '60px', right: 0, backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', padding: '12px', minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 101, border: '1px solid #e2e8f0' }}>
+                    <div className="explore-menu-item" style={{ color: '#0f172a', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => { setExploreMenuOpen(false); alert('Offer of the day clicked!') }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                      Offer of the day
+                    </div>
+                    <div className="explore-menu-item" style={{ color: '#0f172a', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => { setExploreMenuOpen(false); alert('Sale notification clicked!') }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                      Sale notification
+                    </div>
+                    <div className="explore-menu-item" style={{ color: '#0f172a', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => { setExploreMenuOpen(false); alert('Festival wishes clicked!') }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+                      Festival wishes
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -389,7 +846,7 @@ function App() {
           <div className="marquee-container">
             <div className={`marquee-track ${reviewTab}`}>
               {/* Render active reviews twice for infinite seamless scrolling */}
-              {[...activeReviews, ...activeReviews].map((r, i) => (
+              {[...(reviewTab === 'b2c' ? [...activeReviews, ...approvedReviews.map(r => ({ tag: 'Verified buyer', stars: r.stars, quote: r.quote, name: r.name, role: r.city || 'Customer', color: ['#14b8a6','#f97316','#3b82f6','#8b5cf6','#eab308','#ef4444'][Math.floor(Math.random()*6)] }))] : activeReviews), ...(reviewTab === 'b2c' ? [...activeReviews, ...approvedReviews.map(r => ({ tag: 'Verified buyer', stars: r.stars, quote: r.quote, name: r.name, role: r.city || 'Customer', color: ['#14b8a6','#f97316','#3b82f6','#8b5cf6','#eab308','#ef4444'][Math.floor(Math.random()*6)] }))] : activeReviews)].map((r, i) => (
                 <TiltCard key={`${reviewTab}-${i}`} className="review-card" style={{ backgroundColor: r.color + '15', borderTopColor: r.color }}>
                   <span className={`review-tag ${reviewTab === 'b2b' ? 'b2b' : 'b2c'}`} style={{ color: r.color }}>{r.tag}</span>
                   <Stars count={r.stars} />
@@ -407,6 +864,38 @@ function App() {
           </div>
         </div>
       </section>
+
+      {/* ─── INSTAGRAM HIGHLIGHTS ─── */}
+      <section className="highlights-section">
+        <h2 className="highlights-title">Our Highlights</h2>
+        <div className="highlights-scroll">
+          {(() => {
+            const dynamicHighlights = HIGHLIGHTS.map(h => {
+              if (h.id === 'reviews') {
+                const approvedPhotos = approvedReviews.filter(r => r.photo).map(r => `${API_URL}/uploads/${r.photo}`)
+                return { ...h, stories: [...h.stories, ...approvedPhotos] }
+              }
+              return h
+            })
+            return dynamicHighlights.map(h => (
+              <div key={h.id} className="highlight-item" onClick={() => setActiveStoryHighlight(h)}>
+                <div className="highlight-ring">
+                  <img src={h.cover} alt={h.label} className="highlight-cover" />
+                </div>
+                <span className="highlight-label">{h.label}</span>
+              </div>
+            ))
+          })()}
+        </div>
+      </section>
+
+      {/* Story Viewer Modal */}
+      {activeStoryHighlight && (
+        <StoryViewer
+          highlight={activeStoryHighlight}
+          onClose={() => setActiveStoryHighlight(null)}
+        />
+      )}
 
       {/* ─── WHAT WE PROVIDE ─── */}
       <section id="what-we-provide" className="section" style={{ padding: '60px 20px', maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
@@ -463,7 +952,7 @@ function App() {
                   <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#000000', lineHeight: 1.3 }}>Explore latest Caseily accessories</p>
                 </div>
                 <div className="shop-banner-image" style={{ backgroundColor: '#f1f5f9' }}>
-                  <img src="/cases_hero.jpg" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <img src="/class_hero.jpg" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 </div>
               </div>
             </div>
@@ -507,12 +996,72 @@ function App() {
         </div>
       </section>
 
+      {/* ═══════════════════════════════════════════════════════════════
+         WRITE A REVIEW
+         ═══════════════════════════════════════════════════════════════ */}
+      <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
+        <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '28px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+          {reviewSuccess ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎉</div>
+              <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#22c55e', marginBottom: '8px' }}>Review submitted successfully!</h3>
+              <p style={{ color: '#64748b', fontSize: '15px' }}>Thank you for your feedback. It will appear once approved.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="review-form-grid">
+                <input
+                  type="text" placeholder="Your name *" required
+                  value={reviewForm.name} onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
+                  style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', background: '#f8fafc' }}
+                />
+                <input
+                  type="text" placeholder="City (optional)"
+                  value={reviewForm.city} onChange={e => setReviewForm(f => ({ ...f, city: e.target.value }))}
+                  style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', background: '#f8fafc' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '8px' }}>Rating</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[1,2,3,4,5].map(s => (
+                    <span key={s} onClick={() => setReviewForm(f => ({ ...f, stars: s }))} style={{ cursor: 'pointer', fontSize: '28px', color: s <= reviewForm.stars ? '#f59e0b' : '#d1d5db', transition: 'transform 0.15s' }}>
+                      {s <= reviewForm.stars ? '★' : '☆'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <textarea
+                placeholder="Write your review... *" required
+                value={reviewForm.quote} onChange={e => setReviewForm(f => ({ ...f, quote: e.target.value }))}
+                rows={4}
+                style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', resize: 'vertical', background: '#f8fafc', fontFamily: 'inherit' }}
+              />
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderRadius: '16px', border: '1px dashed #cbd5e1', cursor: 'pointer', background: '#f8fafc', color: '#64748b', fontSize: '15px' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  {reviewPhoto ? reviewPhoto.name : 'Upload product photo (optional)'}
+                  <input type="file" accept="image/*" hidden onChange={e => setReviewPhoto(e.target.files[0] || null)} />
+                </label>
+              </div>
+              {reviewError && <p style={{ color: '#ef4444', fontSize: '14px', margin: 0 }}>{reviewError}</p>}
+              <button type="submit" disabled={reviewSubmitting} style={{ padding: '16px', borderRadius: '16px', background: '#1e3fd1', color: '#fff', fontSize: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', opacity: reviewSubmitting ? 0.6 : 1 }}>
+                {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </form>
+          )}
+        </div>
+      </section>
+
 
       {/* ═══════════════════════════════════════════════════════════════
          SUPPORT & LINKS
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="support-links" className="section" style={{ padding: '40px 20px', maxWidth: '800px', margin: '0 auto' }}>
-        <div className="support-list" style={{ borderTop: '1px solid var(--border)' }}>
+      <section id="support-links" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto', textAlign: 'left' }}>
+        <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Support & Links</h2>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '12px 28px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+          <div className="support-list">
           {[
             { label: 'Shipping Policies', id: 'shipping', icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>, content: 'Orders are processed within 1-2 business days. Standard shipping takes 3-5 days. We provide tracking information for all shipments.' },
             { label: 'Returns & Exchanges', id: 'returns', icon: <><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="14" x2="21" y2="3"></line><polyline points="8 21 3 21 3 16"></polyline><line x1="20" y1="10" x2="3" y2="21"></line></>, content: 'We offer a 30-day return policy for unused items in original packaging. Exchanges are processed immediately upon receipt of the returned item.' },
@@ -555,6 +1104,7 @@ function App() {
               )}
             </div>
           )})}
+          </div>
         </div>
       </section>
 
@@ -574,24 +1124,6 @@ function App() {
           </div>
         </div>
       </footer>
-
-      {/* ═══════════════════════════════════════════════════════════════
-         MOBILE BOTTOM NAV
-         ═══════════════════════════════════════════════════════════════ */}
-      <nav className="mobile-nav">
-        {[
-          { id: 'track', label: 'Track', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> },
-          { id: 'reviews', label: 'Reviews', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-          { id: 'blog', label: 'Blog', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> },
-          { id: 'community', label: 'Connect', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-          { id: 'faq', label: 'FAQ', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> },
-        ].map(item => (
-          <button key={item.id} className={`mobile-nav-item ${activeSection === item.id ? 'active' : ''}`} onClick={() => scrollTo(item.id)}>
-            {item.icon}
-            {item.label}
-          </button>
-        ))}
-      </nav>
 
     </div>
   )
