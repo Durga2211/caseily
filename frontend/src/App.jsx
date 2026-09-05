@@ -64,6 +64,29 @@ const HIGHLIGHTS = [
       '/highlights/review5.png',
     ],
   },
+  {
+    id: 'happy_customers',
+    label: 'Our Happy Customers',
+    cover: '/happy_customers/img1.png',
+    stories: [
+      '/happy_customers/img1.png',
+      '/happy_customers/img2.png',
+      '/happy_customers/img3.png',
+      '/happy_customers/img4.png',
+    ],
+  },
+  {
+    id: 'our_products',
+    label: 'Our Products',
+    cover: '/our_products/img1.png',
+    stories: [
+      '/our_products/img1.png',
+      '/our_products/img2.png',
+      '/our_products/img3.png',
+      '/our_products/img4.png',
+      '/our_products/img5.png',
+    ],
+  },
 ]
 
 // ─── HELPERS ────────────────────────────────────────────────────────────
@@ -667,7 +690,7 @@ function App() {
         </nav>
 
         {/* ─── MOBILE HEADER ─── */}
-        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: '#ffffff', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0' }}>
+        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: '#ffffff', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
           <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', letterSpacing: '-0.04em', fontFamily: '"Poppins", "Circular", "Plus Jakarta Sans", sans-serif' }}>caseily</div>
           
           <div style={{ position: 'absolute', right: '20px' }} ref={shortcutRef}>
@@ -683,6 +706,13 @@ function App() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ─── ANNOUNCEMENT BAR ─── */}
+        <div style={{ width: '100%', backgroundColor: '#1e3a8a', color: '#ffffff', padding: '8px 0', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+          <marquee scrollamount="12" style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '0.1em', textTransform: 'uppercase', width: '100%' }}>
+            🎉 FLAT 21% OFFER ON ALL SILICON CASES — GET YOURS NOW 🎉 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎉 FLAT 21% OFFER ON ALL SILICON CASES — GET YOURS NOW 🎉
+          </marquee>
         </div>
 
         {/* ─── HERO TITLE ─── */}
@@ -824,7 +854,29 @@ function App() {
                 )}
               </div>
             </div>
+            
           </div>
+          
+          {/* ─── QUICK LINKS BAR ─── */}
+          <div className="quick-links-bar" style={{ marginTop: '24px', justifyContent: 'center' }}>
+            <button className="quick-link-btn active" onClick={() => scrollTo('highlights')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <span>The Community Wall</span>
+            </button>
+            <button className="quick-link-btn" onClick={() => scrollTo('deal-of-the-day')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              <span>Deal of the Day</span>
+            </button>
+            <button className="quick-link-btn" onClick={() => scrollTo('write-review')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <span>Post a Review</span>
+            </button>
+            <button className="quick-link-btn" onClick={() => scrollTo('blog')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              <span>Techblogs & News</span>
+            </button>
+          </div>
+          
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -865,8 +917,30 @@ function App() {
         </div>
       </section>
 
+      {/* ─── DEAL OF THE DAY ─── */}
+      <section id="deal-of-the-day" className="section" style={{ paddingBottom: '20px' }}>
+        <div className="container" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--ink-strong)', marginBottom: '24px', letterSpacing: '-1px', textAlign: 'center' }}>Deal of the Day</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', aspectRatio: '1/1' }}>
+              <video src="/deal_of_the_day/video.mp4" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: '16px', left: '16px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', padding: '6px 12px', borderRadius: '16px', fontSize: '14px', fontWeight: 'bold', backdropFilter: 'blur(8px)' }}>Featured Video</div>
+            </div>
+            <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', aspectRatio: '1/1' }}>
+              <img src="/deal_of_the_day/img1.jpg" alt="Deal of the Day 1" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'} />
+            </div>
+            <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', aspectRatio: '1/1' }}>
+              <img src="/deal_of_the_day/img2.jpg" alt="Deal of the Day 2" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'} />
+            </div>
+            <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', aspectRatio: '1/1' }}>
+              <img src="/deal_of_the_day/img3.jpg" alt="Deal of the Day 3" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'} />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── INSTAGRAM HIGHLIGHTS ─── */}
-      <section className="highlights-section">
+      <section id="highlights" className="highlights-section">
         <h2 className="highlights-title">Our Highlights</h2>
         <div className="highlights-scroll">
           {(() => {
@@ -1111,16 +1185,81 @@ function App() {
 
 
       {/* ─── FOOTER ─── */}
-      <footer className="footer">
+      <footer className="footer-large">
         <div className="container">
-          <div className="footer-content">
-            <div className="footer-brand" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-              <img src="/logo.png" alt="Caseily" className="c-logo-full" style={{ height: '32px', width: 'auto' }} />
-              <p style={{ color: 'var(--ink-muted)' }}>Making global shipping transparent, reliable, and beautifully simple.</p>
+          <div className="footer-large-grid">
+            {/* Column 1: Company */}
+            <div className="footer-column">
+              <h4>Company</h4>
+              <ul>
+                <li><a onClick={() => scrollTo('track')}>Home</a></li>
+                <li><a onClick={() => scrollTo('blog')}>News</a></li>
+                <li><a onClick={() => scrollTo('reviews')}>Reviews</a></li>
+                <li><a onClick={() => scrollTo('support-links')}>Contact Us</a></li>
+                <li><a onClick={() => scrollTo('write-review')}>Leave Feedback</a></li>
+              </ul>
+            </div>
+
+            {/* Column 2: Legal */}
+            <div className="footer-column">
+              <h4>Legal</h4>
+              <ul>
+                <li><a>About Us</a></li>
+                <li><a>Terms & Conditions</a></li>
+                <li><a>Privacy Policy</a></li>
+                <li><a>Shipping Policy</a></li>
+                <li><a>Return Policy</a></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Social Media */}
+            <div className="footer-column">
+              <h4>Social Media</h4>
+              <div className="footer-social-icons">
+                <a href="https://youtube.com/@caseilyplus?si=GXIR-3isU2OCFKY8" target="_blank" rel="noopener noreferrer" title="YouTube">
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </a>
+                <a href="https://whatsapp.com/channel/0029VbApzgg9cDDUfdHPdQ2z" target="_blank" rel="noopener noreferrer" title="WhatsApp Channel">
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                </a>
+                <a href="https://www.snapchat.com/add/caseilyplus" target="_blank" rel="noopener noreferrer" title="Snapchat">
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.146 1.768c-1.894 0-3.518.558-4.757 1.635-1.235 1.071-1.928 2.585-2.062 4.542-.146 2.128.536 3.512.923 4.298.397.808.574 1.168.328 1.458-.204.24-.766.425-1.428.643-1.077.355-2.392.79-3.045 1.503-.314.342-.505.776-.505 1.155 0 .393.18.847.531 1.25.437.5 1.16.89 2.023 1.09.28.064.385.16.347.315-.054.218-.176.621-.304 1.042-.15.49-.313 1.025-.333 1.348-.009.155.032.285.127.375.116.108.286.136.488.077.301-.088.757-.282 1.264-.496.653-.275 1.411-.595 1.954-.627.171-.01.32.063.504.16.398.21.942.497 1.554.809.84.428 1.83.932 2.394.932s1.554-.504 2.395-.932c.611-.312 1.155-.599 1.553-.809.183-.097.333-.17.503-.16.543.032 1.3.352 1.954.627.507.214.963.408 1.264.496.202.06.372.031.488-.077.095-.09.136-.22.127-.375-.02-.323-.183-.858-.333-1.348-.128-.421-.25-.824-.304-1.042-.038-.155.067-.251.347-.315.863-.2 1.586-.59 2.023-1.09.35-.403.531-.857.531-1.25 0-.379-.19-.813-.505-1.155-.653-.713-1.968-1.148-3.045-1.503-.662-.218-1.224-.403-1.428-.643-.246-.29-.069-.65.328-1.458.387-.786 1.069-2.17.923-4.298-.134-1.957-.827-3.471-2.062-4.542-1.239-1.077-2.863-1.635-4.757-1.635z"/></svg>
+                </a>
+                <a href="https://wa.me/c/919167788773" target="_blank" rel="noopener noreferrer" title="WhatsApp Catalog">
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                </a>
+              </div>
+            </div>
+
+            {/* Column 4: Site links */}
+            <div className="footer-column">
+              <h4>Site links</h4>
+              <ul>
+                <li><a onClick={() => window.location.href = '/admin'}>Admin Dashboard</a></li>
+                <li><a>B2B Pricing</a></li>
+                <li><a>Distribution</a></li>
+                <li><a>Careers</a></li>
+              </ul>
+            </div>
+
+            {/* Column 5: Site Map */}
+            <div className="footer-column">
+              <h4>Site Map</h4>
+              <ul>
+                <li><a onClick={() => scrollTo('track')}>Track Order</a></li>
+                <li><a onClick={() => scrollTo('faq')}>FAQ</a></li>
+                <li><a onClick={() => scrollTo('support-links')}>Help Center</a></li>
+                <li><a>Site Map XML</a></li>
+              </ul>
             </div>
           </div>
-          <div style={{ textAlign: 'center', marginTop: '32px', color: 'var(--ink-faint)', fontSize: '14px' }}>
-            © {new Date().getFullYear()} Caseily · All rights reserved
+
+          <div className="footer-bottom">
+            <div>© {new Date().getFullYear()} Caseily · All rights reserved</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img src="/c-logo.png" alt="Caseily" style={{ height: '24px', width: 'auto', borderRadius: '4px' }} />
+              <span style={{ fontWeight: 800, letterSpacing: '-0.5px' }}>caseily</span>
+            </div>
           </div>
         </div>
       </footer>
