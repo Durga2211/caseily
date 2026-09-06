@@ -70,9 +70,9 @@ const HIGHLIGHTS = [
     cover: '/happy_customers/img1.png',
     stories: [
       '/happy_customers/img1.png',
-      '/happy_customers/img2.png',
-      '/happy_customers/img3.png',
-      '/happy_customers/img4.png',
+      '/happy_customers/img2.jpg',
+      '/happy_customers/img3.jpg',
+      '/happy_customers/img4.jpg',
     ],
   },
   {
@@ -84,7 +84,6 @@ const HIGHLIGHTS = [
       '/our_products/img2.png',
       '/our_products/img3.png',
       '/our_products/img4.png',
-      '/our_products/img5.png',
     ],
   },
 ]
@@ -379,6 +378,17 @@ function AdminDashboard() {
     } catch (err) { console.error(err) }
   }
 
+  async function handleDelete(id) {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+    try {
+      await fetch(`${API_URL}/api/admin/reviews/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      fetchReviews()
+    } catch (err) { console.error(err) }
+  }
+
   if (!isLoggedIn) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)' }}>
@@ -422,16 +432,19 @@ function AdminDashboard() {
         )}
         <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>{new Date(r.created_at).toLocaleString()}</div>
         {r.status === 'pending' && (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
             <button onClick={() => handleAction(r.id, 'approve')} style={{ flex: 1, padding: '10px', borderRadius: '12px', background: '#22c55e', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✓ Approve</button>
             <button onClick={() => handleAction(r.id, 'reject')} style={{ flex: 1, padding: '10px', borderRadius: '12px', background: '#ef4444', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✕ Reject</button>
           </div>
         )}
         {r.status !== 'pending' && (
-          <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', background: r.status === 'approved' ? '#dcfce7' : '#fee2e2', color: r.status === 'approved' ? '#16a34a' : '#dc2626' }}>
-            {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-          </span>
+          <div style={{ marginBottom: '12px' }}>
+            <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', background: r.status === 'approved' ? '#dcfce7' : '#fee2e2', color: r.status === 'approved' ? '#16a34a' : '#dc2626' }}>
+              {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+            </span>
+          </div>
         )}
+        <button onClick={() => handleDelete(r.id)} style={{ width: '100%', padding: '10px', borderRadius: '12px', background: '#f8fafc', color: '#dc2626', fontWeight: '600', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px' }}>🗑️ Delete Review</button>
       </div>
     )
   }
@@ -658,6 +671,186 @@ function App() {
   const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Select Courier (optional, e.g., US...'
   const activeReviews = reviewTab === 'b2b' ? REVIEWS_B2B : REVIEWS_B2C
 
+  const combinedReviews = [...approvedReviews.map(r => ({
+    name: r.name || 'Anonymous',
+    time: 'Just now',
+    text: r.quote,
+    image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
+    likes: (r.quote.length * 7) % 200 + 15,
+    comments: (r.quote.length * 3) % 20 + 2
+  })), ...activeReviews.map(r => ({
+    name: r.name || 'User',
+    time: '2 hours ago',
+    text: r.quote,
+    image: null,
+    likes: (r.quote.length * 5) % 150 + 10,
+    comments: (r.quote.length * 2) % 15 + 1
+  }))];
+
+  const renderReviewForm = () => (
+    <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
+      <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
+      <div style={{ backgroundColor: 'var(--bg-elevated)', borderRadius: '32px', padding: '28px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
+        {reviewSuccess ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎉</div>
+            <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#22c55e', marginBottom: '8px' }}>Review submitted successfully!</h3>
+            <p style={{ color: 'var(--ink-muted)', fontSize: '15px' }}>Thank you for your feedback. It will appear once approved.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="review-form-grid">
+              <input
+                type="text" placeholder="Your name *" required
+                value={reviewForm.name} onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
+                style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }}
+              />
+              <input
+                type="text" placeholder="City (optional)"
+                value={reviewForm.city} onChange={e => setReviewForm(f => ({ ...f, city: e.target.value }))}
+                style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: 'var(--ink)', marginBottom: '8px' }}>Rating</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[1,2,3,4,5].map(s => (
+                  <span key={s} onClick={() => setReviewForm(f => ({ ...f, stars: s }))} style={{ cursor: 'pointer', fontSize: '28px', color: s <= reviewForm.stars ? '#f59e0b' : 'var(--border)', transition: 'transform 0.15s' }}>
+                    {s <= reviewForm.stars ? '★' : '☆'}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <textarea
+              placeholder="Write your review... *" required
+              value={reviewForm.quote} onChange={e => setReviewForm(f => ({ ...f, quote: e.target.value }))}
+              rows={4}
+              style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', resize: 'vertical', background: 'var(--bg-default)', color: 'var(--ink-strong)', fontFamily: 'inherit' }}
+            />
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderRadius: '16px', border: '1px dashed var(--ink-muted)', cursor: 'pointer', background: 'var(--bg-default)', color: 'var(--ink-muted)', fontSize: '15px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                {reviewPhoto ? reviewPhoto.name : 'Upload product photo (optional)'}
+                <input type="file" accept="image/*" hidden onChange={e => setReviewPhoto(e.target.files[0] || null)} />
+              </label>
+            </div>
+            {reviewError && <p style={{ color: '#ef4444', fontSize: '14px', margin: 0 }}>{reviewError}</p>}
+            <button type="submit" disabled={reviewSubmitting} style={{ padding: '16px', borderRadius: '16px', background: '#1e3fd1', color: '#fff', fontSize: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', opacity: reviewSubmitting ? 0.6 : 1 }}>
+              {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+            </button>
+          </form>
+        )}
+      </div>
+    </section>
+  )
+
+  const renderCommunityWallCard = (post, i) => (
+    <div key={i} className="cw-card" onClick={() => { if (currentPath !== '/reviews') { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); } }}>
+      <div className="cw-user">
+        <img className="cw-avatar" src={`https://ui-avatars.com/api/?name=${post.name}&background=random`} alt={post.name} />
+        <div className="cw-meta">
+          <div className="cw-name">{post.name}</div>
+          <div className="cw-time">{post.time}</div>
+        </div>
+        <div className="cw-dots">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        </div>
+      </div>
+      {post.text && <div className="cw-text">{post.text}</div>}
+      {post.image && <img className="cw-image" src={post.image} alt="Review" />}
+      <div className="cw-footer">
+        <div className="cw-action">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>{post.likes}</span>
+        </div>
+        <div className="cw-action">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span>{post.comments}</span>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (currentPath === '/reviews') {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                 <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+                 <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Community Wall</h2>
+              </div>
+              <div className="reviews-page-grid">
+                  {combinedReviews.map((post, i) => renderCommunityWallCard(post, i))}
+              </div>
+           </div>
+           
+           {renderReviewForm()}
+        </main>
+      </div>
+    )
+  }
+
+  if (currentPath === '/shop') {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                 <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+                 <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>CaseilyPlus+ Shop</h2>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '24px' }}>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f1f5f9', height: '200px' }}>
+                    <img src="/class_hero.jpg" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Accessorize your device...</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Explore latest Caseily accessories</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#e6e6e6', height: '200px' }}>
+                    <img src="/banner2_image.png" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Elevate your setup</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Simplify Connectivity. Boost Productivity.</p>
+                  </div>
+                </div>
+              </div>
+           </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (currentPath === '/news') {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                 <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+                 <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>News and tips</h2>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '24px' }}>
+                {BLOGS.map((b, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#fff', borderRadius: '24px', padding: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                    <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '16px', backgroundColor: b.color }}>
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#3b82f6', marginBottom: '8px', textTransform: 'uppercase' }}>{b.category}</span>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#0f172a', lineHeight: 1.4 }}>{b.title}</h3>
+                  </div>
+                ))}
+              </div>
+           </div>
+        </main>
+      </div>
+    )
+  }
+
   // ═════════════════════════════════════════════════════════════════════
   // RENDER
   // ═════════════════════════════════════════════════════════════════════
@@ -879,70 +1072,10 @@ function App() {
           
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════
-         REVIEWS
-         ═══════════════════════════════════════════════════════════════ */}
-      <section id="reviews" className="section-alt">
-        <div className="container">
-          <div className="section-header">
-            <span className="section-label">Reviews</span>
-            <h2 className="section-title">Trusted on both sides of the loading dock</h2>
-            <p className="section-subtitle">From warehouse managers routing thousands of pallets to someone waiting on a birthday gift — here's what they say.</p>
-          </div>
-
-          <div className="review-tabs">
-            <button className={`review-tab ${reviewTab === 'b2b' ? 'active' : ''}`} onClick={() => setReviewTab('b2b')}>For businesses</button>
-            <button className={`review-tab ${reviewTab === 'b2c' ? 'active' : ''}`} onClick={() => setReviewTab('b2c')}>For shoppers</button>
-          </div>
-
-          <div className="marquee-container">
-            <div className={`marquee-track ${reviewTab}`}>
-              {/* Render active reviews twice for infinite seamless scrolling */}
-              {[...(reviewTab === 'b2c' ? [...activeReviews, ...approvedReviews.map(r => ({ tag: 'Verified buyer', stars: r.stars, quote: r.quote, name: r.name, role: r.city || 'Customer', color: ['#14b8a6','#f97316','#3b82f6','#8b5cf6','#eab308','#ef4444'][Math.floor(Math.random()*6)] }))] : activeReviews), ...(reviewTab === 'b2c' ? [...activeReviews, ...approvedReviews.map(r => ({ tag: 'Verified buyer', stars: r.stars, quote: r.quote, name: r.name, role: r.city || 'Customer', color: ['#14b8a6','#f97316','#3b82f6','#8b5cf6','#eab308','#ef4444'][Math.floor(Math.random()*6)] }))] : activeReviews)].map((r, i) => (
-                <TiltCard key={`${reviewTab}-${i}`} className="review-card" style={{ backgroundColor: r.color + '15', borderTopColor: r.color }}>
-                  <span className={`review-tag ${reviewTab === 'b2b' ? 'b2b' : 'b2c'}`} style={{ color: r.color }}>{r.tag}</span>
-                  <Stars count={r.stars} />
-                  <p className="review-quote">"{r.quote}"</p>
-                  <div className="review-author">
-                    <div className="review-avatar" style={{ background: r.color }}>{r.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</div>
-                    <div className="review-author-info">
-                      <span className="review-author-name">{r.name}</span>
-                      <span className="review-author-role">{r.role}</span>
-                    </div>
-                  </div>
-                </TiltCard>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── DEAL OF THE DAY ─── */}
-      <section id="deal-of-the-day" className="section" style={{ paddingBottom: '20px' }}>
-        <div className="container" style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: '900', color: 'var(--ink-strong)', marginBottom: '24px', letterSpacing: '-1px', textAlign: 'center' }}>Deal of the Day</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', aspectRatio: '1/1' }}>
-              <video src="/deal_of_the_day/video.mp4" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', bottom: '16px', left: '16px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', padding: '6px 12px', borderRadius: '16px', fontSize: '14px', fontWeight: 'bold', backdropFilter: 'blur(8px)' }}>Featured Video</div>
-            </div>
-            <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', aspectRatio: '1/1' }}>
-              <img src="/deal_of_the_day/img1.jpg" alt="Deal of the Day 1" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'} />
-            </div>
-            <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', aspectRatio: '1/1' }}>
-              <img src="/deal_of_the_day/img2.jpg" alt="Deal of the Day 2" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'} />
-            </div>
-            <div style={{ borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', aspectRatio: '1/1' }}>
-              <img src="/deal_of_the_day/img3.jpg" alt="Deal of the Day 3" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'} />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ─── INSTAGRAM HIGHLIGHTS ─── */}
       <section id="highlights" className="highlights-section">
-        <h2 className="highlights-title">Our Highlights</h2>
-        <div className="highlights-scroll">
+        <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Story Highlights</h2>
+        <div className="highlights-scroll" style={{ gap: '20px' }}>
           {(() => {
             const dynamicHighlights = HIGHLIGHTS.map(h => {
               if (h.id === 'reviews') {
@@ -953,10 +1086,12 @@ function App() {
             })
             return dynamicHighlights.map(h => (
               <div key={h.id} className="highlight-item" onClick={() => setActiveStoryHighlight(h)}>
-                <div className="highlight-ring">
-                  <img src={h.cover} alt={h.label} className="highlight-cover" />
+                <div className="highlight-ring" style={{ background: 'none', border: '2px solid #2563eb', padding: '4px' }}>
+                  <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <img src={h.cover} alt={h.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
                 </div>
-                <span className="highlight-label">{h.label}</span>
+                <span className="highlight-label" style={{ fontWeight: '600' }}>{h.label}</span>
               </div>
             ))
           })()}
@@ -971,30 +1106,88 @@ function App() {
         />
       )}
 
-      {/* ─── WHAT WE PROVIDE ─── */}
-      <section id="what-we-provide" className="section" style={{ padding: '60px 20px', maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
-        <h2 className="section-title" style={{ marginBottom: '32px' }}>What we provide</h2>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
-          gap: '16px' 
-        }}>
+      {/* ─── TRENDING REELS ─── */}
+      <section id="trending-reels" className="section" style={{ padding: '10px 20px 40px', maxWidth: '800px', margin: '0 auto' }}>
+        <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Trending Reels</h2>
+        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', padding: '0 8px 16px', WebkitOverflowScrolling: 'touch' }}>
           {[1, 2, 3, 4].map((num) => (
             <div key={num} style={{ 
               borderRadius: '16px', 
               overflow: 'hidden', 
-              backgroundColor: 'var(--bg-elevated)', 
-              boxShadow: 'var(--shadow-card)',
-              border: '1px solid var(--border)'
+              backgroundColor: '#000', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              position: 'relative',
+              flex: '0 0 150px',
+              aspectRatio: '9/16'
             }}>
+              <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+              </div>
               <video 
                 src={`/promo${num}.mp4`} 
                 muted
                 autoPlay
                 loop
                 playsInline
-                style={{ width: '100%', display: 'block', backgroundColor: '#000' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               ></video>
+              <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '30px 12px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '13px', fontWeight: 'bold', textAlign: 'left', zIndex: 2 }}>
+                {num === 1 ? 'My top 5 colors!' : num === 2 ? 'How I use it...' : num === 3 ? 'Creator collab BTS' : 'Get ready with Caseily'}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+         COMMUNITY WALL
+         ═══════════════════════════════════════════════════════════════ */}
+      <section id="reviews" className="community-wall-section">
+        <div className="cw-header-row">
+          <h2 className="cw-title">Community Wall</h2>
+          <a className="cw-show-all" onClick={() => { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); }}>Show all</a>
+        </div>
+        <div className="cw-scroll">
+          {combinedReviews.map((post, i) => renderCommunityWallCard(post, i))}
+        </div>
+      </section>
+
+      {/* ─── DEAL OF THE DAY ─── */}
+      <section id="deal-of-the-day" className="section" style={{ padding: '40px 0 40px', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Deal of the Day</h2>
+          <a href="http://wa.me/c/919167788773" target="_blank" rel="noreferrer" style={{ fontSize: '13px', fontWeight: '600', color: '#1e3fd1', textDecoration: 'none' }}>View all</a>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', padding: '0 20px 20px', WebkitOverflowScrolling: 'touch' }}>
+          {[1, 2, 3].map(num => (
+            <div key={num} style={{
+              flex: '0 0 85%',
+              maxWidth: '320px',
+              backgroundColor: '#f8fafc',
+              borderRadius: '16px',
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              <div style={{ flex: 1, paddingRight: '12px' }}>
+                <div style={{ fontWeight: '800', fontSize: '14px', color: '#0f172a', marginBottom: '4px' }}>Deal of the Day</div>
+                <div style={{ fontSize: '12px', color: '#475569', lineHeight: 1.4, marginBottom: '12px' }}>
+                  Get up to 50% off on our premium cases & accessories. Shop now!
+                </div>
+                <a href="http://wa.me/c/919167788773" target="_blank" rel="noreferrer" style={{ display: 'inline-block', backgroundColor: '#2563eb', color: '#fff', textDecoration: 'none', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', fontWeight: '600' }}>
+                  Shop Now
+                </a>
+              </div>
+              <div style={{ width: '90px', height: '100px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
+                {num === 1 ? (
+                  <video src="/deal_of_the_day/video.mp4" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <img src={`/deal_of_the_day/img${num}.jpg`} alt="Deal" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -1004,7 +1197,7 @@ function App() {
          SHOP BANNER
          ═══════════════════════════════════════════════════════════════ */}
       <section id="shop-banner" style={{ padding: '0 20px', maxWidth: '800px', margin: '60px auto 40px auto' }}>
-        <div onClick={() => window.open('http://wa.me/c/919167788773', '_blank')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
+        <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
           <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>CaseilyPlus+ shop</h2>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
@@ -1019,7 +1212,7 @@ function App() {
             }}
           >
             {/* Banner 1 */}
-            <div onClick={() => window.open('http://wa.me/c/919167788773', '_blank')} style={{ width: '50%', flexShrink: 0, padding: '0' }}>
+            <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ width: '50%', flexShrink: 0, padding: '0' }}>
               <div className="shop-banner-card">
                 <div className="shop-banner-text">
                   <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Accessorize your device...</h3>
@@ -1032,7 +1225,7 @@ function App() {
             </div>
 
             {/* Banner 2 */}
-            <div onClick={() => window.open('http://wa.me/c/919167788773', '_blank')} style={{ width: '50%', flexShrink: 0, padding: '0' }}>
+            <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ width: '50%', flexShrink: 0, padding: '0' }}>
               <div className="shop-banner-card">
                 <div className="shop-banner-text">
                   <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Elevate your setup</h3>
@@ -1051,7 +1244,7 @@ function App() {
          BLOG
          ═══════════════════════════════════════════════════════════════ */}
       <section id="blog" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
+        <div onClick={() => { window.history.pushState({}, '', '/news'); setCurrentPath('/news'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
           <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>News and tips</h2>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
@@ -1059,7 +1252,7 @@ function App() {
         <div style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
             {BLOGS.map((b, i) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
+              <div key={i} onClick={() => { window.history.pushState({}, '', '/news'); setCurrentPath('/news'); window.scrollTo(0, 0); }} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
                 <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '12px', backgroundColor: b.color }}>
                 </div>
                 <span style={{ fontSize: '14px', fontWeight: '800', color: '#94a3b8', marginBottom: '4px' }}>{b.category}</span>
@@ -1073,60 +1266,7 @@ function App() {
       {/* ═══════════════════════════════════════════════════════════════
          WRITE A REVIEW
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
-        <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '28px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
-          {reviewSuccess ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎉</div>
-              <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#22c55e', marginBottom: '8px' }}>Review submitted successfully!</h3>
-              <p style={{ color: '#64748b', fontSize: '15px' }}>Thank you for your feedback. It will appear once approved.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className="review-form-grid">
-                <input
-                  type="text" placeholder="Your name *" required
-                  value={reviewForm.name} onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
-                  style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', background: '#f8fafc' }}
-                />
-                <input
-                  type="text" placeholder="City (optional)"
-                  value={reviewForm.city} onChange={e => setReviewForm(f => ({ ...f, city: e.target.value }))}
-                  style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', background: '#f8fafc' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '8px' }}>Rating</label>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[1,2,3,4,5].map(s => (
-                    <span key={s} onClick={() => setReviewForm(f => ({ ...f, stars: s }))} style={{ cursor: 'pointer', fontSize: '28px', color: s <= reviewForm.stars ? '#f59e0b' : '#d1d5db', transition: 'transform 0.15s' }}>
-                      {s <= reviewForm.stars ? '★' : '☆'}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <textarea
-                placeholder="Write your review... *" required
-                value={reviewForm.quote} onChange={e => setReviewForm(f => ({ ...f, quote: e.target.value }))}
-                rows={4}
-                style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', resize: 'vertical', background: '#f8fafc', fontFamily: 'inherit' }}
-              />
-              <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderRadius: '16px', border: '1px dashed #cbd5e1', cursor: 'pointer', background: '#f8fafc', color: '#64748b', fontSize: '15px' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                  {reviewPhoto ? reviewPhoto.name : 'Upload product photo (optional)'}
-                  <input type="file" accept="image/*" hidden onChange={e => setReviewPhoto(e.target.files[0] || null)} />
-                </label>
-              </div>
-              {reviewError && <p style={{ color: '#ef4444', fontSize: '14px', margin: 0 }}>{reviewError}</p>}
-              <button type="submit" disabled={reviewSubmitting} style={{ padding: '16px', borderRadius: '16px', background: '#1e3fd1', color: '#fff', fontSize: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', opacity: reviewSubmitting ? 0.6 : 1 }}>
-                {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
+      {renderReviewForm()}
 
 
       {/* ═══════════════════════════════════════════════════════════════
