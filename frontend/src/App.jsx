@@ -243,6 +243,60 @@ function StoryViewer({ highlight, onClose }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════
+// REEL VIEWER
+// ═════════════════════════════════════════════════════════════════════════
+function ReelViewer({ initialNum, onClose }) {
+  const [currentNum, setCurrentNum] = useState(initialNum)
+  const totalReels = 4;
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  function goNext(e) {
+    if (e) e.stopPropagation()
+    if (currentNum < totalReels) setCurrentNum(n => n + 1)
+  }
+
+  function goPrev(e) {
+    if (e) e.stopPropagation()
+    if (currentNum > 1) setCurrentNum(n => n - 1)
+  }
+
+  const [touchStartV, setTouchStartV] = useState(0)
+  function handleTouchStart(e) { setTouchStartV(e.touches[0].clientY) }
+  function handleTouchEnd(e) {
+    const touchEndV = e.changedTouches[0].clientY
+    if (touchStartV - touchEndV > 50) goNext(e)
+    else if (touchEndV - touchStartV > 50) goPrev(e)
+  }
+
+  return (
+    <div className="story-viewer-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
+      <div className="story-viewer-container" style={{ backgroundColor: '#000', borderRadius: '16px', overflow: 'hidden', position: 'relative' }} onClick={e => e.stopPropagation()} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <button style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }} onClick={onClose}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+
+        <video
+          key={currentNum}
+          src={`/promo${currentNum}.mp4`}
+          autoPlay
+          loop
+          playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+
+        <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '40px 16px 24px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '15px', fontWeight: 'bold', zIndex: 2 }}>
+          {currentNum === 1 ? 'My top 5 colors!' : currentNum === 2 ? 'How I use it...' : currentNum === 3 ? 'Creator collab BTS' : 'Get ready with Caseily'}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ═════════════════════════════════════════════════════════════════════════
 // SPLASH SCREEN
 // ═════════════════════════════════════════════════════════════════════════
 function SplashScreen() {
@@ -531,6 +585,17 @@ function App() {
   const [exploreMenuOpen, setExploreMenuOpen] = useState(false)
   const exploreRef = useRef(null)
   const [activeStoryHighlight, setActiveStoryHighlight] = useState(null)
+  const [activeReelNum, setActiveReelNum] = useState(null)
+  const [likedPosts, setLikedPosts] = useState(new Set())
+  const handleLikeToggle = (i, e) => {
+    e.stopPropagation();
+    setLikedPosts(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
 
   // ─── Review form state ───────────────────────────────────────────────
   const [reviewForm, setReviewForm] = useState({ name: '', city: '', stars: 5, quote: '' })
@@ -759,13 +824,9 @@ function App() {
       {post.text && <div className="cw-text">{post.text}</div>}
       {post.image && <img className="cw-image" src={post.image} alt="Review" />}
       <div className="cw-footer">
-        <div className="cw-action">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span>{post.likes}</span>
-        </div>
-        <div className="cw-action">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-          <span>{post.comments}</span>
+        <div className="cw-action" onClick={(e) => handleLikeToggle(i, e)} style={{ color: likedPosts.has(i) ? '#ef4444' : 'currentColor', cursor: 'pointer' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={likedPosts.has(i) ? "#ef4444" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>{post.likes + (likedPosts.has(i) ? 1 : 0)}</span>
         </div>
       </div>
     </div>
@@ -844,6 +905,29 @@ function App() {
                     <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#0f172a', lineHeight: 1.4 }}>{b.title}</h3>
                   </div>
                 ))}
+              </div>
+           </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (['/exclusive-drops', '/creators-club', '/loyalty-points'].includes(currentPath)) {
+    const titles = {
+      '/exclusive-drops': 'Exclusive Drops',
+      '/creators-club': 'Creators Club',
+      '/loyalty-points': 'Loyalty Points'
+    }
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                 <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+                 <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>{titles[currentPath]}</h2>
+              </div>
+              <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#fff', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                <p style={{ fontSize: '18px', color: 'var(--ink-muted)' }}>Coming soon...</p>
               </div>
            </div>
         </main>
@@ -1068,6 +1152,18 @@ function App() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
               <span>Techblogs & News</span>
             </button>
+            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/exclusive-drops'); setCurrentPath('/exclusive-drops'); window.scrollTo(0, 0); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              <span>Exclusive Drops</span>
+            </button>
+            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/creators-club'); setCurrentPath('/creators-club'); window.scrollTo(0, 0); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+              <span>Creators Club</span>
+            </button>
+            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+              <span>Loyalty Points</span>
+            </button>
           </div>
           
       </section>
@@ -1111,14 +1207,15 @@ function App() {
         <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Trending Reels</h2>
         <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', padding: '0 8px 16px', WebkitOverflowScrolling: 'touch' }}>
           {[1, 2, 3, 4].map((num) => (
-            <div key={num} style={{ 
+            <div key={num} onClick={() => setActiveReelNum(num)} style={{ 
               borderRadius: '16px', 
               overflow: 'hidden', 
               backgroundColor: '#000', 
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               position: 'relative',
               flex: '0 0 150px',
-              aspectRatio: '9/16'
+              aspectRatio: '9/16',
+              cursor: 'pointer'
             }}>
               <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2 }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
@@ -1138,6 +1235,14 @@ function App() {
           ))}
         </div>
       </section>
+
+      {/* Reel Viewer Modal */}
+      {activeReelNum !== null && (
+        <ReelViewer
+          initialNum={activeReelNum}
+          onClose={() => setActiveReelNum(null)}
+        />
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════
          COMMUNITY WALL
