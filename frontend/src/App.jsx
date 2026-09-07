@@ -297,6 +297,37 @@ function ReelViewer({ initialNum, onClose }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════
+// EVENT COUNTDOWN
+// ═════════════════════════════════════════════════════════════════════════
+function EventCountdown() {
+  const [timeLeft, setTimeLeft] = useState('')
+  useEffect(() => {
+    const targetDate = new Date('2026-09-09T10:00:00-07:00').getTime();
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = targetDate - now;
+      if (distance < 0) {
+        setTimeLeft('Event Started!');
+        clearInterval(interval);
+        return;
+      }
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div style={{ fontSize: '42px', fontWeight: '900', color: '#1e3fd1', textAlign: 'center', marginBottom: '24px' }}>
+      {timeLeft || 'Loading...'}
+    </div>
+  )
+}
+
+// ═════════════════════════════════════════════════════════════════════════
 // SPLASH SCREEN
 // ═════════════════════════════════════════════════════════════════════════
 function SplashScreen() {
@@ -880,8 +911,92 @@ function App() {
                     <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Simplify Connectivity. Boost Productivity.</p>
                   </div>
                 </div>
+
+                {/* New Categories */}
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/car_accessories.png" alt="Car Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Car Accessories</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Mobile Stand | Charger & Cables</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/charging_accessories.png" alt="Charging Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Charging Accessories</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Powerbanks & Travel Chargers</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/ipad_accessories.png" alt="iPad Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>iPad Accessories</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>iPad Cases | Screen Protectors</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/watch_accessories.png" alt="Watch Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Watch Accessories</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Watch Strap | Screen Guard</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/phone_cases.png" alt="Phone Cases" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Phone Cases</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Phone Covers | Lens Protectors</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/buds_accessories.png" alt="Buds Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Buds Accessories</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Protective Buds Case</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/laptop_bags.png" alt="Laptop Bags" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Laptop Bags</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Premium Bags For Every Journey</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/audio_connectors.png" alt="Audio & Connectors" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Audio & Connectors</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Earphones | Cables | Connectors</p>
+                  </div>
+                </div>
+                <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                    <img src="/shop/macbook_accessories.png" alt="Macbook Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div className="shop-banner-text" style={{ padding: '16px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>MacBook Accessories</h3>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#64748b', lineHeight: 1.3 }}>Protection Case | Keyboard Guard</p>
+                  </div>
+                </div>
+
               </div>
-           </div>
+            </div>
         </main>
       </div>
     )
@@ -912,10 +1027,9 @@ function App() {
     )
   }
 
-  if (['/exclusive-drops', '/creators-club', '/loyalty-points'].includes(currentPath)) {
+  if (['/exclusive-drops', '/loyalty-points'].includes(currentPath)) {
     const titles = {
       '/exclusive-drops': 'Exclusive Drops',
-      '/creators-club': 'Creators Club',
       '/loyalty-points': 'Loyalty Points'
     }
     return (
@@ -928,6 +1042,79 @@ function App() {
               </div>
               <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#fff', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                 <p style={{ fontSize: '18px', color: 'var(--ink-muted)' }}>Coming soon...</p>
+              </div>
+           </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (currentPath === '/bulk-order') {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                 <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+                 <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Bulk Order</h2>
+              </div>
+              <div style={{ 
+                padding: '80px 40px', 
+                textAlign: 'center', 
+                backgroundColor: '#fff', 
+                borderRadius: '32px', 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)', 
+                maxWidth: '500px', 
+                margin: '40px auto'
+              }}>
+                <p style={{ fontSize: '32px', color: '#000000', fontWeight: '800', lineHeight: 1.2, margin: '0 0 24px 0' }}>To get the bulk order<br/>contact this number:</p>
+                <p style={{ fontSize: '56px', color: '#1e3fd1', fontWeight: '900', margin: '0', letterSpacing: '-0.02em' }}>9987759029</p>
+              </div>
+           </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (currentPath === '/events') {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                 <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+                 <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Apple Event</h2>
+              </div>
+              <div style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                <h3 style={{ textAlign: 'center', fontSize: '22px', fontWeight: 'bold', marginBottom: '16px' }}>Event starts in:</h3>
+                <EventCountdown />
+                <div style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: '#000' }}>
+                  <iframe width="100%" height="500" src="https://www.youtube.com/embed/39BalPDuTo0" title="Apple Event" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                </div>
+              </div>
+           </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (currentPath === '/creators-club') {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                 <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+                 <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Creators Club</h2>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', backgroundColor: '#fff', padding: '20px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                <img src="/creators-club/hero.png" alt="Become a Caseilyplus+ Creator Partner" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
+                <img src="/creators-club/how_it_works.png" alt="How it works" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
+                <img src="/creators-club/free_product.png" alt="Free product" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
+                <img src="/creators-club/early_access.png" alt="Early access" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
+                <img src="/creators-club/commissions.png" alt="Commissions" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
+                <img src="/creators-club/arc_campaigns.png" alt="Arc campaigns" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
+                <img src="/creators-club/long_term.png" alt="Long term partnerships" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
               </div>
            </div>
         </main>
@@ -1163,6 +1350,14 @@ function App() {
             <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
               <span>Loyalty Points</span>
+            </button>
+            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/bulk-order'); setCurrentPath('/bulk-order'); window.scrollTo(0, 0); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              <span>Bulk Order</span>
+            </button>
+            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/events'); setCurrentPath('/events'); window.scrollTo(0, 0); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span>Events</span>
             </button>
           </div>
           
