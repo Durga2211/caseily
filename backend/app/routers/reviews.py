@@ -123,3 +123,13 @@ async def reject_review(review_id: str, auth: bool = Depends(_require_admin)):
             _save_db(reviews)
             return {"success": True, "message": "Review rejected"}
     raise HTTPException(status_code=404, detail="Review not found")
+
+@router.delete("/admin/reviews/{review_id}")
+async def delete_review(review_id: str, auth: bool = Depends(_require_admin)):
+    """Delete a review."""
+    reviews = _load_db()
+    filtered_reviews = [r for r in reviews if r["id"] != review_id]
+    if len(filtered_reviews) == len(reviews):
+        raise HTTPException(status_code=404, detail="Review not found")
+    _save_db(filtered_reviews)
+    return {"success": True, "message": "Review deleted"}

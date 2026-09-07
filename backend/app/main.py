@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import tracking, reviews
+from .routers import tracking, reviews, insiders
 import os
 
 app = FastAPI(title = "Caseily Backend")
@@ -13,6 +13,7 @@ app.add_middleware(
 )
 app.include_router(tracking.router)
 app.include_router(reviews.router)
+app.include_router(insiders.router)
 
 # Mount uploads directory for serving review photos
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")

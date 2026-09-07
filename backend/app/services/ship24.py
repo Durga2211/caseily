@@ -2,7 +2,7 @@ import httpx
 import asyncio
 import logging
 import re
-from app.core import config
+from ..core import config
 
 logger = logging.getLogger("ship24")
 

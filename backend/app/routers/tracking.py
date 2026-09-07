@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
-from app.services import ship24
+from ..services import ship24
 import logging
 
 logger = logging.getLogger("tracking")
