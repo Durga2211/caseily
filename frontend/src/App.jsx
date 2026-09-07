@@ -1059,16 +1059,18 @@ function App() {
                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Bulk Order</h2>
               </div>
               <div style={{ 
-                padding: '80px 40px', 
+                padding: '60px 20px', 
                 textAlign: 'center', 
                 backgroundColor: '#fff', 
                 borderRadius: '32px', 
                 boxShadow: '0 4px 20px rgba(0,0,0,0.05)', 
                 maxWidth: '500px', 
-                margin: '40px auto'
+                margin: '40px auto',
+                width: '100%',
+                boxSizing: 'border-box'
               }}>
-                <p style={{ fontSize: '32px', color: '#000000', fontWeight: '800', lineHeight: 1.2, margin: '0 0 24px 0' }}>To get the bulk order<br/>contact this number:</p>
-                <p style={{ fontSize: '56px', color: '#1e3fd1', fontWeight: '900', margin: '0', letterSpacing: '-0.02em' }}>9987759029</p>
+                <p style={{ fontSize: 'clamp(24px, 6vw, 32px)', color: '#000000', fontWeight: '800', lineHeight: 1.2, margin: '0 0 24px 0' }}>To get the bulk order<br/>contact this number:</p>
+                <p style={{ fontSize: 'clamp(36px, 10vw, 56px)', color: '#1e3fd1', fontWeight: '900', margin: '0', letterSpacing: '-0.02em', wordBreak: 'break-word' }}>9987759029</p>
               </div>
            </div>
         </main>
@@ -1331,7 +1333,7 @@ function App() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
               <span>Deal of the Day</span>
             </button>
-            <button className="quick-link-btn" onClick={() => scrollTo('write-review')}>
+            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
               <span>Post a Review</span>
             </button>
@@ -1566,9 +1568,7 @@ function App() {
       {/* ═══════════════════════════════════════════════════════════════
          WRITE A REVIEW
          ═══════════════════════════════════════════════════════════════ */}
-      {renderReviewForm()}
-
-
+      {/* Review form is now in /reviews */}
       {/* ═══════════════════════════════════════════════════════════════
          SUPPORT & LINKS
          ═══════════════════════════════════════════════════════════════ */}
