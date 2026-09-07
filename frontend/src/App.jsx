@@ -382,7 +382,7 @@ function SplashScreen() {
 
       <div className="splash-v2-center">
         <div className="splash-v2-headline">
-          <div className="splash-v2-wordmark">caseily</div>
+          <div className="splash-v2-wordmark">CASEILY</div>
         </div>
         
         <div className="splash-v2-bottom-shape">
@@ -412,6 +412,11 @@ function AdminDashboard() {
   const [reviews, setReviews] = useState([])
   const [loginError, setLoginError] = useState('')
   const [loadingReviews, setLoadingReviews] = useState(false)
+  const [adminTab, setAdminTab] = useState('reviews')
+  const [insiders, setInsiders] = useState([])
+  const [loadingInsiders, setLoadingInsiders] = useState(false)
+  const [insiderForm, setInsiderForm] = useState({ type: 'text', content: '' })
+  const [insiderPhotos, setInsiderPhotos] = useState([])
 
   const isLoggedIn = !!token
 
@@ -449,9 +454,58 @@ function AdminDashboard() {
     setLoadingReviews(false)
   }
 
+  async function fetchInsiders() {
+    setLoadingInsiders(true)
+    try {
+      const res = await fetch(`${API_URL}/api/insiders`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      setInsiders(data.posts || [])
+    } catch (err) { console.error(err) }
+    setLoadingInsiders(false)
+  }
+
   useEffect(() => {
-    if (isLoggedIn) fetchReviews()
-  }, [isLoggedIn])
+    if (isLoggedIn) {
+      if (adminTab === 'reviews') fetchReviews()
+      if (adminTab === 'insiders') fetchInsiders()
+    }
+  }, [isLoggedIn, adminTab])
+
+  async function handleCreateInsider(e) {
+    e.preventDefault()
+    const form = new FormData()
+    form.append('post_type', insiderForm.type)
+    form.append('content', insiderForm.content)
+    if (insiderPhotos && insiderPhotos.length > 0) {
+      Array.from(insiderPhotos).forEach(file => {
+        form.append('images', file)
+      })
+    }
+
+    try {
+      await fetch(`${API_URL}/api/admin/insiders`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      })
+      setInsiderForm({ type: 'text', content: '' })
+      setInsiderPhotos([])
+      fetchInsiders()
+    } catch (err) { console.error(err) }
+  }
+
+  async function handleDeleteInsider(id) {
+    if (!window.confirm('Delete this post?')) return;
+    try {
+      await fetch(`${API_URL}/api/admin/insiders/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      fetchInsiders()
+    } catch (err) { console.error(err) }
+  }
 
   async function handleAction(id, action) {
     try {
@@ -478,7 +532,7 @@ function AdminDashboard() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)' }}>
         <form onSubmit={handleLogin} style={{ background: '#fff', padding: '48px 40px', borderRadius: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', maxWidth: '400px', width: '90%', textAlign: 'center' }}>
-          <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '32px', marginBottom: '8px', fontFamily: '"Poppins", sans-serif' }}>caseily</div>
+          <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '32px', marginBottom: '8px', fontFamily: '"Poppins", sans-serif' }}>CASEILY</div>
           <p style={{ color: '#64748b', marginBottom: '32px', fontSize: '15px' }}>Admin Dashboard</p>
           {loginError && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{loginError}</p>}
           <input
@@ -538,36 +592,85 @@ function AdminDashboard() {
     <div style={{ minHeight: '100vh', background: '#f1f5f9' }}>
       <div style={{ background: '#fff', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '24px', fontFamily: '"Poppins", sans-serif' }}>caseily</div>
+          <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '24px', fontFamily: '"Poppins", sans-serif' }}>CASEILY</div>
           <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Admin</span>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button onClick={fetchReviews} style={{ padding: '8px 16px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
+          <button onClick={() => setAdminTab('reviews')} style={{ padding: '8px 16px', borderRadius: '10px', background: adminTab === 'reviews' ? '#1e3fd1' : 'transparent', color: adminTab === 'reviews' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Reviews</button>
+          <button onClick={() => setAdminTab('insiders')} style={{ padding: '8px 16px', borderRadius: '10px', background: adminTab === 'insiders' ? '#1e3fd1' : 'transparent', color: adminTab === 'insiders' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Insiders</button>
+          <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 8px' }}></div>
+          <button onClick={adminTab === 'reviews' ? fetchReviews : fetchInsiders} style={{ padding: '8px 16px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
           <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 16px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
           <button onClick={handleLogout} style={{ padding: '8px 16px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
         </div>
       </div>
 
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px 16px' }}>
-        {loadingReviews ? (
-          <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Loading reviews...</p>
+        {adminTab === 'reviews' ? (
+          loadingReviews ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Loading reviews...</p>
+          ) : (
+            <>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Pending Reviews ({pending.length})</h2>
+              {pending.length === 0 && <p style={{ color: '#94a3b8', marginBottom: '32px' }}>No pending reviews.</p>}
+              <div style={{ display: 'grid', gap: '16px', marginBottom: '40px' }}>
+                {pending.map(r => <ReviewCard key={r.id} r={r} />)}
+              </div>
+
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Approved ({approved.length})</h2>
+              <div style={{ display: 'grid', gap: '16px', marginBottom: '40px' }}>
+                {approved.map(r => <ReviewCard key={r.id} r={r} />)}
+              </div>
+
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Rejected ({rejected.length})</h2>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {rejected.map(r => <ReviewCard key={r.id} r={r} />)}
+              </div>
+            </>
+          )
         ) : (
           <>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Pending Reviews ({pending.length})</h2>
-            {pending.length === 0 && <p style={{ color: '#94a3b8', marginBottom: '32px' }}>No pending reviews.</p>}
-            <div style={{ display: 'grid', gap: '16px', marginBottom: '40px' }}>
-              {pending.map(r => <ReviewCard key={r.id} r={r} />)}
+            <div style={{ background: '#fff', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Create Insider Post</h2>
+              <form onSubmit={handleCreateInsider} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <select value={insiderForm.type} onChange={e => setInsiderForm({...insiderForm, type: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <option value="text">Text Post</option>
+                  <option value="image">Image Post</option>
+                </select>
+                
+                <textarea placeholder="Post content..." value={insiderForm.content} onChange={e => setInsiderForm({...insiderForm, content: e.target.value})} rows={3} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', resize: 'vertical' }} required />
+                
+                {(insiderForm.type === 'image' || insiderForm.type === 'text') && (
+                  <input type="file" accept="image/*" multiple onChange={e => setInsiderPhotos(e.target.files)} style={{ padding: '8px' }} />
+                )}
+                
+                <button type="submit" style={{ padding: '12px', borderRadius: '12px', background: '#1e3fd1', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer' }}>Create Post</button>
+              </form>
             </div>
 
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Approved ({approved.length})</h2>
-            <div style={{ display: 'grid', gap: '16px', marginBottom: '40px' }}>
-              {approved.map(r => <ReviewCard key={r.id} r={r} />)}
-            </div>
-
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Rejected ({rejected.length})</h2>
-            <div style={{ display: 'grid', gap: '16px' }}>
-              {rejected.map(r => <ReviewCard key={r.id} r={r} />)}
-            </div>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Active Posts ({insiders.length})</h2>
+            {loadingInsiders ? <p>Loading...</p> : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {insiders.map(post => (
+                  <div key={post.id} style={{ background: '#fff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>{new Date(post.created_at).toLocaleString()} • {post.type.toUpperCase()}</div>
+                    {post.type === 'text' ? (
+                      <p style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '500', color: '#0f172a', wordBreak: 'break-word' }}>{post.content}</p>
+                    ) : (
+                      <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}>{post.content}</p>
+                    )}
+                    {post.images && post.images.length > 0 && (
+                      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '12px' }}>
+                        {post.images.map((img, idx) => (
+                          <img key={idx} src={`${API_URL}/uploads/${img}`} alt="Post" style={{ width: '100%', maxWidth: '200px', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px' }} />
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={() => handleDeleteInsider(post.id)} style={{ padding: '8px 12px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Delete</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -637,6 +740,17 @@ function App() {
 
   // ─── Approved reviews from backend ───────────────────────────────────
   const [approvedReviews, setApprovedReviews] = useState([])
+  const [insidersPosts, setInsidersPosts] = useState([])
+  const [commentInput, setCommentInput] = useState({})
+  const [userPostForm, setUserPostForm] = useState({ type: 'text', content: '' })
+  const [userPostPhotos, setUserPostPhotos] = useState([])
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/insiders`)
+      .then(r => r.json())
+      .then(data => setInsidersPosts(data.posts || []))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     fetch(`${API_URL}/api/reviews/approved`)
@@ -1002,6 +1116,167 @@ function App() {
     )
   }
 
+  if (currentPath === '/insiders') {
+    const handleUserCreatePost = async (e) => {
+      e.preventDefault()
+      const form = new FormData()
+      form.append('post_type', userPostForm.type)
+      form.append('content', userPostForm.content)
+      if (userPostPhotos && userPostPhotos.length > 0) {
+        Array.from(userPostPhotos).forEach(file => {
+          form.append('images', file)
+        })
+      }
+
+      try {
+        await fetch(`${API_URL}/api/insiders`, {
+          method: 'POST',
+          body: form
+        })
+        setUserPostForm({ type: 'text', content: '' })
+        setUserPostPhotos([])
+        const data = await fetch(`${API_URL}/api/insiders`).then(r => r.json())
+        setInsidersPosts(data.posts || [])
+      } catch (err) { console.error(err) }
+    }
+
+    const handleLike = async (postId) => {
+      try {
+        const res = await fetch(`${API_URL}/api/insiders/${postId}/like`, { method: 'POST' })
+        if (res.ok) {
+          const data = await fetch(`${API_URL}/api/insiders`).then(r => r.json())
+          setInsidersPosts(data.posts || [])
+        }
+      } catch (err) { console.error(err) }
+    }
+
+    const handleComment = async (postId) => {
+      const text = commentInput[postId]
+      if (!text || !text.trim()) return;
+      try {
+        const res = await fetch(`${API_URL}/api/insiders/${postId}/comment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        })
+        if (res.ok) {
+          setCommentInput({ ...commentInput, [postId]: '' })
+          const data = await fetch(`${API_URL}/api/insiders`).then(r => r.json())
+          setInsidersPosts(data.posts || [])
+        }
+      } catch (err) { console.error(err) }
+    }
+
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fafafa' }}>
+        <header style={{ backgroundColor: '#fff', borderBottom: '1px solid #dbdbdb', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center' }}>
+          <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: '#262626' }}>&larr;</button>
+          <div style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: '700', color: '#262626' }}>CASEILY Insiders</div>
+          <div style={{ width: '24px' }}></div>
+        </header>
+
+        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 0' }}>
+          
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '16px', border: '1px solid #dbdbdb', marginBottom: '24px' }}>
+            <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '12px', color: '#262626' }}>Create Post</div>
+            <form onSubmit={handleUserCreatePost} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <select value={userPostForm.type} onChange={e => setUserPostForm({...userPostForm, type: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #efefef', background: '#fafafa', outline: 'none', fontSize: '14px' }}>
+                <option value="text">Text Post</option>
+                <option value="image">Image Post</option>
+              </select>
+              <textarea placeholder="What's on your mind?" value={userPostForm.content} onChange={e => setUserPostForm({...userPostForm, content: e.target.value})} rows={3} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #efefef', background: '#fafafa', outline: 'none', resize: 'vertical', fontSize: '14px' }} required />
+              {(userPostForm.type === 'image' || userPostForm.type === 'text') && (
+                <input type="file" accept="image/*" multiple onChange={e => setUserPostPhotos(e.target.files)} style={{ padding: '8px' }} />
+              )}
+              <button type="submit" style={{ padding: '10px', borderRadius: '8px', background: '#0095f6', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Post</button>
+            </form>
+          </div>
+
+          {insidersPosts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#8e8e8e' }}>No posts yet.</div>
+          ) : (
+            insidersPosts.map(post => {
+              return (
+                <article key={post.id} style={{ backgroundColor: '#fff', border: '1px solid #dbdbdb', borderRadius: '8px', marginBottom: '24px' }}>
+                  <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #efefef' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
+                      <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>C</span>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '14px', color: '#262626' }}>{post.author}</div>
+                      <div style={{ fontSize: '12px', color: '#8e8e8e' }}>{new Date(post.created_at).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+
+                  {post.images && post.images.length > 0 && (
+                    <div style={{ display: 'flex', overflowX: 'auto', snapType: 'x mandatory' }}>
+                      {post.images.map((img, idx) => (
+                        <div key={idx} style={{ minWidth: '100%', scrollSnapAlign: 'start' }}>
+                          <img src={`${API_URL}/uploads/${img}`} alt="Post content" style={{ width: '100%', display: 'block', maxHeight: '600px', objectFit: 'contain', backgroundColor: '#000' }} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={{ padding: '16px' }}>
+                    {post.type === 'text' && (
+                      <p style={{ margin: '0 0 16px 0', fontSize: '24px', fontWeight: '500', color: '#0f172a', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                        {post.content}
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
+                      <button onClick={() => handleLike(post.id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                      </button>
+                    </div>
+                    
+                    <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>{post.likes || 0} likes</div>
+
+                    {post.type !== 'text' && (
+                      <p style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#262626', lineHeight: '1.5', wordBreak: 'break-word' }}>
+                        <span style={{ fontWeight: '600', marginRight: '6px' }}>{post.author}</span>
+                        {post.content}
+                      </p>
+                    )}
+
+                    {/* Comments Section */}
+                    {post.comments && post.comments.length > 0 && (
+                      <div style={{ marginBottom: '12px', maxHeight: '150px', overflowY: 'auto' }}>
+                        {post.comments.map(c => (
+                          <div key={c.id} style={{ fontSize: '14px', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: '600', marginRight: '6px' }}>{c.author}</span>
+                            {c.text}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div style={{ display: 'flex', borderTop: '1px solid #efefef', paddingTop: '12px', marginTop: '12px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Add a comment..." 
+                        value={commentInput[post.id] || ''}
+                        onChange={e => setCommentInput({...commentInput, [post.id]: e.target.value})}
+                        style={{ border: 'none', flex: 1, outline: 'none', fontSize: '14px' }}
+                      />
+                      <button 
+                        onClick={() => handleComment(post.id)}
+                        style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '600', cursor: 'pointer', opacity: commentInput[post.id]?.trim() ? 1 : 0.5 }}
+                      >
+                        Post
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              )
+            })
+          )}
+        </main>
+      </div>
+    )
+  }
+
   if (currentPath === '/news') {
     return (
       <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -1135,7 +1410,7 @@ function App() {
         {/* ─── NAVBAR ─── */}
         <nav className="navbar" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
           <div className="navbar-left">
-            <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', letterSpacing: '-0.04em', fontFamily: '"Poppins", "Circular", "Plus Jakarta Sans", sans-serif' }}>caseily</div>
+            <div className="desktop-logo" style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase', cursor: 'pointer' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>CASEILY</div>
           </div>
           <div className="navbar-links">
             {['track','reviews','blog','community','faq'].map(id => (
@@ -1157,7 +1432,7 @@ function App() {
 
         {/* ─── MOBILE HEADER ─── */}
         <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: '#ffffff', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
-          <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', letterSpacing: '-0.04em', fontFamily: '"Poppins", "Circular", "Plus Jakarta Sans", sans-serif' }}>caseily</div>
+          <div className="desktop-logo" style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '24px', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase', cursor: 'pointer' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>CASEILY</div>
           
           <div style={{ position: 'absolute', right: '20px' }} ref={shortcutRef}>
             <button className="theme-toggle" onClick={() => setShortcutMenuOpen(o => !o)} aria-label="Menu" style={{ backgroundColor: 'transparent', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: '#1e3fd1' }}>
@@ -1566,9 +1841,25 @@ function App() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-         WRITE A REVIEW
+         CASEILY INSIDERS
          ═══════════════════════════════════════════════════════════════ */}
-      {/* Review form is now in /reviews */}
+      <section id="insiders-promo" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
+        <div onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
+          <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Caseily Insiders</h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+        
+        <div onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4"/><path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"/></svg>
+          </div>
+          <div>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#000' }}>Join the exclusive community</h3>
+            <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Vote on new products, get behind the scenes access, and interact with other Caseily fans.</p>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════════════════════════════════════════════════════════
          SUPPORT & LINKS
          ═══════════════════════════════════════════════════════════════ */}
@@ -1686,7 +1977,6 @@ function App() {
             <div className="footer-column">
               <h4>Site Map</h4>
               <ul>
-                <li><a onClick={() => scrollTo('track')}>Track Order</a></li>
                 <li><a onClick={() => scrollTo('faq')}>FAQ</a></li>
                 <li><a onClick={() => scrollTo('support-links')}>Help Center</a></li>
                 <li><a>Site Map XML</a></li>
