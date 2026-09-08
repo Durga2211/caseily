@@ -1727,7 +1727,7 @@ function App() {
       {/* ─── TRENDING REELS ─── */}
       <section id="trending-reels" className="section" style={{ padding: '10px 20px 40px', maxWidth: '800px', margin: '0 auto' }}>
         <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Trending Reels</h2>
-        <div className="cw-scroll" style={{ padding: '8px' }}>
+        <div className="cw-scroll" style={{ padding: '8px', display: 'flex', gap: '16px', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', width: '100%', touchAction: 'pan-x' }}>
           {[1, 2, 3, 4].map((num) => (
             <div key={num} onClick={() => setActiveReelNum(num)} style={{ 
               borderRadius: '16px', 
@@ -1750,7 +1750,7 @@ function App() {
                 autoPlay
                 loop
                 playsInline
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
               ></video>
               <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '30px 12px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '13px', fontWeight: 'bold', textAlign: 'left', zIndex: 2 }}>
                 {num === 1 ? 'My top 5 colors!' : num === 2 ? 'How I use it...' : num === 3 ? 'Creator collab BTS' : 'Get ready with Caseily'}
