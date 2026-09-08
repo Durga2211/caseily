@@ -1728,15 +1728,23 @@ function App() {
       <section id="trending-reels" className="section" style={{ padding: '10px 20px 40px', maxWidth: '800px', margin: '0 auto' }}>
         <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Trending Reels</h2>
         <div className="cw-scroll" style={{ padding: '8px', display: 'flex', gap: '16px', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', width: '100%', touchAction: 'pan-x' }}>
-          {[1, 2, 3, 4].map((num) => (
-            <div key={num} onClick={() => setActiveReelNum(num)} style={{ 
+          {[
+            { id: 1, video: 1, text: 'My top 5 colors!' },
+            { id: 2, video: 2, text: 'How I use it...' },
+            { id: 3, video: 3, text: 'Creator collab BTS' },
+            { id: 4, video: 4, text: 'Get ready with Caseily' },
+            { id: 5, video: 1, text: 'Behind the scenes' },
+            { id: 6, video: 2, text: 'Day in the life' }
+          ].map((item) => (
+            <div key={item.id} onClick={() => setActiveReelNum(item.video)} style={{ 
               borderRadius: '16px', 
               overflow: 'hidden', 
               backgroundColor: '#000', 
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               position: 'relative',
-              flex: '0 0 160px',
-              minWidth: '160px',
+              flex: '0 0 45%',
+              minWidth: '140px',
+              maxWidth: '240px',
               aspectRatio: '9/16',
               cursor: 'pointer',
               scrollSnapAlign: 'start'
@@ -1745,7 +1753,7 @@ function App() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
               </div>
               <video 
-                src={`/promo${num}.mp4`} 
+                src={`/promo${item.video}.mp4`} 
                 muted
                 autoPlay
                 loop
@@ -1753,7 +1761,7 @@ function App() {
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
               ></video>
               <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '30px 12px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '13px', fontWeight: 'bold', textAlign: 'left', zIndex: 2 }}>
-                {num === 1 ? 'My top 5 colors!' : num === 2 ? 'How I use it...' : num === 3 ? 'Creator collab BTS' : 'Get ready with Caseily'}
+                {item.text}
               </div>
             </div>
           ))}
