@@ -2139,3 +2139,13 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 20px;
 }
+
+/* Reels scroll fix */
+#trending-reels > div:first-of-type {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto !important;
+  touch-action: pan-x;
+}
+#trending-reels > div:first-of-type::-webkit-scrollbar {
+  display: none;
+}

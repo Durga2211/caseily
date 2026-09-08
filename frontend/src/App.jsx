@@ -782,15 +782,17 @@ function App() {
     setReviewSubmitting(false)
   }
 
-  const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+
+
+  const [currentPromoIndex, setCurrentPromoIndex] = useState(0)
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentBannerIndex(prev => (prev === 0 ? 1 : 0))
+      setCurrentPromoIndex(prev => (prev + 1) % 3)
     }, 4000)
     return () => clearInterval(timer)
   }, [])
 
-  // ─── Dropdown outside-click ───────────────────────────────────────────
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -1324,29 +1326,166 @@ function App() {
     )
   }
 
+  if (currentPath === '/track-order') {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+          <div className="container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+              <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+              <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Track Your Order</h2>
+            </div>
+
+            {/* Hero */}
+            <div style={{ background: 'linear-gradient(135deg, #1e3fd1 0%, #3b5fe0 50%, #6366f1 100%)', borderRadius: '32px', padding: '32px 24px', textAlign: 'center', marginBottom: '24px', color: '#fff' }}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '12px' }}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              <h3 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>Where's your order?</h3>
+              <p style={{ fontSize: '14px', opacity: 0.85, margin: 0 }}>Enter your tracking number to see live delivery status</p>
+            </div>
+
+            {/* Tracking Card */}
+            <div className="tracking-card" style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: '32px', padding: '0 20px', marginBottom: '16px', border: '1px solid #f1f5f9' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" style={{ flex: 1, border: 'none', background: 'transparent', padding: '16px 12px', fontSize: '16px', outline: 'none' }} placeholder="Enter your tracking number" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTrack()} />
+              </div>
+
+              <div style={{ position: 'relative', marginBottom: '24px' }} ref={dropdownRef}>
+                <button type="button" onClick={() => { setCourierOpen(o => !o); setCourierSearch('') }} style={{ width: '100%', display: 'flex', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: '32px', padding: '16px 20px', border: '1px solid #f1f5f9', color: '#64748b', fontSize: '16px', cursor: 'pointer' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '12px' }}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                  <span style={{ flex: 1, textAlign: 'left' }}>{courierDisplayText}</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: courierOpen ? 'rotate(180deg)' : '' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                {courierOpen && (
+                  <div className="courier-dropdown-menu">
+                    <div className="courier-dropdown-search"><input type="text" placeholder="Search courier…" value={courierSearch} onChange={e => setCourierSearch(e.target.value)} autoFocus /></div>
+                    <div className="courier-dropdown-list">
+                      {filteredCouriers.map(c => (
+                        <div key={c.key} className={`courier-dropdown-item ${selectedCourier === c.key ? 'selected' : ''}`} onClick={() => { setSelectedCourier(c.key); setCourierOpen(false) }}>
+                          <span className="flag">{c.country ? isoToFlag(c.country) : '🔍'}</span>
+                          <span className="item-name">{c.name}</span>
+                          {selectedCourier === c.key && <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                        </div>
+                      ))}
+                      {filteredCouriers.length === 0 && <div className="dropdown-empty">No couriers found</div>}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={handleTrack} disabled={loading || !trackingNumber.trim()} style={{ width: '100%', backgroundColor: 'var(--accent)', color: '#ffffff', borderRadius: '32px', padding: '16px', fontSize: '18px', fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                {loading ? <div className="spinner-small" /> : 'Track now'}
+              </button>
+
+              {/* Results */}
+              {showResults && (
+                <div className="results-section" style={{ marginTop: '24px' }}>
+                  {loading && <div className="loading-container"><div className="spinner" /><p>Fetching tracking info…</p><p className="loading-hint">This may take up to a minute for new shipments</p></div>}
+                  {error && <p className="status-text error">{error}</p>}
+                  {result && (
+                    <div className="result">
+                      <div className="result-head">
+                        <div className="oid">Tracking number</div>
+                        <h2>{trackingNumber}</h2>
+                        {result.courier_name && <div className="selected-courier-badge"><span className="badge-name">{result.courier_name}</span></div>}
+                        <div className={getStatusPillClass(result.status_tag)}><span className="dot" />{result.status}</div>
+                      </div>
+                      {result.events && result.events.length > 0 && (
+                        <div className="timeline">
+                          {result.events.map((evt, i) => (
+                            <div key={i} className={`timeline-item ${i === 0 ? 'active' : ''}`}>
+                              <div className="timeline-dot" />
+                              <div className="timeline-content">
+                                <div className="timeline-date">{new Date(evt.datetime).toLocaleString()}</div>
+                                <div className="timeline-desc">{evt.description}</div>
+                                {evt.location && <div className="timeline-loc">📍 {evt.location}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   if (currentPath === '/bulk-order') {
     return (
       <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
-           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+           <div className="container" style={{ maxWidth: '700px', margin: '0 auto', padding: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
                  <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Bulk Order</h2>
               </div>
-              <div style={{ 
-                padding: '60px 20px', 
-                textAlign: 'center', 
-                backgroundColor: '#fff', 
-                borderRadius: '32px', 
-                boxShadow: '0 4px 20px rgba(0,0,0,0.05)', 
-                maxWidth: '500px', 
-                margin: '40px auto',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}>
-                <p style={{ fontSize: 'clamp(24px, 6vw, 32px)', color: '#000000', fontWeight: '800', lineHeight: 1.2, margin: '0 0 24px 0' }}>To get the bulk order<br/>contact this number:</p>
-                <p style={{ fontSize: 'clamp(36px, 10vw, 56px)', color: '#1e3fd1', fontWeight: '900', margin: '0', letterSpacing: '-0.02em', wordBreak: 'break-word' }}>9987759029</p>
+
+              {/* Hero Banner Image */}
+              <div style={{ marginBottom: '24px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
+                <img src="/bulk_banner.jpg" alt="Your Reliable Partner for Bulk Orders" style={{ width: '100%', display: 'block', height: 'auto' }} />
               </div>
+
+              {/* Connect Info */}
+              <div style={{ backgroundColor: '#fff', borderRadius: '32px', padding: '28px 24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
+                <p style={{ fontSize: '15px', color: '#334155', lineHeight: 1.6, margin: '0 0 20px 0' }}>
+                  Connect with us directly on WhatsApp to get verified and gain access to our exclusive catalog, channel, and community links.
+                </p>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0' }}>📱 How to Register via WhatsApp:</h3>
+                <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 16px 0' }}>
+                  Send a message to <span style={{ fontWeight: '800', color: '#1e3fd1' }}>+91 9987759029</span> with the following details:
+                </p>
+                <div style={{ backgroundColor: '#f8fafc', borderRadius: '20px', padding: '20px', border: '1px solid #e2e8f0' }}>
+                  {[
+                    'Your Name',
+                    'Shop / Business Name',
+                    'Business Type (Online or Retail / Offline)',
+                    'Location / City',
+                    'Visiting Card / Shop Board Photo (Attach image/document)'
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 0', borderBottom: i < 4 ? '1px solid #e2e8f0' : 'none' }}>
+                      <span style={{ color: '#1e3fd1', fontWeight: '800', fontSize: '14px', flexShrink: 0 }}>•</span>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#334155' }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Next Steps */}
+              <div style={{ backgroundColor: '#fff', borderRadius: '32px', padding: '28px 24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 20px 0' }}>Next Steps & Support Hours</h3>
+                
+                <div style={{ backgroundColor: '#dbeafe', borderRadius: '20px', padding: '20px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>✅</span>
+                    <div>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: '800', color: '#1e3a8a' }}>Verification</h4>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', lineHeight: 1.5 }}>Once your business details are reviewed and verified, we will share the exclusive WhatsApp channel and community links.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: '#f0fdf4', borderRadius: '20px', padding: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>🕐</span>
+                    <div>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: '800', color: '#166534' }}>Operating Hours</h4>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#15803d', lineHeight: 1.5 }}>Monday to Saturday | 10:00 AM – 8:00 PM</p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b', lineHeight: 1.4, fontStyle: 'italic' }}>(Queries received on Sundays or after hours will be addressed on the next business day.)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* WhatsApp CTA */}
+              <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                <a href="https://wa.me/919987759029?text=Hi%2C%20I%27d%20like%20to%20register%20for%20wholesale%20%2F%20bulk%20orders.%0A%0AMy%20Name%3A%0AShop%20%2F%20Business%20Name%3A%0ABusiness%20Type%3A%0ALocation%20%2F%20City%3A" target="_blank" rel="noreferrer" style={{ display: 'inline-block', backgroundColor: '#25D366', color: '#fff', padding: '18px 32px', borderRadius: '32px', fontSize: '17px', fontWeight: '800', textDecoration: 'none', width: '100%', boxSizing: 'border-box', boxShadow: '0 8px 24px rgba(37,211,102,0.3)' }}>💬 Register on WhatsApp</a>
+              </div>
+
            </div>
         </main>
       </div>
@@ -1468,98 +1607,29 @@ function App() {
       </div>
 
       <section id="track" style={{ position: 'relative', zIndex: 10, marginTop: '-64px', padding: '0 20px 40px' }}>
-        <div className="container" style={{ maxWidth: '600px', margin: '0 auto' }}>
-          {/* ─── TRACKING CARD ─── */}
-          <div className="tracking-card" style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
-            
-            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: '32px', padding: '0 20px', marginBottom: '16px', border: '1px solid #f1f5f9' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" style={{ flex: 1, border: 'none', background: 'transparent', padding: '16px 12px', fontSize: '16px', outline: 'none' }} placeholder="Enter your tracking number" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTrack()} />
+        
+        {/* ─── AUTO-MOVING PROMO CAROUSEL ─── */}
+        <div className="container" style={{ maxWidth: '800px', margin: '0 auto 24px auto' }}>
+          <div style={{ overflow: 'hidden', borderRadius: '32px', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
+            <div style={{ 
+              display: 'flex', 
+              width: '300%', 
+              transform: `translateX(-${currentPromoIndex * 33.3333}%)`, 
+              transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' 
+            }}>
+              <div style={{ width: '33.3333%', flexShrink: 0, aspectRatio: '16/9' }}>
+                <img src="/banner_apple.png" alt="Apple Event" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
+              </div>
+              <div style={{ width: '33.3333%', flexShrink: 0, aspectRatio: '16/9' }}>
+                <img src="/banner_galaxy.png" alt="Galaxy Z Fold7" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
+              </div>
+              <div style={{ width: '33.3333%', flexShrink: 0, aspectRatio: '16/9' }}>
+                <img src="/banner_fold.png" alt="Galaxy Fold" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
+              </div>
             </div>
+          </div>
+        </div>
 
-            <div style={{ position: 'relative', marginBottom: '24px' }} ref={dropdownRef}>
-              <button type="button" onClick={() => { setCourierOpen(o => !o); setCourierSearch('') }} style={{ width: '100%', display: 'flex', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: '32px', padding: '16px 20px', border: '1px solid #f1f5f9', color: '#64748b', fontSize: '16px', cursor: 'pointer' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '12px' }}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                <span style={{ flex: 1, textAlign: 'left' }}>{courierDisplayText}</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: courierOpen ? 'rotate(180deg)' : '' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </button>
-              {courierOpen && (
-                <div className="courier-dropdown-menu">
-                  <div className="courier-dropdown-search"><input type="text" placeholder="Search courier…" value={courierSearch} onChange={e => setCourierSearch(e.target.value)} autoFocus /></div>
-                  <div className="courier-dropdown-list">
-                    {filteredCouriers.map(c => (
-                      <div key={c.key} className={`courier-dropdown-item ${selectedCourier === c.key ? 'selected' : ''}`} onClick={() => { setSelectedCourier(c.key); setCourierOpen(false) }}>
-                        <span className="flag">{c.country ? isoToFlag(c.country) : '🔍'}</span>
-                        <span className="item-name">{c.name}</span>
-                        {selectedCourier === c.key && <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                      </div>
-                    ))}
-                    {filteredCouriers.length === 0 && <div className="dropdown-empty">No couriers found</div>}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <button onClick={handleTrack} disabled={loading || !trackingNumber.trim()} style={{ width: '100%', backgroundColor: 'var(--accent)', color: '#ffffff', borderRadius: '32px', padding: '16px', fontSize: '18px', fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              {loading ? <div className="spinner-small" /> : 'Track now'}
-            </button>
-
-              {/* ─── RESULTS ─── */}
-              {showResults && (
-                <div className="results-section">
-                  {loading && <div className="loading-container"><div className="spinner" /><p>Fetching tracking info…</p><p className="loading-hint">This may take up to a minute for new shipments</p></div>}
-                  {error && <p className="status-text error">{error}</p>}
-                  {result && (
-                    <div className="result">
-                      <div className="result-head">
-                        <div className="oid">Tracking number</div>
-                        <h2>{trackingNumber}</h2>
-                        {result.courier_name && <div className="selected-courier-badge"><span className="badge-name">{result.courier_name}</span></div>}
-                        <div className={getStatusPillClass(result.status_tag)}><span className="dot" />{result.status}</div>
-                      </div>
-                      {hasMessage && (isAwaiting || isNotFound || isError) && (
-                        <div className={`tracking-message ${result.status_tag}`}>
-                          <div className="tracking-message-icon">
-                            {isAwaiting && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-                            {isNotFound && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
-                            {isError && <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-                          </div>
-                          <p>{result.message}</p>
-                        </div>
-                      )}
-                      {!isError && !isNotFound && (
-                        <div className="timeline">
-                          {result.steps?.map((step, i) => {
-                            const icons = {
-                              "Order Placed": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-                              "In Transit": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
-                              "Out For Delivery": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
-                              "Delivered": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                            }
-                            return (
-                              <div key={i} className={`tl-step ${step.done ? '' : 'pending'} ${i === currentIndex ? 'current' : ''}`} style={{ animationDelay: `${i * 0.12}s` }}>
-                                <div className="tl-step-header">{icons[step.label]}<h3>{step.label}</h3></div>
-                                <p>{step.done ? (step.timestamp ? new Date(step.timestamp).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Completed') : '—'}</p>
-                                {step.location && <p className="step-location"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight:'4px'}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{step.location}</p>}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                      <div className="result-actions">
-                        {(isAwaiting || isNotFound) && (
-                          <button className="btn-refresh btn-glossy" onClick={handleTrack} disabled={loading}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                            Refresh Status
-                          </button>
-                        )}
-                        <button className="btn-track-another btn-glossy" onClick={handleReset}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Track another</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
             {/* ─── BOTTOM NAV PILL ─── */}
             <div className="mobile-dashboard" style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#ffffff', borderRadius: '32px', padding: '12px 24px', display: 'flex', alignItems: 'center', boxShadow: '0 12px 32px rgba(0,0,0,0.1)', zIndex: 100, width: 'max-content', maxWidth: '90vw', justifyContent: 'space-between' }}>
@@ -1573,40 +1643,20 @@ function App() {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
               </div>
               
-              <div ref={exploreRef} style={{ position: 'relative' }}>
-                <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setExploreMenuOpen(!exploreMenuOpen)}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
-                </div>
-                {exploreMenuOpen && (
-                  <div style={{ position: 'absolute', bottom: '60px', right: 0, backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', padding: '12px', minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 101, border: '1px solid #e2e8f0' }}>
-                    <div className="explore-menu-item" style={{ color: '#0f172a', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => { setExploreMenuOpen(false); alert('Offer of the day clicked!') }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-                      Offer of the day
-                    </div>
-                    <div className="explore-menu-item" style={{ color: '#0f172a', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => { setExploreMenuOpen(false); alert('Sale notification clicked!') }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                      Sale notification
-                    </div>
-                    <div className="explore-menu-item" style={{ color: '#0f172a', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '10px' }} onClick={() => { setExploreMenuOpen(false); alert('Festival wishes clicked!') }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
-                      Festival wishes
-                    </div>
-                  </div>
-                )}
+              <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '50%' }} onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
               </div>
             </div>
-            
-          </div>
-          
+
           {/* ─── QUICK LINKS BAR ─── */}
           <div className="quick-links-bar" style={{ marginTop: '24px', justifyContent: 'center' }}>
             <button className="quick-link-btn active" onClick={() => scrollTo('highlights')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
               <span>The Community Wall</span>
             </button>
-            <button className="quick-link-btn" onClick={() => scrollTo('deal-of-the-day')}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-              <span>Deal of the Day</span>
+            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/track-order'); setCurrentPath('/track-order'); window.scrollTo(0, 0); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              <span>Track Your Order</span>
             </button>
             <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
@@ -1616,9 +1666,9 @@ function App() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
               <span>Techblogs & News</span>
             </button>
-            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/exclusive-drops'); setCurrentPath('/exclusive-drops'); window.scrollTo(0, 0); }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-              <span>Exclusive Drops</span>
+            <button className="quick-link-btn" onClick={() => scrollTo('deal-of-the-day')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              <span>Deal of the Day</span>
             </button>
             <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/creators-club'); setCurrentPath('/creators-club'); window.scrollTo(0, 0); }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
@@ -1642,7 +1692,7 @@ function App() {
 
       {/* ─── INSTAGRAM HIGHLIGHTS ─── */}
       <section id="highlights" className="highlights-section">
-        <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Story Highlights</h2>
+        <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Spotlight</h2>
         <div className="highlights-scroll" style={{ gap: '20px' }}>
           {(() => {
             const dynamicHighlights = HIGHLIGHTS.map(h => {
@@ -1677,7 +1727,7 @@ function App() {
       {/* ─── TRENDING REELS ─── */}
       <section id="trending-reels" className="section" style={{ padding: '10px 20px 40px', maxWidth: '800px', margin: '0 auto' }}>
         <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Trending Reels</h2>
-        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', padding: '0 8px 16px', WebkitOverflowScrolling: 'touch' }}>
+        <div className="cw-scroll" style={{ padding: '8px' }}>
           {[1, 2, 3, 4].map((num) => (
             <div key={num} onClick={() => setActiveReelNum(num)} style={{ 
               borderRadius: '16px', 
@@ -1685,9 +1735,11 @@ function App() {
               backgroundColor: '#000', 
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               position: 'relative',
-              flex: '0 0 150px',
+              flex: '0 0 160px',
+              minWidth: '160px',
               aspectRatio: '9/16',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              scrollSnapAlign: 'start'
             }}>
               <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2 }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
@@ -1779,38 +1831,29 @@ function App() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
         
-        <div style={{ overflow: 'hidden', margin: '-10px', padding: '10px' }}>
-          <div 
-            style={{ 
-              display: 'flex', 
-              width: '200%', 
-              transform: `translateX(-${currentBannerIndex * 50}%)`, 
-              transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' 
-            }}
-          >
-            {/* Banner 1 */}
-            <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ width: '50%', flexShrink: 0, padding: '0' }}>
-              <div className="shop-banner-card">
-                <div className="shop-banner-text">
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Accessorize your device...</h3>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#000000', lineHeight: 1.3 }}>Explore latest Caseily accessories</p>
-                </div>
-                <div className="shop-banner-image" style={{ backgroundColor: '#f1f5f9' }}>
-                  <img src="/class_hero.jpg" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                </div>
+        <div style={{ overflowX: 'auto', display: 'flex', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+          {/* Banner 1 */}
+          <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ width: '100%', flex: '0 0 100%', scrollSnapAlign: 'start', padding: '0 4px', boxSizing: 'border-box' }}>
+            <div className="shop-banner-card">
+              <div className="shop-banner-text" style={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.2, whiteSpace: 'normal', overflowWrap: 'break-word' }}>Accessorize your device...</h3>
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#000000', lineHeight: 1.3, whiteSpace: 'normal', overflowWrap: 'break-word' }}>Explore latest Caseily accessories</p>
+              </div>
+              <div className="shop-banner-image" style={{ backgroundColor: '#f1f5f9' }}>
+                <img src="/class_hero.jpg" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
             </div>
+          </div>
 
-            {/* Banner 2 */}
-            <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ width: '50%', flexShrink: 0, padding: '0' }}>
-              <div className="shop-banner-card">
-                <div className="shop-banner-text">
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.2 }}>Elevate your setup</h3>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#000000', lineHeight: 1.3 }}>Simplify Connectivity. Boost Productivity.</p>
-                </div>
-                <div className="shop-banner-image" style={{ backgroundColor: '#e6e6e6' }}>
-                  <img src="/banner2_image.png" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                </div>
+          {/* Banner 2 */}
+          <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ width: '100%', flex: '0 0 100%', scrollSnapAlign: 'start', padding: '0 4px', boxSizing: 'border-box' }}>
+            <div className="shop-banner-card">
+              <div className="shop-banner-text" style={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.2, whiteSpace: 'normal', overflowWrap: 'break-word' }}>Elevate your setup</h3>
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#000000', lineHeight: 1.3, whiteSpace: 'normal', overflowWrap: 'break-word' }}>Simplify Connectivity. Boost Productivity.</p>
+              </div>
+              <div className="shop-banner-image" style={{ backgroundColor: '#e6e6e6' }}>
+                <img src="/banner2_image.png" alt="Accessories" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
             </div>
           </div>
