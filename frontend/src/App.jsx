@@ -17,24 +17,6 @@ const COURIERS = [
   { key: 'ups', name: 'UPS', country: 'US' },
 ]
 
-const REVIEWS_B2B = [
-  { tag: 'E-commerce brand', stars: 5, quote: 'We plugged Caseily tracking into our Shopify store and "where is my order?" tickets dropped by 60% in the first month. Customers love the live status page.', name: 'Renu Thakkar', role: 'Founder, StyleCraft Co.', color: '#f97316' },
-  { tag: 'Logistics partner', stars: 5, quote: 'Handling 3,000+ AWBs daily across Delhivery and BlueDart — Caseily normalises all the scan events into one clean timeline. Our ops dashboard finally makes sense.', name: 'Arjun Mehta', role: 'Ops Lead, QuickShip 3PL', color: '#14b8a6' },
-  { tag: 'D2C brand', stars: 4, quote: 'Our customers used to call us every day asking about their orders. Now they just check the tracking page. Onboarding was seamless — took less than an afternoon.', name: 'Priya Sharma', role: 'Head of CX, GlowBox', color: '#3b82f6' },
-  { tag: 'E-commerce brand', stars: 5, quote: 'The API is incredibly stable and the webhook responses are near-instant. We have integrated it across our entire custom ERP with zero downtime.', name: 'Vikram Singh', role: 'CTO, UrbanCart', color: '#8b5cf6' },
-  { tag: 'Logistics partner', stars: 5, quote: 'What used to take 3 support agents to track down missing parcels now takes seconds. The unified tracking interface is a game-changer for our B2B ops.', name: 'Neha Patel', role: 'Operations Mgr, SwiftLog', color: '#eab308' },
-  { tag: 'D2C brand', stars: 5, quote: 'Best investment we made this quarter. Customers feel more in control, and our NPS score jumped 15 points simply because tracking is transparent.', name: 'Aman Gupta', role: 'CEO, FitGear', color: '#ef4444' },
-]
-
-const REVIEWS_B2C = [
-  { tag: 'Verified buyer', stars: 5, quote: "Got my phone case delivered in 3 days! The tracking page showed every step — from warehouse to my doorstep. So much better than checking the courier's janky site.", name: 'Sneha R.', role: 'Mumbai, MH', color: '#14b8a6' },
-  { tag: 'Verified buyer', stars: 5, quote: "Love how I can see the exact location of my package. Got a notification when it was out for delivery. The case itself is gorgeous too — perfect fit on my iPhone.", name: 'Karthik V.', role: 'Bangalore, KA', color: '#f97316' },
-  { tag: 'Verified buyer', stars: 4, quote: "Ordered a custom case and was anxious about delivery time. The live tracker calmed my nerves — I could see it moving across the country. Great experience overall!", name: 'Anjali P.', role: 'Delhi, DL', color: '#3b82f6' },
-  { tag: 'Verified buyer', stars: 5, quote: "The timeline was spot on. I knew exactly when to be home to receive my parcel. No more waiting around all day guessing when the delivery guy will show up.", name: 'Rohit K.', role: 'Pune, MH', color: '#8b5cf6' },
-  { tag: 'Verified buyer', stars: 5, quote: "Usually I have to copy-paste tracking numbers across 3 different sites. This is so much easier. Just enter the number and boom, the whole history is right there.", name: 'Meera M.', role: 'Chennai, TN', color: '#eab308' },
-  { tag: 'Verified buyer', stars: 5, quote: "Fast updates! The moment my package was out for delivery, the status changed. Really reassuring when you're ordering expensive items.", name: 'Rahul S.', role: 'Hyderabad, TS', color: '#ef4444' },
-]
-
 const BLOGS = [
   { category: 'Tips', title: 'How we built real-time tracking for 10+ carriers', color: '#d9a05b' },
   { category: 'Guide', title: '5 tips to reduce "Where is my order?" support tickets', color: '#4a5556' },
@@ -245,9 +227,9 @@ function StoryViewer({ highlight, onClose }) {
 // ═════════════════════════════════════════════════════════════════════════
 // REEL VIEWER
 // ═════════════════════════════════════════════════════════════════════════
-function ReelViewer({ initialNum, onClose }) {
-  const [currentNum, setCurrentNum] = useState(initialNum)
-  const totalReels = 4;
+function ReelViewer({ initialNum, allReels, onClose }) {
+  const [currentIndex, setCurrentIndex] = useState(initialNum)
+  const totalReels = allReels.length;
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -256,12 +238,12 @@ function ReelViewer({ initialNum, onClose }) {
 
   function goNext(e) {
     if (e) e.stopPropagation()
-    if (currentNum < totalReels) setCurrentNum(n => n + 1)
+    if (currentIndex < totalReels - 1) setCurrentIndex(n => n + 1)
   }
 
   function goPrev(e) {
     if (e) e.stopPropagation()
-    if (currentNum > 1) setCurrentNum(n => n - 1)
+    if (currentIndex > 0) setCurrentIndex(n => n - 1)
   }
 
   const [touchStartV, setTouchStartV] = useState(0)
@@ -272,6 +254,8 @@ function ReelViewer({ initialNum, onClose }) {
     else if (touchEndV - touchStartV > 50) goPrev(e)
   }
 
+  const currentReel = allReels[currentIndex];
+
   return (
     <div className="story-viewer-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
       <div className="story-viewer-container" style={{ backgroundColor: '#000', borderRadius: '16px', overflow: 'hidden', position: 'relative' }} onClick={e => e.stopPropagation()} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
@@ -280,8 +264,8 @@ function ReelViewer({ initialNum, onClose }) {
         </button>
 
         <video
-          key={currentNum}
-          src={`/promo${currentNum}.mp4`}
+          key={currentIndex}
+          src={currentReel.videoSrc}
           autoPlay
           loop
           playsInline
@@ -289,7 +273,7 @@ function ReelViewer({ initialNum, onClose }) {
         />
 
         <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '40px 16px 24px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '15px', fontWeight: 'bold', zIndex: 2 }}>
-          {currentNum === 1 ? 'My top 5 colors!' : currentNum === 2 ? 'How I use it...' : currentNum === 3 ? 'Creator collab BTS' : 'Get ready with Caseily'}
+          {currentReel.text}
         </div>
       </div>
     </div>
@@ -402,6 +386,117 @@ function SplashScreen() {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || ''
+const WS_URL = API_URL ? API_URL.replace(/^http/, 'ws') + '/api/chat/ws' : `ws://${window.location.host}/api/chat/ws`
+
+// ═════════════════════════════════════════════════════════════════════════
+// LIVE CHAT COMPONENT
+// ═════════════════════════════════════════════════════════════════════════
+function LiveChat() {
+  const [messages, setMessages] = useState([])
+  const [inputMsg, setInputMsg] = useState('')
+  const [userName, setUserName] = useState('')
+  const [socket, setSocket] = useState(null)
+  const [floatingReactions, setFloatingReactions] = useState([])
+  const messagesEndRef = useRef(null)
+
+  useEffect(() => {
+    // Generate random name if empty
+    if (!userName) setUserName(`User${Math.floor(Math.random() * 9000) + 1000}`)
+    
+    const ws = new WebSocket(WS_URL)
+    ws.onopen = () => console.log("Connected to chat")
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      if (data.type === 'history') {
+        setMessages(data.data)
+      } else if (data.type === 'message') {
+        setMessages(prev => [...prev, data.data])
+      } else if (data.type === 'reaction') {
+        const id = Date.now() + Math.random()
+        setFloatingReactions(prev => [...prev, { id, emoji: data.emoji }])
+        setTimeout(() => {
+          setFloatingReactions(prev => prev.filter(r => r.id !== id))
+        }, 3000)
+      }
+    }
+    setSocket(ws)
+    return () => ws.close()
+  }, [])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const sendMessage = (e) => {
+    e.preventDefault()
+    if (!inputMsg.trim() || !socket) return
+    socket.send(JSON.stringify({
+      type: 'message',
+      text: inputMsg,
+      user: userName,
+      avatar: userName.charAt(0).toUpperCase()
+    }))
+    setInputMsg('')
+  }
+
+  const sendReaction = (emoji) => {
+    if (!socket) return
+    socket.send(JSON.stringify({ type: 'reaction', emoji }))
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '500px', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', backgroundColor: 'var(--bg-secondary)', fontWeight: 'bold', color: 'var(--ink-strong)' }}>Live Chat</div>
+      
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {messages.map((msg, i) => (
+          <div key={msg.id || i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: msg.color || '#1e3fd1', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', flexShrink: 0 }}>
+              {msg.avatar || 'U'}
+            </div>
+            <div style={{ fontSize: '14px', lineHeight: '1.4' }}>
+              <span style={{ fontWeight: '600', color: '#475569', marginRight: '8px' }}>{msg.user}</span>
+              <span style={{ color: 'var(--ink-strong)' }}>{msg.text}</span>
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Floating Reactions overlay */}
+      <div style={{ position: 'absolute', bottom: '120px', right: '20px', pointerEvents: 'none', zIndex: 10 }}>
+        {floatingReactions.map(r => (
+          <div key={r.id} style={{ fontSize: '32px', animation: 'floatUp 3s ease-out forwards', position: 'absolute', bottom: 0, right: 0 }}>
+            {r.emoji}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: '12px', borderTop: '1px solid #e2e8f0', backgroundColor: 'var(--bg-secondary)' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'flex-end' }}>
+          {['❤️', '👏', '🎉', '🤩'].map(emoji => (
+            <button key={emoji} onClick={() => sendReaction(emoji)} style={{ background: '#e2e8f0', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }} onMouseDown={e => e.currentTarget.style.transform = 'scale(0.9)'} onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
+              {emoji}
+            </button>
+          ))}
+        </div>
+        <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px' }}>
+          <input type="text" value={userName} onChange={e => setUserName(e.target.value)} placeholder="Name" style={{ width: '80px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+          <input type="text" value={inputMsg} onChange={e => setInputMsg(e.target.value)} placeholder="Say something..." style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+          <button type="submit" style={{ padding: '0 16px', borderRadius: '8px', backgroundColor: '#1e3fd1', color: '#fff', border: 'none', fontWeight: '600', cursor: 'pointer' }}>Send</button>
+        </form>
+      </div>
+
+      <style>{`
+        @keyframes floatUp {
+          0% { transform: translateY(0) scale(1) translateX(0px); opacity: 1; }
+          50% { transform: translateY(-50px) scale(1.2) translateX(-10px); opacity: 0.8; }
+          100% { transform: translateY(-100px) scale(1) translateX(10px); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  )
+}
 
 // ═════════════════════════════════════════════════════════════════════════
 // ADMIN DASHBOARD
@@ -417,6 +512,10 @@ function AdminDashboard() {
   const [loadingInsiders, setLoadingInsiders] = useState(false)
   const [insiderForm, setInsiderForm] = useState({ type: 'text', content: '' })
   const [insiderPhotos, setInsiderPhotos] = useState([])
+  const [adminReels, setAdminReels] = useState([])
+  const [loadingReels, setLoadingReels] = useState(false)
+  const [reelForm, setReelForm] = useState({ caption: '' })
+  const [reelVideo, setReelVideo] = useState(null)
 
   const isLoggedIn = !!token
 
@@ -466,10 +565,21 @@ function AdminDashboard() {
     setLoadingInsiders(false)
   }
 
+  async function fetchAdminReels() {
+    setLoadingReels(true)
+    try {
+      const res = await fetch(`${API_URL}/api/reels`)
+      const data = await res.json()
+      setAdminReels(data.reels || [])
+    } catch (err) { console.error(err) }
+    setLoadingReels(false)
+  }
+
   useEffect(() => {
     if (isLoggedIn) {
       if (adminTab === 'reviews') fetchReviews()
       if (adminTab === 'insiders') fetchInsiders()
+      if (adminTab === 'reels') fetchAdminReels()
     }
   }, [isLoggedIn, adminTab])
 
@@ -507,6 +617,36 @@ function AdminDashboard() {
     } catch (err) { console.error(err) }
   }
 
+  async function handleCreateReel(e) {
+    e.preventDefault()
+    if (!reelVideo) return alert('Select a video file')
+    const form = new FormData()
+    form.append('caption', reelForm.caption)
+    form.append('video', reelVideo)
+
+    try {
+      await fetch(`${API_URL}/api/admin/reels`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      })
+      setReelForm({ caption: '' })
+      setReelVideo(null)
+      fetchAdminReels()
+    } catch (err) { console.error(err) }
+  }
+
+  async function handleDeleteReel(id) {
+    if (!window.confirm('Delete this reel?')) return;
+    try {
+      await fetch(`${API_URL}/api/admin/reels/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      fetchAdminReels()
+    } catch (err) { console.error(err) }
+  }
+
   async function handleAction(id, action) {
     try {
       await fetch(`${API_URL}/api/admin/reviews/${id}/${action}`, {
@@ -531,7 +671,7 @@ function AdminDashboard() {
   if (!isLoggedIn) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)' }}>
-        <form onSubmit={handleLogin} style={{ background: '#fff', padding: '48px 40px', borderRadius: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', maxWidth: '400px', width: '90%', textAlign: 'center' }}>
+        <form onSubmit={handleLogin} style={{ background: 'var(--bg-card)', padding: '48px 40px', borderRadius: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', maxWidth: '400px', width: '90%', textAlign: 'center' }}>
           <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '32px', marginBottom: '8px', fontFamily: '"Poppins", sans-serif' }}>CASEILY</div>
           <p style={{ color: '#64748b', marginBottom: '32px', fontSize: '15px' }}>Admin Dashboard</p>
           {loginError && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{loginError}</p>}
@@ -557,10 +697,10 @@ function AdminDashboard() {
 
   function ReviewCard({ r }) {
     return (
-      <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
           <div>
-            <div style={{ fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>{r.name}</div>
+            <div style={{ fontWeight: '700', fontSize: '16px', color: 'var(--ink-strong)' }}>{r.name}</div>
             <div style={{ fontSize: '13px', color: '#64748b' }}>{r.city}</div>
           </div>
           <div style={{ color: '#f59e0b', fontSize: '16px' }}>{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</div>
@@ -590,18 +730,19 @@ function AdminDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f1f5f9' }}>
-      <div style={{ background: '#fff', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '24px', fontFamily: '"Poppins", sans-serif' }}>CASEILY</div>
           <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>Admin</span>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button onClick={() => setAdminTab('reviews')} style={{ padding: '8px 16px', borderRadius: '10px', background: adminTab === 'reviews' ? '#1e3fd1' : 'transparent', color: adminTab === 'reviews' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Reviews</button>
-          <button onClick={() => setAdminTab('insiders')} style={{ padding: '8px 16px', borderRadius: '10px', background: adminTab === 'insiders' ? '#1e3fd1' : 'transparent', color: adminTab === 'insiders' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Insiders</button>
-          <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 8px' }}></div>
-          <button onClick={adminTab === 'reviews' ? fetchReviews : fetchInsiders} style={{ padding: '8px 16px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
-          <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 16px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
-          <button onClick={handleLogout} style={{ padding: '8px 16px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button onClick={() => setAdminTab('reviews')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'reviews' ? '#1e3fd1' : 'transparent', color: adminTab === 'reviews' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Reviews</button>
+          <button onClick={() => setAdminTab('insiders')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'insiders' ? '#1e3fd1' : 'transparent', color: adminTab === 'insiders' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Insiders</button>
+          <button onClick={() => setAdminTab('reels')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'reels' ? '#1e3fd1' : 'transparent', color: adminTab === 'reels' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Reels</button>
+          <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 4px' }}></div>
+          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : fetchAdminReels} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
+          <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
+          <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
         </div>
       </div>
 
@@ -611,27 +752,27 @@ function AdminDashboard() {
             <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Loading reviews...</p>
           ) : (
             <>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Pending Reviews ({pending.length})</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Pending Reviews ({pending.length})</h2>
               {pending.length === 0 && <p style={{ color: '#94a3b8', marginBottom: '32px' }}>No pending reviews.</p>}
               <div style={{ display: 'grid', gap: '16px', marginBottom: '40px' }}>
                 {pending.map(r => <ReviewCard key={r.id} r={r} />)}
               </div>
 
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Approved ({approved.length})</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Approved ({approved.length})</h2>
               <div style={{ display: 'grid', gap: '16px', marginBottom: '40px' }}>
                 {approved.map(r => <ReviewCard key={r.id} r={r} />)}
               </div>
 
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Rejected ({rejected.length})</h2>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Rejected ({rejected.length})</h2>
               <div style={{ display: 'grid', gap: '16px' }}>
                 {rejected.map(r => <ReviewCard key={r.id} r={r} />)}
               </div>
             </>
           )
-        ) : (
+        ) : adminTab === 'insiders' ? (
           <>
-            <div style={{ background: '#fff', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Create Insider Post</h2>
+            <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Create Insider Post</h2>
               <form onSubmit={handleCreateInsider} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <select value={insiderForm.type} onChange={e => setInsiderForm({...insiderForm, type: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                   <option value="text">Text Post</option>
@@ -648,14 +789,14 @@ function AdminDashboard() {
               </form>
             </div>
 
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>Active Posts ({insiders.length})</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Active Posts ({insiders.length})</h2>
             {loadingInsiders ? <p>Loading...</p> : (
               <div style={{ display: 'grid', gap: '16px' }}>
                 {insiders.map(post => (
-                  <div key={post.id} style={{ background: '#fff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                  <div key={post.id} style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>{new Date(post.created_at).toLocaleString()} • {post.type.toUpperCase()}</div>
                     {post.type === 'text' ? (
-                      <p style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '500', color: '#0f172a', wordBreak: 'break-word' }}>{post.content}</p>
+                      <p style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '500', color: 'var(--ink-strong)', wordBreak: 'break-word' }}>{post.content}</p>
                     ) : (
                       <p style={{ margin: '0 0 12px 0', fontSize: '15px' }}>{post.content}</p>
                     )}
@@ -672,7 +813,33 @@ function AdminDashboard() {
               </div>
             )}
           </>
-        )}
+        ) : adminTab === 'reels' ? (
+          <>
+            <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Upload Trending Reel</h2>
+              <form onSubmit={handleCreateReel} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <input type="text" placeholder="Caption (e.g. 'My top 5 colors!')" value={reelForm.caption} onChange={e => setReelForm({...reelForm, caption: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} required />
+                <input type="file" accept="video/*" onChange={e => setReelVideo(e.target.files[0])} style={{ padding: '8px' }} required />
+                <button type="submit" style={{ padding: '12px', borderRadius: '12px', background: '#1e3fd1', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer' }}>Upload Reel</button>
+              </form>
+            </div>
+
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Active Reels ({adminReels.length})</h2>
+            {loadingReels ? <p>Loading...</p> : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px' }}>
+                {adminReels.map(reel => (
+                  <div key={reel.id} style={{ background: '#000', borderRadius: '16px', overflow: 'hidden', position: 'relative', aspectRatio: '9/16' }}>
+                    <video src={`${API_URL}/uploads/${reel.video}`} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '30px 12px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>
+                      {reel.caption}
+                    </div>
+                    <button onClick={() => handleDeleteReel(reel.id)} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(220, 38, 38, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : null}
       </div>
     </div>
   )
@@ -722,6 +889,8 @@ function App() {
   const [activeReelNum, setActiveReelNum] = useState(null)
   const [likedPosts, setLikedPosts] = useState(new Set())
   const [selectedReview, setSelectedReview] = useState(null)
+  const [selectedDeal, setSelectedDeal] = useState(null)
+  const [backendReels, setBackendReels] = useState([])
   const handleLikeToggle = (i, e) => {
     e.stopPropagation();
     setLikedPosts(prev => {
@@ -757,6 +926,13 @@ function App() {
     fetch(`${API_URL}/api/reviews/approved`)
       .then(r => r.json())
       .then(data => setApprovedReviews(data.reviews || []))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/reels`)
+      .then(r => r.json())
+      .then(data => setBackendReels(data.reels || []))
       .catch(() => {})
   }, [])
 
@@ -882,23 +1058,14 @@ function App() {
   const filteredCouriers = COURIERS.filter(c => c.name.toLowerCase().includes(courierSearch.toLowerCase()))
   const selectedCourierObj = COURIERS.find(c => c.key === selectedCourier)
   const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Select Courier (optional, e.g., US...'
-  const activeReviews = reviewTab === 'b2b' ? REVIEWS_B2B : REVIEWS_B2C
-
-  const combinedReviews = [...approvedReviews.map(r => ({
+  const combinedReviews = approvedReviews.map(r => ({
     name: r.name || 'Anonymous',
     time: 'Just now',
     text: r.quote,
     image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
     likes: (r.quote.length * 7) % 200 + 15,
     comments: (r.quote.length * 3) % 20 + 2
-  })), ...activeReviews.map(r => ({
-    name: r.name || 'User',
-    time: '2 hours ago',
-    text: r.quote,
-    image: null,
-    likes: (r.quote.length * 5) % 150 + 10,
-    comments: (r.quote.length * 2) % 15 + 1
-  }))];
+  }));
 
   const renderReviewForm = () => (
     <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
@@ -991,7 +1158,7 @@ function App() {
               <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: 'var(--ink-strong)' }}>Review</h2>
             </div>
 
-            <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '28px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
+            <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '28px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
               {/* User Info */}
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
                 <img src={`https://ui-avatars.com/api/?name=${post.name}&background=random&size=64`} alt={post.name} style={{ width: '56px', height: '56px', borderRadius: '50%', marginRight: '16px' }} />
@@ -1019,6 +1186,36 @@ function App() {
                 <span style={{ fontWeight: '600' }}>{post.likes} likes</span>
               </div>
             </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (currentPath === '/deal-detail' && selectedDeal) {
+    const isVideo = selectedDeal.num === 1;
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ flex: 1, backgroundColor: 'var(--bg-default)' }}>
+          {isVideo ? (
+            <div style={{ width: '100%', height: '400px', backgroundColor: '#000', position: 'relative' }}>
+              <video src="/deal_of_the_day/video.mp4" autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/'); window.scrollTo(0,0); }} style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&larr;</button>
+            </div>
+          ) : (
+            <div style={{ width: '100%', height: '400px', backgroundColor: '#f1f5f9', position: 'relative' }}>
+              <img src={`/deal_of_the_day/img${selectedDeal.num}.jpg`} alt="Deal" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/'); window.scrollTo(0,0); }} style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: 'var(--ink-strong)', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>&larr;</button>
+            </div>
+          )}
+          <div className="container" style={{ maxWidth: '600px', margin: '0 auto', padding: '24px' }}>
+            <h2 style={{ fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', marginBottom: '16px' }}>Deal of the Day</h2>
+            <p style={{ fontSize: '16px', color: '#475569', lineHeight: 1.6, marginBottom: '32px' }}>
+              Get up to 50% off on our premium cases & accessories. This is a limited time offer available only for our community. Upgrade your setup today!
+            </p>
+            <a href="http://wa.me/c/919167788773" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#2563eb', color: '#fff', textDecoration: 'none', padding: '16px', borderRadius: '16px', fontSize: '18px', fontWeight: '700', width: '100%', boxSizing: 'border-box' }}>
+              Shop Now via WhatsApp
+            </a>
           </div>
         </main>
       </div>
@@ -1076,7 +1273,7 @@ function App() {
 
                 {/* New Categories */}
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/car_accessories.png" alt="Car Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1085,7 +1282,7 @@ function App() {
                   </div>
                 </div>
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/charging_accessories.png" alt="Charging Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1094,7 +1291,7 @@ function App() {
                   </div>
                 </div>
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/ipad_accessories.png" alt="iPad Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1103,7 +1300,7 @@ function App() {
                   </div>
                 </div>
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/watch_accessories.png" alt="Watch Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1112,7 +1309,7 @@ function App() {
                   </div>
                 </div>
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/phone_cases.png" alt="Phone Cases" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1121,7 +1318,7 @@ function App() {
                   </div>
                 </div>
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/buds_accessories.png" alt="Buds Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1130,7 +1327,7 @@ function App() {
                   </div>
                 </div>
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/laptop_bags.png" alt="Laptop Bags" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1139,7 +1336,7 @@ function App() {
                   </div>
                 </div>
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/audio_connectors.png" alt="Audio & Connectors" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1148,7 +1345,7 @@ function App() {
                   </div>
                 </div>
                 <div className="shop-banner-card" style={{ width: '100%', height: '100%', flexDirection: 'column' }}>
-                  <div className="shop-banner-image" style={{ backgroundColor: '#f8fafc', height: '200px' }}>
+                  <div className="shop-banner-image" style={{ backgroundColor: 'var(--bg-secondary)', height: '200px' }}>
                     <img src="/shop/macbook_accessories.png" alt="Macbook Accessories" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div className="shop-banner-text" style={{ padding: '16px' }}>
@@ -1217,7 +1414,7 @@ function App() {
 
     return (
       <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fafafa' }}>
-        <header style={{ backgroundColor: '#fff', borderBottom: '1px solid #dbdbdb', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center' }}>
+        <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid #dbdbdb', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center' }}>
           <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: '#262626' }}>&larr;</button>
           <div style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: '700', color: '#262626' }}>CASEILY Insiders</div>
           <div style={{ width: '24px' }}></div>
@@ -1225,7 +1422,7 @@ function App() {
 
         <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 0' }}>
           
-          <div style={{ background: '#fff', padding: '20px', borderRadius: '16px', border: '1px solid #dbdbdb', marginBottom: '24px' }}>
+          <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '16px', border: '1px solid #dbdbdb', marginBottom: '24px' }}>
             <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '12px', color: '#262626' }}>Create Post</div>
             <form onSubmit={handleUserCreatePost} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <select value={userPostForm.type} onChange={e => setUserPostForm({...userPostForm, type: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #efefef', background: '#fafafa', outline: 'none', fontSize: '14px' }}>
@@ -1245,7 +1442,7 @@ function App() {
           ) : (
             insidersPosts.map(post => {
               return (
-                <article key={post.id} style={{ backgroundColor: '#fff', border: '1px solid #dbdbdb', borderRadius: '8px', marginBottom: '24px' }}>
+                <article key={post.id} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid #dbdbdb', borderRadius: '8px', marginBottom: '24px' }}>
                   <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #efefef' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
                       <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>C</span>
@@ -1268,7 +1465,7 @@ function App() {
 
                   <div style={{ padding: '16px' }}>
                     {post.type === 'text' && (
-                      <p style={{ margin: '0 0 16px 0', fontSize: '24px', fontWeight: '500', color: '#0f172a', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '24px', fontWeight: '500', color: 'var(--ink-strong)', lineHeight: '1.4', wordBreak: 'break-word' }}>
                         {post.content}
                       </p>
                     )}
@@ -1336,11 +1533,11 @@ function App() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '24px' }}>
                 {BLOGS.map((b, i) => (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#fff', borderRadius: '24px', padding: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                     <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '16px', backgroundColor: b.color }}>
                     </div>
                     <span style={{ fontSize: '12px', fontWeight: '800', color: '#3b82f6', marginBottom: '8px', textTransform: 'uppercase' }}>{b.category}</span>
-                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#0f172a', lineHeight: 1.4 }}>{b.title}</h3>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: 'var(--ink-strong)', lineHeight: 1.4 }}>{b.title}</h3>
                   </div>
                 ))}
               </div>
@@ -1363,7 +1560,7 @@ function App() {
                  <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>{titles[currentPath]}</h2>
               </div>
-              <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#fff', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'var(--bg-card)', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                 <p style={{ fontSize: '18px', color: 'var(--ink-muted)' }}>Coming soon...</p>
               </div>
            </div>
@@ -1386,14 +1583,14 @@ function App() {
             <TicTacToe />
 
             {/* Tracking Card */}
-            <div className="tracking-card" style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: '32px', padding: '0 20px', marginBottom: '16px', border: '1px solid #f1f5f9' }}>
+            <div className="tracking-card" style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '24px', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: '32px', padding: '0 20px', marginBottom: '16px', border: '1px solid #f1f5f9' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" style={{ flex: 1, border: 'none', background: 'transparent', padding: '16px 12px', fontSize: '16px', outline: 'none' }} placeholder="Enter your tracking number" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTrack()} />
               </div>
 
               <div style={{ position: 'relative', marginBottom: '24px' }} ref={dropdownRef}>
-                <button type="button" onClick={() => { setCourierOpen(o => !o); setCourierSearch('') }} style={{ width: '100%', display: 'flex', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: '32px', padding: '16px 20px', border: '1px solid #f1f5f9', color: '#64748b', fontSize: '16px', cursor: 'pointer' }}>
+                <button type="button" onClick={() => { setCourierOpen(o => !o); setCourierSearch('') }} style={{ width: '100%', display: 'flex', alignItems: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: '32px', padding: '16px 20px', border: '1px solid #f1f5f9', color: '#64748b', fontSize: '16px', cursor: 'pointer' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '12px' }}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                   <span style={{ flex: 1, textAlign: 'left' }}>{courierDisplayText}</span>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: courierOpen ? 'rotate(180deg)' : '' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1473,15 +1670,15 @@ function App() {
               </div>
 
               {/* Connect Info */}
-              <div style={{ backgroundColor: '#fff', borderRadius: '32px', padding: '28px 24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
+              <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '28px 24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
                 <p style={{ fontSize: '15px', color: '#334155', lineHeight: 1.6, margin: '0 0 20px 0' }}>
                   Connect with us directly on WhatsApp to get verified and gain access to our exclusive catalog, channel, and community links.
                 </p>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0' }}>📱 How to Register via WhatsApp:</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: '0 0 16px 0' }}>📱 How to Register via WhatsApp:</h3>
                 <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 16px 0' }}>
                   Send a message to <span style={{ fontWeight: '800', color: '#1e3fd1' }}>+91 9987759029</span> with the following details:
                 </p>
-                <div style={{ backgroundColor: '#f8fafc', borderRadius: '20px', padding: '20px', border: '1px solid #e2e8f0' }}>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '20px', padding: '20px', border: '1px solid #e2e8f0' }}>
                   {[
                     'Your Name',
                     'Shop / Business Name',
@@ -1498,8 +1695,8 @@ function App() {
               </div>
 
               {/* Next Steps */}
-              <div style={{ backgroundColor: '#fff', borderRadius: '32px', padding: '28px 24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 20px 0' }}>Next Steps & Support Hours</h3>
+              <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '28px 24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: '0 0 20px 0' }}>Next Steps & Support Hours</h3>
                 
                 <div style={{ backgroundColor: '#dbeafe', borderRadius: '20px', padding: '20px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -1538,16 +1735,26 @@ function App() {
     return (
       <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
-           <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+           <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
                  <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Apple Event</h2>
               </div>
-              <div style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              
+              <div style={{ backgroundColor: 'var(--bg-card)', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
                 <h3 style={{ textAlign: 'center', fontSize: '22px', fontWeight: 'bold', marginBottom: '16px' }}>Event starts in:</h3>
                 <EventCountdown />
-                <div style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: '#000' }}>
-                  <iframe width="100%" height="500" src="https://www.youtube.com/embed/39BalPDuTo0" title="Apple Event" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+              </div>
+
+              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                {/* Video Column */}
+                <div style={{ flex: '1 1 600px', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#000', display: 'flex', flexDirection: 'column' }}>
+                  <iframe style={{ width: '100%', height: '500px', flex: 1 }} src="https://www.youtube.com/embed/39BalPDuTo0" title="Apple Event" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                </div>
+                
+                {/* Chat Column */}
+                <div style={{ flex: '1 1 350px', minWidth: '300px' }}>
+                  <LiveChat />
                 </div>
               </div>
            </div>
@@ -1565,7 +1772,14 @@ function App() {
                  <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Creators Club</h2>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', backgroundColor: '#fff', padding: '20px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                <div style={{ width: '100%', maxWidth: '600px', backgroundColor: '#ebf5ff', padding: '16px 20px', borderRadius: '16px', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                  <p style={{ margin: 0, fontSize: '15px', color: '#1e3a8a', fontWeight: '600', flex: '1 1 200px' }}>Interested in partnering? Connect with us on WhatsApp.</p>
+                  <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" style={{ backgroundColor: '#25D366', color: '#ffffff', padding: '10px 20px', borderRadius: '12px', fontWeight: '700', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                    WhatsApp Us
+                  </a>
+                </div>
                 <img src="/creators-club/hero.png" alt="Become a Caseilyplus+ Creator Partner" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
                 <img src="/creators-club/how_it_works.png" alt="How it works" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
                 <img src="/creators-club/free_product.png" alt="Free product" style={{ width: '100%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #f1f5f9' }} />
@@ -1583,48 +1797,58 @@ function App() {
   // ═════════════════════════════════════════════════════════════════════
   // RENDER
   // ═════════════════════════════════════════════════════════════════════
+  const allReels = backendReels.map((r, i) => ({ 
+    id: r.id, 
+    videoSrc: r.is_local_promo ? `/${r.video}` : `${API_URL}/uploads/${r.video}`, 
+    text: r.caption, 
+    index: i 
+  }));
+
   return (
     <div className="app-wrapper">
       <SplashScreen />
 
       <div style={{ backgroundColor: 'var(--accent)', position: 'relative', zIndex: 1, paddingBottom: '80px' }}>
         {/* ─── NAVBAR ─── */}
-        <nav className="navbar" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+        <nav className="navbar" style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid #e2e8f0' }}>
           <div className="navbar-left">
             <div className="desktop-logo" style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase', cursor: 'pointer' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>CASEILY</div>
           </div>
           <div className="navbar-links">
             {['track','reviews','blog','community','faq'].map(id => (
-              <button key={id} className={`navbar-link ${activeSection === id ? 'active' : ''}`} onClick={() => scrollTo(id)} style={{ color: '#0f172a' }}>
+              <button key={id} className={`navbar-link ${activeSection === id ? 'active' : ''}`} onClick={() => scrollTo(id)} style={{ color: 'var(--ink-strong)' }}>
                 {id.charAt(0).toUpperCase() + id.slice(1)}
               </button>
             ))}
           </div>
           <div className="navbar-right">
-            <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" title="Translate to Hindi" style={{ marginRight: '8px', color: '#0f172a' }}>
+            <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" title="Translate to Hindi" style={{ marginRight: '8px', color: 'var(--ink-strong)' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
             </button>
-            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ color: '#0f172a' }}>
+            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ color: 'var(--ink-strong)' }}>
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
-            <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta" style={{ backgroundColor: '#bfdbfe', color: '#0f172a' }}>Contact us</a>
+            <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta" style={{ backgroundColor: '#bfdbfe', color: 'var(--ink-strong)' }}>Contact us</a>
           </div>
         </nav>
 
         {/* ─── MOBILE HEADER ─── */}
-        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: '#ffffff', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
+        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: 'var(--bg-card)', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
           <div className="desktop-logo" style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '24px', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase', cursor: 'pointer' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>CASEILY</div>
           
-          <div style={{ position: 'absolute', right: '20px' }} ref={shortcutRef}>
+          <div style={{ position: 'absolute', right: '20px', display: 'flex', alignItems: 'center', gap: '12px' }} ref={shortcutRef}>
+            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ backgroundColor: 'transparent', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--ink-strong)', fontSize: '20px' }}>
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
             <button className="theme-toggle" onClick={() => setShortcutMenuOpen(o => !o)} aria-label="Menu" style={{ backgroundColor: 'transparent', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: '#1e3fd1' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
             </button>
             {shortcutMenuOpen && (
-              <div style={{ position: 'absolute', right: 0, top: '44px', backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', padding: '8px', width: '160px', zIndex: 100, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
-                <button type="button" onClick={() => { setShortcutMenuOpen(false); translateToHindi(); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: '#0f172a' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Change lang</button>
-                <button type="button" onClick={() => { setShortcutMenuOpen(false); scrollTo('what-we-provide'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: '#0f172a' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>About us</button>
-                <button type="button" onClick={() => { setShortcutMenuOpen(false); scrollTo('faq'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: '#0f172a' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Faq</button>
-                <button type="button" onClick={() => { setShortcutMenuOpen(false); window.open('https://twitter.com/caseily', '_blank'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: '#0f172a' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Follow us</button>
+              <div style={{ position: 'absolute', right: 0, top: '44px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', padding: '8px', width: '160px', zIndex: 100, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+                <button type="button" onClick={() => { setShortcutMenuOpen(false); translateToHindi(); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: 'var(--ink-strong)' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Change lang</button>
+                <button type="button" onClick={() => { setShortcutMenuOpen(false); scrollTo('what-we-provide'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: 'var(--ink-strong)' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>About us</button>
+                <button type="button" onClick={() => { setShortcutMenuOpen(false); scrollTo('faq'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: 'var(--ink-strong)' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Faq</button>
+                <button type="button" onClick={() => { setShortcutMenuOpen(false); window.open('https://twitter.com/caseily', '_blank'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: 'var(--ink-strong)' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Follow us</button>
               </div>
             )}
           </div>
@@ -1639,11 +1863,11 @@ function App() {
 
         {/* ─── HERO TITLE ─── */}
         <div className="container" style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
-          <h1 className="hero-heading" style={{ color: '#ffffff', margin: 0, fontSize: '36px', lineHeight: '1.2' }}>
-            Where's your order?<br/>Track your happiness.<br/>We're on it.
+          <h1 className="hero-heading" style={{ color: '#ffffff', margin: 0, fontSize: '32px', lineHeight: '1.2' }}>
+            The Ultimate Hub for Premium Cases.<br/>Live Tracking. Community Reviews.<br/>Creator Partnerships.
           </h1>
-          <p className="hero-subtitle desktop-only" style={{ color: '#94a3b8', marginTop: '16px' }}>
-            Enter your tracking number below to see your live delivery status
+          <p className="hero-subtitle desktop-only" style={{ color: 'rgba(255,255,255,0.8)', marginTop: '16px' }}>
+            Everything you need, right here.
           </p>
         </div>
       </div>
@@ -1674,7 +1898,7 @@ function App() {
 
 
             {/* ─── BOTTOM NAV PILL ─── */}
-            <div className="mobile-dashboard" style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#ffffff', borderRadius: '32px', padding: '12px 24px', display: 'flex', alignItems: 'center', boxShadow: '0 12px 32px rgba(0,0,0,0.1)', zIndex: 100, width: 'max-content', maxWidth: '90vw', justifyContent: 'space-between' }}>
+            <div className="mobile-dashboard" style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '12px 24px', display: 'flex', alignItems: 'center', boxShadow: '0 12px 32px rgba(0,0,0,0.1)', zIndex: 100, width: 'max-content', maxWidth: '90vw', justifyContent: 'space-between' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: activeSection === 'track' ? 'var(--accent)' : 'transparent', color: activeSection === 'track' ? '#ffffff' : 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => scrollTo('track')}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
               </div>
@@ -1734,7 +1958,7 @@ function App() {
 
       {/* ─── INSTAGRAM HIGHLIGHTS ─── */}
       <section id="highlights" className="highlights-section">
-        <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Spotlight</h2>
+        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '24px'}}>✨</span><h2 className="highlights-title" style={{ fontSize: '24px', fontWeight: '900', margin: 0, background: 'linear-gradient(90deg, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Spotlight</h2></div>
         <div className="highlights-scroll" style={{ gap: '20px' }}>
           {(() => {
             const dynamicHighlights = HIGHLIGHTS.map(h => {
@@ -1768,17 +1992,10 @@ function App() {
 
       {/* ─── TRENDING REELS ─── */}
       <section id="trending-reels" className="section" style={{ padding: '10px 20px 40px', maxWidth: '800px', margin: '0 auto' }}>
-        <h2 className="highlights-title" style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px' }}>Trending Reels</h2>
+        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '24px'}}>🔥</span><h2 className="highlights-title" style={{ fontSize: '24px', fontWeight: '900', margin: 0, background: 'linear-gradient(90deg, #ef4444, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Trending Reels</h2></div>
         <div className="cw-scroll" style={{ padding: '8px', display: 'flex', gap: '16px', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', width: '100%', touchAction: 'pan-x' }}>
-          {[
-            { id: 1, video: 1, text: 'My top 5 colors!' },
-            { id: 2, video: 2, text: 'How I use it...' },
-            { id: 3, video: 3, text: 'Creator collab BTS' },
-            { id: 4, video: 4, text: 'Get ready with Caseily' },
-            { id: 5, video: 1, text: 'Behind the scenes' },
-            { id: 6, video: 2, text: 'Day in the life' }
-          ].map((item) => (
-            <div key={item.id} onClick={() => setActiveReelNum(item.video)} style={{ 
+          {allReels.map((item) => (
+            <div key={item.id} onClick={() => setActiveReelNum(item.index)} style={{ 
               borderRadius: '16px', 
               overflow: 'hidden', 
               backgroundColor: '#000', 
@@ -1795,7 +2012,7 @@ function App() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
               </div>
               <video 
-                src={`/promo${item.video}.mp4`} 
+                src={item.videoSrc} 
                 muted
                 autoPlay
                 loop
@@ -1814,6 +2031,7 @@ function App() {
       {activeReelNum !== null && (
         <ReelViewer
           initialNum={activeReelNum}
+          allReels={allReels}
           onClose={() => setActiveReelNum(null)}
         />
       )}
@@ -1823,7 +2041,7 @@ function App() {
          ═══════════════════════════════════════════════════════════════ */}
       <section id="reviews" className="community-wall-section">
         <div className="cw-header-row">
-          <h2 className="cw-title">Community Wall</h2>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', justifyContent: 'center'}}><span style={{fontSize: '24px'}}>💬</span><h2 className="cw-title" style={{ margin: 0, background: 'linear-gradient(90deg, #3b82f6, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Community Wall</h2></div>
           <a className="cw-show-all" onClick={() => { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); }}>Show all</a>
         </div>
         <div className="cw-scroll">
@@ -1834,29 +2052,30 @@ function App() {
       {/* ─── DEAL OF THE DAY ─── */}
       <section id="deal-of-the-day" className="section" style={{ padding: '40px 0 40px', maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Deal of the Day</h2>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', margin: 0}}><span style={{fontSize: '20px'}}>🛍️</span><h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, background: 'linear-gradient(90deg, #10b981, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Deal of the Day</h2></div>
           <a href="http://wa.me/c/919167788773" target="_blank" rel="noreferrer" style={{ fontSize: '13px', fontWeight: '600', color: '#1e3fd1', textDecoration: 'none' }}>View all</a>
         </div>
         <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', padding: '0 20px 20px', WebkitOverflowScrolling: 'touch' }}>
           {[1, 2, 3].map(num => (
-            <div key={num} style={{
+            <div key={num} onClick={() => { setSelectedDeal({num}); window.history.pushState({}, '', '/deal-detail'); setCurrentPath('/deal-detail'); window.scrollTo(0,0); }} style={{
               flex: '0 0 85%',
               maxWidth: '320px',
-              backgroundColor: '#f8fafc',
+              backgroundColor: 'var(--bg-secondary)',
               borderRadius: '16px',
               padding: '16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               border: '1px solid #e2e8f0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              cursor: 'pointer'
             }}>
               <div style={{ flex: 1, paddingRight: '12px' }}>
-                <div style={{ fontWeight: '800', fontSize: '14px', color: '#0f172a', marginBottom: '4px' }}>Deal of the Day</div>
+                <div style={{ fontWeight: '800', fontSize: '14px', color: 'var(--ink-strong)', marginBottom: '4px' }}>Deal of the Day</div>
                 <div style={{ fontSize: '12px', color: '#475569', lineHeight: 1.4, marginBottom: '12px' }}>
                   Get up to 50% off on our premium cases & accessories. Shop now!
                 </div>
-                <a href="http://wa.me/c/919167788773" target="_blank" rel="noreferrer" style={{ display: 'inline-block', backgroundColor: '#2563eb', color: '#fff', textDecoration: 'none', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', fontWeight: '600' }}>
+                <a href="http://wa.me/c/919167788773" onClick={e => e.stopPropagation()} target="_blank" rel="noreferrer" style={{ display: 'inline-block', backgroundColor: '#2563eb', color: '#fff', textDecoration: 'none', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', fontWeight: '600' }}>
                   Shop Now
                 </a>
               </div>
@@ -1877,7 +2096,7 @@ function App() {
          ═══════════════════════════════════════════════════════════════ */}
       <section id="shop-banner" style={{ padding: '0 20px', maxWidth: '800px', margin: '60px auto 40px auto' }}>
         <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
-          <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>CaseilyPlus+ shop</h2>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '28px'}}>🛒</span><h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', background: 'linear-gradient(90deg, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>CaseilyPlus+ shop</h2></div>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
         
@@ -1915,11 +2134,11 @@ function App() {
          ═══════════════════════════════════════════════════════════════ */}
       <section id="blog" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
         <div onClick={() => { window.history.pushState({}, '', '/news'); setCurrentPath('/news'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
-          <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>News and tips</h2>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '28px'}}>📰</span><h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', background: 'linear-gradient(90deg, #14b8a6, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>News and tips</h2></div>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
         
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+        <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
             {BLOGS.map((b, i) => (
               <div key={i} onClick={() => { window.history.pushState({}, '', '/news'); setCurrentPath('/news'); window.scrollTo(0, 0); }} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
@@ -1938,16 +2157,16 @@ function App() {
          ═══════════════════════════════════════════════════════════════ */}
       <section id="insiders-promo" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
         <div onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
-          <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Caseily Insiders</h2>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '28px'}}>🤝</span><h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', background: 'linear-gradient(90deg, #f59e0b, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>Caseily Insiders</h2></div>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
         
-        <div onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', gap: '16px', alignItems: 'center' }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4"/><path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"/></svg>
           </div>
           <div>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#000' }}>Join the exclusive community</h3>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>Join the exclusive community</h3>
             <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Vote on new products, get behind the scenes access, and interact with other Caseily fans.</p>
           </div>
         </div>
@@ -1957,8 +2176,8 @@ function App() {
          SUPPORT & LINKS
          ═══════════════════════════════════════════════════════════════ */}
       <section id="support-links" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto', textAlign: 'left' }}>
-        <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Support & Links</h2>
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '12px 28px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 16px 8px'}}><span style={{fontSize: '28px'}}>🎧</span><h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', background: 'linear-gradient(90deg, #64748b, #475569)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>Support & Links</h2></div>
+        <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '12px 28px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
           <div className="support-list">
           {[
             { label: 'Shipping Policies', id: 'shipping', icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>, content: 'Orders are processed within 1-2 business days. Standard shipping takes 3-5 days. We provide tracking information for all shipments.' },
