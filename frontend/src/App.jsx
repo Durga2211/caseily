@@ -420,52 +420,110 @@ function LiveChat() {
   const [inputMsg, setInputMsg] = useState('')
   const [userName, setUserName] = useState('')
   const [socket, setSocket] = useState(null)
+  const [isFallback, setIsFallback] = useState(false)
   const [floatingReactions, setFloatingReactions] = useState([])
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
-    // Generate random name if empty
     if (!userName) setUserName(`User${Math.floor(Math.random() * 9000) + 1000}`)
-    
-    const ws = new WebSocket(WS_URL)
-    ws.onopen = () => console.log("Connected to chat")
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (data.type === 'history') {
-        setMessages(data.data)
-      } else if (data.type === 'message') {
-        setMessages(prev => [...prev, data.data])
-      } else if (data.type === 'reaction') {
-        const id = Date.now() + Math.random()
-        setFloatingReactions(prev => [...prev, { id, emoji: data.emoji }])
-        setTimeout(() => {
-          setFloatingReactions(prev => prev.filter(r => r.id !== id))
-        }, 3000)
+    let ws = null;
+    let pollInterval = null;
+
+    const connectWs = () => {
+      ws = new WebSocket(WS_URL)
+      ws.onopen = () => {
+        console.log("Connected to secure WS chat")
+        setIsFallback(false)
       }
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        if (data.type === 'history') {
+          setMessages(data.data)
+        } else if (data.type === 'message') {
+          setMessages(prev => {
+            if (prev.find(m => m.id === data.data.id)) return prev;
+            return [...prev, data.data];
+          })
+        } else if (data.type === 'reaction') {
+          const id = Date.now() + Math.random()
+          setFloatingReactions(prev => [...prev, { id, emoji: data.emoji }])
+          setTimeout(() => setFloatingReactions(prev => prev.filter(r => r.id !== id)), 3000)
+        }
+      }
+      ws.onerror = () => {
+        console.warn("WebSocket error, switching to HTTP fallback")
+        setIsFallback(true)
+      }
+      ws.onclose = () => {
+        console.warn("WebSocket closed, switching to HTTP fallback")
+        setIsFallback(true)
+      }
+      setSocket(ws)
     }
-    setSocket(ws)
-    return () => ws.close()
+
+    connectWs()
+
+    return () => {
+      if (ws) ws.close()
+    }
   }, [])
+
+  // HTTP Fallback Polling
+  useEffect(() => {
+    let pollInterval;
+    if (isFallback) {
+      console.log("Starting HTTP polling for chat")
+      const fetchChat = () => {
+        fetch(`${API_URL || ''}/api/chat/messages`)
+          .then(res => res.json())
+          .then(data => {
+            setMessages(data.messages || [])
+            if (data.reactions && data.reactions.length > 0) {
+              data.reactions.forEach(react => {
+                const id = Date.now() + Math.random()
+                setFloatingReactions(prev => [...prev, { id, emoji: react.emoji }])
+                setTimeout(() => setFloatingReactions(prev => prev.filter(r => r.id !== id)), 3000)
+              })
+            }
+          }).catch(console.error)
+      }
+      fetchChat() // initial fetch
+      pollInterval = setInterval(fetchChat, 3000)
+    }
+    return () => clearInterval(pollInterval)
+  }, [isFallback])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const sendMessage = (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault()
-    if (!inputMsg.trim() || !socket) return
-    socket.send(JSON.stringify({
-      type: 'message',
-      text: inputMsg,
-      user: userName,
-      avatar: userName.charAt(0).toUpperCase()
-    }))
+    if (!inputMsg.trim()) return
+    const payload = { type: 'message', text: inputMsg, user: userName, avatar: userName.charAt(0).toUpperCase() }
+    
+    if (isFallback || !socket || socket.readyState !== WebSocket.OPEN) {
+      await fetch(`${API_URL || ''}/api/chat/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+    } else {
+      socket.send(JSON.stringify(payload))
+    }
     setInputMsg('')
   }
 
-  const sendReaction = (emoji) => {
-    if (!socket) return
-    socket.send(JSON.stringify({ type: 'reaction', emoji }))
+  const sendReaction = async (emoji) => {
+    if (isFallback || !socket || socket.readyState !== WebSocket.OPEN) {
+      await fetch(`${API_URL || ''}/api/chat/reaction`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji })
+      })
+    } else {
+      socket.send(JSON.stringify({ type: 'reaction', emoji }))
+    }
   }
 
   return (
