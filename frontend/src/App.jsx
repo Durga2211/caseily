@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import { useTilt } from './useTilt'
 import { TiltCard } from './TiltCard'
-
+import TicTacToe from './TicTacToe'
 // ─── DATA ───────────────────────────────────────────────────────────────
 const COURIERS = [
   { key: '', name: 'Auto-detect / Not sure', country: '' },
@@ -1336,12 +1336,8 @@ function App() {
               <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Track Your Order</h2>
             </div>
 
-            {/* Hero */}
-            <div style={{ background: 'linear-gradient(135deg, #1e3fd1 0%, #3b5fe0 50%, #6366f1 100%)', borderRadius: '32px', padding: '32px 24px', textAlign: 'center', marginBottom: '24px', color: '#fff' }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '12px' }}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-              <h3 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>Where's your order?</h3>
-              <p style={{ fontSize: '14px', opacity: 0.85, margin: 0 }}>Enter your tracking number to see live delivery status</p>
-            </div>
+            {/* Hero (Tic Tac Toe) */}
+            <TicTacToe />
 
             {/* Tracking Card */}
             <div className="tracking-card" style={{ backgroundColor: '#ffffff', borderRadius: '32px', padding: '24px', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
