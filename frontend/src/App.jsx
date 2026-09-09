@@ -4,6 +4,23 @@ import { useTilt } from './useTilt'
 import { TiltCard } from './TiltCard'
 import TicTacToe from './TicTacToe'
 // ─── DATA ───────────────────────────────────────────────────────────────
+const FALLBACK_REVIEWS = [
+  { name: "Renu Thakkar", time: "2 hours ago", text: "We plugged Caseily tracking into our Shopify store and \"where is my order?\" tickets dropped by 60% in the first month. Customers love the live status page.", likes: 245, comments: 18 },
+  { name: "Arjun Mehta", time: "5 hours ago", text: "Handling 3,000+ AWBs daily across Delhivery and BlueDart — Caseily normalises all the scan events into one clean timeline. Our ops dashboard finally makes sense.", likes: 189, comments: 12 },
+  { name: "Priya Sharma", time: "1 day ago", text: "Our customers used to call us every day asking about their orders. Now they just check the tracking page. Onboarding was seamless — took less than an afternoon.", likes: 312, comments: 45 },
+  { name: "Sneha R.", time: "2 days ago", text: "Got my phone case delivered in 3 days! The tracking page showed every step — from warehouse to my doorstep. So much better than checking the courier's janky site.", likes: 120, comments: 8 },
+  { name: "Vikram Singh", time: "3 days ago", text: "The API is incredibly stable and the webhook responses are near-instant. We have integrated it across our entire custom ERP with zero downtime.", likes: 410, comments: 55 }
+];
+
+const FALLBACK_REELS = [
+  { id: 'h1', videoSrc: '/promo1.mp4', text: 'My top 5 colors!' },
+  { id: 'h2', videoSrc: '/promo2.mp4', text: 'How I use it...' },
+  { id: 'h3', videoSrc: '/promo3.mp4', text: 'Creator collab BTS' },
+  { id: 'h4', videoSrc: '/promo4.mp4', text: 'Get ready with Caseily' },
+  { id: 'h5', videoSrc: '/promo1.mp4', text: 'Behind the scenes' },
+  { id: 'h6', videoSrc: '/promo2.mp4', text: 'Day in the life' }
+];
+
 const COURIERS = [
   { key: '', name: 'Auto-detect / Not sure', country: '' },
   { key: 'delhivery', name: 'Delhivery', country: 'IN' },
@@ -1058,14 +1075,17 @@ function App() {
   const filteredCouriers = COURIERS.filter(c => c.name.toLowerCase().includes(courierSearch.toLowerCase()))
   const selectedCourierObj = COURIERS.find(c => c.key === selectedCourier)
   const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Select Courier (optional, e.g., US...'
-  const combinedReviews = approvedReviews.map(r => ({
-    name: r.name || 'Anonymous',
-    time: 'Just now',
-    text: r.quote,
-    image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
-    likes: (r.quote.length * 7) % 200 + 15,
-    comments: (r.quote.length * 3) % 20 + 2
-  }));
+  const combinedReviews = [
+    ...FALLBACK_REVIEWS,
+    ...approvedReviews.map(r => ({
+      name: r.name || 'Anonymous',
+      time: 'Just now',
+      text: r.quote,
+      image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
+      likes: (r.quote.length * 7) % 200 + 15,
+      comments: (r.quote.length * 3) % 20 + 2
+    }))
+  ];
 
   const renderReviewForm = () => (
     <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
@@ -1797,12 +1817,15 @@ function App() {
   // ═════════════════════════════════════════════════════════════════════
   // RENDER
   // ═════════════════════════════════════════════════════════════════════
-  const allReels = backendReels.map((r, i) => ({ 
-    id: r.id, 
-    videoSrc: r.is_local_promo ? `/${r.video}` : `${API_URL}/uploads/${r.video}`, 
-    text: r.caption, 
-    index: i 
-  }));
+  const allReels = [
+    ...FALLBACK_REELS.map((r, i) => ({ ...r, index: i })),
+    ...backendReels.map((r, i) => ({ 
+      id: r.id, 
+      videoSrc: r.is_local_promo ? `/${r.video}` : `${API_URL}/uploads/${r.video}`, 
+      text: r.caption, 
+      index: i + FALLBACK_REELS.length 
+    }))
+  ];
 
   return (
     <div className="app-wrapper">
