@@ -430,10 +430,9 @@ function AdminDashboard() {
   const [loadingInsiders, setLoadingInsiders] = useState(false)
   const [insiderForm, setInsiderForm] = useState({ type: 'text', content: '' })
   const [insiderPhotos, setInsiderPhotos] = useState([])
-  const [adminReels, setAdminReels] = useState([])
-  const [loadingReels, setLoadingReels] = useState(false)
-  const [reelForm, setReelForm] = useState({ caption: '' })
-  const [reelVideo, setReelVideo] = useState(null)
+  const [adminNotifications, setAdminNotifications] = useState([])
+  const [loadingNotifications, setLoadingNotifications] = useState(false)
+  const [notifForm, setNotifForm] = useState({ text: '' })
 
   const isLoggedIn = !!token
 
@@ -483,21 +482,21 @@ function AdminDashboard() {
     setLoadingInsiders(false)
   }
 
-  async function fetchAdminReels() {
-    setLoadingReels(true)
+  async function fetchAdminNotifications() {
+    setLoadingNotifications(true)
     try {
-      const res = await fetch(`${API_URL}/api/reels`)
+      const res = await fetch(`${API_URL}/api/notifications`)
       const data = await res.json()
-      setAdminReels(data.reels || [])
+      setAdminNotifications(data.notifications || [])
     } catch (err) { console.error(err) }
-    setLoadingReels(false)
+    setLoadingNotifications(false)
   }
 
   useEffect(() => {
     if (isLoggedIn) {
       if (adminTab === 'reviews') fetchReviews()
       if (adminTab === 'insiders') fetchInsiders()
-      if (adminTab === 'reels') fetchAdminReels()
+      if (adminTab === 'notifications') fetchAdminNotifications()
     }
   }, [isLoggedIn, adminTab])
 
@@ -535,44 +534,30 @@ function AdminDashboard() {
     } catch (err) { console.error(err) }
   }
 
-  async function handleCreateReel(e) {
+  async function handleCreateNotification(e) {
     e.preventDefault()
-    if (!reelVideo) return alert('Select a video file')
-    if (reelVideo.size > 4.5 * 1024 * 1024) {
-      return alert('Video must be under 4.5MB due to production server limits. Please compress it first.');
-    }
-    const form = new FormData()
-    form.append('caption', reelForm.caption)
-    form.append('video', reelVideo)
-
+    if (!notifForm.text.trim()) return alert('Enter notification text')
     try {
-      const res = await fetch(`${API_URL}/api/admin/reels`, {
+      const res = await fetch(`${API_URL}/api/admin/notifications`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(notifForm)
       })
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || 'Upload failed');
-      }
-      setReelForm({ caption: '' })
-      setReelVideo(null)
-      fetchAdminReels()
-      alert('Reel uploaded successfully!');
-    } catch (err) { 
-      console.error(err);
-      alert('Error uploading reel: ' + err.message);
-    }
+      if (!res.ok) throw new Error(await res.text())
+      setNotifForm({ text: '' })
+      fetchAdminNotifications()
+      alert('Notification sent!')
+    } catch (err) { alert('Error: ' + err.message) }
   }
 
-  async function handleDeleteReel(id) {
-    if (!window.confirm('Delete this reel?')) return;
+  async function handleDeleteNotification(id) {
+    if (!window.confirm('Delete this notification?')) return
     try {
-      await fetch(`${API_URL}/api/admin/reels/${id}`, {
+      await fetch(`${API_URL}/api/admin/notifications/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
-      fetchAdminReels()
+      fetchAdminNotifications()
     } catch (err) { console.error(err) }
   }
 
@@ -667,9 +652,9 @@ function AdminDashboard() {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => setAdminTab('reviews')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'reviews' ? '#1e3fd1' : 'transparent', color: adminTab === 'reviews' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Reviews</button>
           <button onClick={() => setAdminTab('insiders')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'insiders' ? '#1e3fd1' : 'transparent', color: adminTab === 'insiders' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Insiders</button>
-          <button onClick={() => setAdminTab('reels')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'reels' ? '#1e3fd1' : 'transparent', color: adminTab === 'reels' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Reels</button>
+          <button onClick={() => setAdminTab('notifications')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'notifications' ? '#1e3fd1' : 'transparent', color: adminTab === 'notifications' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Notifications</button>
           <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 4px' }}></div>
-          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : fetchAdminReels} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
+          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : fetchAdminNotifications} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
           <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
           <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
         </div>
@@ -742,29 +727,26 @@ function AdminDashboard() {
               </div>
             )}
           </>
-        ) : adminTab === 'reels' ? (
+        ) : adminTab === 'notifications' ? (
           <>
             <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Upload Trending Reel</h2>
-              <form onSubmit={handleCreateReel} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <input type="text" placeholder="Caption (e.g. 'My top 5 colors!')" value={reelForm.caption} onChange={e => setReelForm({...reelForm, caption: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} required />
-                <input type="file" accept="video/*" onChange={e => setReelVideo(e.target.files[0])} style={{ padding: '8px' }} required />
-                <button type="submit" style={{ padding: '12px', borderRadius: '12px', background: '#1e3fd1', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer' }}>Upload Reel</button>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Broadcast Notification</h2>
+              <form onSubmit={handleCreateNotification} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <input type="text" placeholder="Enter notification text..." value={notifForm.text} onChange={e => setNotifForm({text: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} required />
+                <button type="submit" style={{ padding: '12px', borderRadius: '12px', background: '#1e3fd1', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer' }}>Send Notification</button>
               </form>
             </div>
 
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Active Reels ({adminReels.length})</h2>
-            {loadingReels ? <p>Loading...</p> : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px' }}>
-                {adminReels.map(reel => (
-                  <div key={reel.id} style={{ background: '#000', borderRadius: '16px', overflow: 'hidden', position: 'relative', aspectRatio: '9/16' }}>
-                    <video src={`${API_URL}/uploads/${reel.video}`} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '30px 12px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>
-                      {reel.caption}
-                    </div>
-                    <button onClick={() => handleDeleteReel(reel.id)} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(220, 38, 38, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Active Notifications ({adminNotifications.length})</h2>
+            {loadingNotifications ? <p>Loading...</p> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {adminNotifications.map(n => (
+                  <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px', background: '#f8fafc' }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#334155' }}>{n.text}</p>
+                    <button onClick={() => handleDeleteNotification(n.id)} style={{ padding: '6px 12px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Delete</button>
                   </div>
                 ))}
+                {adminNotifications.length === 0 && <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No active notifications.</p>}
               </div>
             )}
           </>
@@ -777,9 +759,89 @@ function AdminDashboard() {
 // ═════════════════════════════════════════════════════════════════════════
 // APP
 // ═════════════════════════════════════════════════════════════════════════
+
+function HappyCustomers() {
+  const customers = [
+    '/customers/c1.png',
+    '/customers/c2.png',
+    '/customers/c3.png',
+    '/customers/c4.png',
+    '/customers/c5.png'
+  ];
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % customers.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [customers.length]);
+
+  return (
+    <section className="section" style={{ padding: '20px 0', maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+      <div style={{ padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
+        <span style={{fontSize: '24px'}}>😄</span>
+        <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0, background: 'linear-gradient(90deg, #ff8a00, #e52e71)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          Our Happy Customers
+        </h2>
+      </div>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '350px', margin: '0 auto', aspectRatio: '3/4', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
+        {customers.map((src, index) => (
+          <img
+            key={index}
+            src={src}
+            alt={`Happy Customer ${index + 1}`}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: index === currentIndex ? 1 : 0,
+              transition: 'opacity 0.8s ease-in-out',
+              zIndex: index === currentIndex ? 1 : 0
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
+        {customers.map((_, index) => (
+          <div
+            key={index}
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: index === currentIndex ? '#e52e71' : '#e2e8f0',
+              transition: 'background-color 0.3s ease'
+            }}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
 function App() {
   // ─── Routing ─────────────────────────────────────────────────────────
   const [currentPath, setCurrentPath] = useState(window.location.pathname)
+  const [notifications, setNotifications] = useState([])
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false)
+  const [hasUnread, setHasUnread] = useState(false)
+
+  useEffect(() => {
+    fetch(`${API_URL || ''}/api/notifications`)
+      .then(res => res.json())
+      .then(data => {
+        setNotifications(data.notifications || [])
+        if (data.notifications && data.notifications.length > 0) setHasUnread(true)
+      })
+      .catch(console.error)
+  }, [currentPath])
+
+
   useEffect(() => {
     function onPop() { setCurrentPath(window.location.pathname) }
     window.addEventListener('popstate', onPop)
@@ -1741,7 +1803,32 @@ function App() {
       <div style={{ backgroundColor: 'var(--accent)', position: 'relative', zIndex: 1, paddingBottom: '80px' }}>
         {/* ─── NAVBAR ─── */}
         <nav className="navbar" style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid #e2e8f0' }}>
-          <div className="navbar-left">
+          <div className="navbar-left" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <button onClick={() => { setShowNotifDropdown(!showNotifDropdown); setHasUnread(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '4px' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-strong)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: hasUnread ? 'swing 2s ease-in-out infinite' : 'none' }}>
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                {hasUnread && <div style={{ position: 'absolute', top: 0, right: 0, width: '10px', height: '10px', backgroundColor: '#ef4444', borderRadius: '50%', border: '2px solid var(--bg-default)' }} />}
+              </button>
+              {showNotifDropdown && (
+                <div style={{ position: 'absolute', top: '40px', left: '0', width: '280px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', padding: '16px', zIndex: 999999, border: '1px solid var(--nav-border)', animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '800', color: 'var(--ink-strong)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notifications</h4>
+                  {notifications.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {notifications.map(n => (
+                        <div key={n.id} style={{ padding: '10px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '14px', color: 'var(--ink-strong)', fontWeight: '500' }}>
+                          {n.text}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: '13px', color: '#64748b', textAlign: 'center', padding: '10px 0' }}>No new notifications</p>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="desktop-logo" style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase', cursor: 'pointer' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>CASEILY</div>
           </div>
           <div className="navbar-links">
@@ -1764,6 +1851,31 @@ function App() {
 
         {/* ─── MOBILE HEADER ─── */}
         <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: 'var(--bg-card)', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
+          <div style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+            <button onClick={() => { setShowNotifDropdown(!showNotifDropdown); setHasUnread(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '4px' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-strong)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: hasUnread ? 'swing 2s ease-in-out infinite' : 'none' }}>
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              {hasUnread && <div style={{ position: 'absolute', top: 0, right: 0, width: '10px', height: '10px', backgroundColor: '#ef4444', borderRadius: '50%', border: '2px solid var(--bg-default)' }} />}
+            </button>
+            {showNotifDropdown && (
+              <div style={{ position: 'absolute', top: '40px', left: '0', width: '280px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', padding: '16px', zIndex: 999999, border: '1px solid var(--nav-border)', animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '800', color: 'var(--ink-strong)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notifications</h4>
+                {notifications.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {notifications.map(n => (
+                      <div key={n.id} style={{ padding: '10px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '14px', color: 'var(--ink-strong)', fontWeight: '500' }}>
+                        {n.text}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b', textAlign: 'center', padding: '10px 0' }}>No new notifications</p>
+                )}
+              </div>
+            )}
+          </div>
           <div className="desktop-logo" style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '24px', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase', cursor: 'pointer' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>CASEILY</div>
           
           <div style={{ position: 'absolute', right: '20px', display: 'flex', alignItems: 'center', gap: '12px' }} ref={shortcutRef}>
@@ -2020,6 +2132,9 @@ function App() {
           ))}
         </div>
       </section>
+
+      {/* ─── OUR HAPPY CUSTOMERS ─── */}
+      <HappyCustomers />
 
       {/* ═══════════════════════════════════════════════════════════════
          SHOP BANNER
