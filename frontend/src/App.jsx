@@ -8,8 +8,14 @@ const FALLBACK_REVIEWS = [
   { name: "Renu Thakkar", time: "2 hours ago", text: "We plugged Caseily tracking into our Shopify store and \"where is my order?\" tickets dropped by 60% in the first month. Customers love the live status page.", likes: 245, comments: 18 },
   { name: "Arjun Mehta", time: "5 hours ago", text: "Handling 3,000+ AWBs daily across Delhivery and BlueDart — Caseily normalises all the scan events into one clean timeline. Our ops dashboard finally makes sense.", likes: 189, comments: 12 },
   { name: "Priya Sharma", time: "1 day ago", text: "Our customers used to call us every day asking about their orders. Now they just check the tracking page. Onboarding was seamless — took less than an afternoon.", likes: 312, comments: 45 },
+  { name: "Vikram Singh", time: "3 days ago", text: "The API is incredibly stable and the webhook responses are near-instant. We have integrated it across our entire custom ERP with zero downtime.", likes: 410, comments: 55 },
+  { name: "Neha Patel", time: "3 days ago", text: "What used to take 3 support agents to track down missing parcels now takes seconds. The unified tracking interface is a game-changer for our B2B ops.", likes: 231, comments: 14 },
   { name: "Sneha R.", time: "2 days ago", text: "Got my phone case delivered in 3 days! The tracking page showed every step — from warehouse to my doorstep. So much better than checking the courier's janky site.", likes: 120, comments: 8 },
-  { name: "Vikram Singh", time: "3 days ago", text: "The API is incredibly stable and the webhook responses are near-instant. We have integrated it across our entire custom ERP with zero downtime.", likes: 410, comments: 55 }
+  { name: "Karthik V.", time: "4 days ago", text: "Love how I can see the exact location of my package. Got a notification when it was out for delivery. The case itself is gorgeous too — perfect fit on my iPhone.", likes: 145, comments: 9 },
+  { name: "Anjali P.", time: "4 days ago", text: "Ordered a custom case and was anxious about delivery time. The live tracker calmed my nerves — I could see it moving across the country. Great experience overall!", likes: 188, comments: 22 },
+  { name: "Rohit K.", time: "5 days ago", text: "The timeline was spot on. I knew exactly when to be home to receive my parcel. No more waiting around all day guessing when the delivery guy will show up.", likes: 95, comments: 4 },
+  { name: "Meera M.", time: "5 days ago", text: "Usually I have to copy-paste tracking numbers across 3 different sites. This is so much easier. Just enter the number and boom, the whole history is right there.", likes: 304, comments: 31 },
+  { name: "Rahul S.", time: "6 days ago", text: "Fast updates! The moment my package was out for delivery, the status changed. Really reassuring when you're ordering expensive items.", likes: 211, comments: 19 }
 ];
 
 const FALLBACK_REELS = [
@@ -403,7 +409,8 @@ function SplashScreen() {
 }
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-const WS_URL = API_URL ? API_URL.replace(/^http/, 'ws') + '/api/chat/ws' : `ws://${window.location.host}/api/chat/ws`
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const WS_URL = API_URL ? API_URL.replace(/^http/, 'ws') + '/api/chat/ws' : `${protocol}//${window.location.host}/api/chat/ws`;
 
 // ═════════════════════════════════════════════════════════════════════════
 // LIVE CHAT COMPONENT
@@ -637,20 +644,31 @@ function AdminDashboard() {
   async function handleCreateReel(e) {
     e.preventDefault()
     if (!reelVideo) return alert('Select a video file')
+    if (reelVideo.size > 4.5 * 1024 * 1024) {
+      return alert('Video must be under 4.5MB due to production server limits. Please compress it first.');
+    }
     const form = new FormData()
     form.append('caption', reelForm.caption)
     form.append('video', reelVideo)
 
     try {
-      await fetch(`${API_URL}/api/admin/reels`, {
+      const res = await fetch(`${API_URL}/api/admin/reels`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: form
       })
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Upload failed');
+      }
       setReelForm({ caption: '' })
       setReelVideo(null)
       fetchAdminReels()
-    } catch (err) { console.error(err) }
+      alert('Reel uploaded successfully!');
+    } catch (err) { 
+      console.error(err);
+      alert('Error uploading reel: ' + err.message);
+    }
   }
 
   async function handleDeleteReel(id) {
