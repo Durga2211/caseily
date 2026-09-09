@@ -721,6 +721,7 @@ function App() {
   const [activeStoryHighlight, setActiveStoryHighlight] = useState(null)
   const [activeReelNum, setActiveReelNum] = useState(null)
   const [likedPosts, setLikedPosts] = useState(new Set())
+  const [selectedReview, setSelectedReview] = useState(null)
   const handleLikeToggle = (i, e) => {
     e.stopPropagation();
     setLikedPosts(prev => {
@@ -957,7 +958,7 @@ function App() {
   )
 
   const renderCommunityWallCard = (post, i) => (
-    <div key={i} className="cw-card" onClick={() => { if (currentPath !== '/reviews') { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); } }}>
+    <div key={i} className="cw-card" onClick={() => { if (currentPath === '/reviews') { setSelectedReview(post); window.history.pushState({}, '', '/review-detail'); setCurrentPath('/review-detail'); window.scrollTo(0, 0); } else { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); } }}>
       <div className="cw-user">
         <img className="cw-avatar" src={`https://ui-avatars.com/api/?name=${post.name}&background=random`} alt={post.name} />
         <div className="cw-meta">
@@ -978,6 +979,51 @@ function App() {
       </div>
     </div>
   )
+
+  if (currentPath === '/review-detail' && selectedReview) {
+    const post = selectedReview;
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+          <div className="container" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+              <button onClick={() => { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: 'var(--ink-strong)' }}>Review</h2>
+            </div>
+
+            <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '28px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
+              {/* User Info */}
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+                <img src={`https://ui-avatars.com/api/?name=${post.name}&background=random&size=64`} alt={post.name} style={{ width: '56px', height: '56px', borderRadius: '50%', marginRight: '16px' }} />
+                <div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>{post.name}</div>
+                  <div style={{ fontSize: '14px', color: 'var(--ink-muted)', marginTop: '2px' }}>{post.time}</div>
+                </div>
+              </div>
+
+              {/* Full Review Text */}
+              <div style={{ fontSize: '16px', lineHeight: 1.7, color: '#334155', marginBottom: post.image ? '20px' : '20px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                {post.text}
+              </div>
+
+              {/* Review Image */}
+              {post.image && (
+                <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
+                  <img src={post.image} alt="Review photo" style={{ width: '100%', display: 'block', borderRadius: '16px', objectFit: 'cover' }} />
+                </div>
+              )}
+
+              {/* Likes */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', color: 'var(--ink-muted)', fontSize: '15px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span style={{ fontWeight: '600' }}>{post.likes} likes</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   if (currentPath === '/reviews') {
     return (
