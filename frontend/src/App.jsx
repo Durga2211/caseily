@@ -71,7 +71,7 @@ const HIGHLIGHTS = [
   },
   {
     id: 'happy_customers',
-    label: 'Our Happy Customers',
+    label: 'Caseily Insider',
     cover: '/happy_customers/img1.png',
     stories: [
       '/happy_customers/img1.png',
@@ -782,7 +782,7 @@ function HappyCustomers() {
       <div style={{ padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
         <span style={{fontSize: '24px'}}>😄</span>
         <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0, background: 'linear-gradient(90deg, #ff8a00, #e52e71)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Our Happy Customers
+          Caseily Insider
         </h2>
       </div>
       <div style={{ position: 'relative', width: '100%', maxWidth: '350px', margin: '0 auto', aspectRatio: '3/4', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}>
@@ -830,6 +830,7 @@ function App() {
   const [notifications, setNotifications] = useState([])
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
+  const notifRef = useRef(null)
 
   useEffect(() => {
     fetch(`${API_URL || ''}/api/notifications`)
@@ -840,6 +841,23 @@ function App() {
       })
       .catch(console.error)
   }, [currentPath])
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifDropdown(false)
+      }
+    }
+    if (showNotifDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [showNotifDropdown])
 
 
   useEffect(() => {
@@ -1805,7 +1823,7 @@ function App() {
         <nav className="navbar" style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid #e2e8f0' }}>
           <div className="navbar-left" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <button onClick={() => { setShowNotifDropdown(!showNotifDropdown); setHasUnread(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '4px' }}>
+              <button ref={notifRef} onClick={() => { setShowNotifDropdown(!showNotifDropdown); setHasUnread(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '4px' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-strong)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: hasUnread ? 'swing 2s ease-in-out infinite' : 'none' }}>
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -1851,7 +1869,7 @@ function App() {
 
         {/* ─── MOBILE HEADER ─── */}
         <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: 'var(--bg-card)', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
-          <div style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+          <div ref={notifRef} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
             <button onClick={() => { setShowNotifDropdown(!showNotifDropdown); setHasUnread(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '4px' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-strong)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: hasUnread ? 'swing 2s ease-in-out infinite' : 'none' }}>
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -1863,7 +1881,7 @@ function App() {
               <div style={{ position: 'absolute', top: '40px', left: '0', width: '280px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', padding: '16px', zIndex: 999999, border: '1px solid var(--nav-border)', animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '800', color: 'var(--ink-strong)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notifications</h4>
                 {notifications.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
                     {notifications.map(n => (
                       <div key={n.id} style={{ padding: '10px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', fontSize: '14px', color: 'var(--ink-strong)', fontWeight: '500' }}>
                         {n.text}
