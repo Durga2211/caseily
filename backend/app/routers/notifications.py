@@ -12,23 +12,43 @@ DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__)
 ADMIN_TOKEN = "caseily-admin-token-2024"
 security = HTTPBearer(auto_error=False)
 
-def _load_db():
-    if not os.path.exists(DB_PATH):
-        return []
-    with open(DB_PATH, "r") as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return []
+# ─── In-memory store ─────────────────────────────────────────────────────
+_notif_store = None
 
-def _save_db(data):
-    with open(DB_PATH, "w") as f:
-        json.dump(data, f, indent=2)
+def _init_store():
+    """Initialize in-memory store from disk on first access."""
+    global _notif_store
+    if _notif_store is not None:
+        return
+
+    _notif_store = []
+    if os.path.exists(DB_PATH):
+        try:
+            with open(DB_PATH, "r") as f:
+                _notif_store = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            _notif_store = []
+
+def _get_notifs():
+    _init_store()
+    return _notif_store
+
+def _set_notifs(data):
+    global _notif_store
+    _notif_store = data
+    _save_to_disk()
+
+def _save_to_disk():
+    try:
+        with open(DB_PATH, "w") as f:
+            json.dump(_notif_store, f, indent=2)
+    except IOError:
+        pass
 
 @router.get("/notifications")
 async def get_notifications():
     """Public endpoint to get all active notifications"""
-    return {"notifications": _load_db()}
+    return {"notifications": _get_notifs()}
 
 @router.post("/admin/notifications")
 async def create_notification(
@@ -38,7 +58,7 @@ async def create_notification(
     if not credentials or credentials.credentials != ADMIN_TOKEN:
         raise HTTPException(status_code=401, detail="Invalid admin token")
         
-    db = _load_db()
+    db = _get_notifs()
     new_notif = {
         "id": str(uuid.uuid4())[:8],
         "text": text.get("text", ""),
@@ -51,7 +71,7 @@ async def create_notification(
     if len(db) > 20:
         db = db[:20]
         
-    _save_db(db)
+    _set_notifs(db)
     return {"status": "success", "notification": new_notif}
 
 @router.delete("/admin/notifications/{notif_id}")
@@ -62,10 +82,11 @@ async def delete_notification(
     if not credentials or credentials.credentials != ADMIN_TOKEN:
         raise HTTPException(status_code=401, detail="Invalid admin token")
         
-    db = _load_db()
+    db = _get_notifs()
     new_db = [n for n in db if n.get("id") != notif_id]
     if len(new_db) == len(db):
         raise HTTPException(status_code=404, detail="Notification not found")
         
-    _save_db(new_db)
+    _set_notifs(new_db)
     return {"status": "success"}
+
