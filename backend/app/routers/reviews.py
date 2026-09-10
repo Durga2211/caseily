@@ -1,80 +1,19 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import json
 import uuid
 import os
 import shutil
 from datetime import datetime
+from ..db import reviews_collection
 
 router = APIRouter(prefix="/api", tags=["reviews"])
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "reviews_db.json")
-SEED_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "reviews_seed.json")
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 
 ADMIN_PASSWORD = "12345"
 ADMIN_TOKEN = "caseily-admin-token-2024"
 
 security = HTTPBearer(auto_error=False)
-
-# ─── In-memory store ─────────────────────────────────────────────────────
-# This ensures reviews survive Render's ephemeral filesystem restarts.
-# On cold start, we load from reviews_db.json (which is committed to Git),
-# merge in any seed data, and keep everything in memory for the lifetime
-# of the process. Writes also go to disk as best-effort backup.
-_reviews_store = None
-
-def _init_store():
-    """Initialize the in-memory store from disk files on first access."""
-    global _reviews_store
-    if _reviews_store is not None:
-        return
-
-    reviews = []
-
-    # Load from seed file first (committed, never changes at runtime)
-    if os.path.exists(SEED_PATH):
-        try:
-            with open(SEED_PATH, "r") as f:
-                reviews = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            reviews = []
-
-    # Then load from runtime DB and merge any new reviews
-    if os.path.exists(DB_PATH):
-        try:
-            with open(DB_PATH, "r") as f:
-                db_reviews = json.load(f)
-            existing_ids = {r["id"] for r in reviews}
-            for r in db_reviews:
-                if r["id"] not in existing_ids:
-                    reviews.append(r)
-        except (json.JSONDecodeError, IOError):
-            pass
-
-    _reviews_store = reviews
-    # Write merged result back to disk
-    _save_to_disk()
-
-
-def _get_reviews():
-    """Get the in-memory reviews list."""
-    _init_store()
-    return _reviews_store
-
-def _set_reviews(data):
-    """Update the in-memory store and persist to disk."""
-    global _reviews_store
-    _reviews_store = data
-    _save_to_disk()
-
-def _save_to_disk():
-    """Best-effort write to disk."""
-    try:
-        with open(DB_PATH, "w") as f:
-            json.dump(_reviews_store, f, indent=2, default=str)
-    except IOError:
-        pass  # On read-only filesystems, silently continue
 
 def _require_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if not credentials or credentials.credentials != ADMIN_TOKEN:
@@ -116,19 +55,22 @@ async def submit_review(
         "created_at": datetime.now().isoformat(),
     }
 
-    reviews = _get_reviews()
-    reviews.append(review)
-    _set_reviews(reviews)
-
+    if reviews_collection is not None:
+        reviews_collection.insert_one(review)
+    
+    # ensure it's JSON serializable when returning
+    review.pop("_id", None)
     return {"success": True, "message": "Review submitted successfully!", "id": review_id}
 
 
 @router.get("/reviews/approved")
 async def get_approved_reviews():
     """Get all approved reviews (public)."""
-    reviews = _get_reviews()
-    approved = [r for r in reviews if r.get("status") == "approved"]
-    return {"reviews": approved}
+    if reviews_collection is None:
+        return {"reviews": []}
+        
+    cursor = reviews_collection.find({"status": "approved"}, {"_id": 0}).sort("created_at", -1)
+    return {"reviews": list(cursor)}
 
 
 # ─── Admin endpoints ─────────────────────────────────────────────────────
@@ -144,41 +86,48 @@ async def admin_login(password: str = Form(...)):
 @router.get("/admin/reviews")
 async def get_all_reviews(auth: bool = Depends(_require_admin)):
     """Get all reviews for admin (pending first)."""
-    reviews = list(_get_reviews())  # copy to avoid mutating
-    # Sort: pending first, then by date descending
-    reviews.sort(key=lambda r: (0 if r.get("status") == "pending" else 1, r.get("created_at", "")), reverse=False)
-    return {"reviews": reviews}
+    if reviews_collection is None:
+        return {"reviews": []}
+        
+    # We want pending first, then sort by date
+    pending = list(reviews_collection.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1))
+    approved = list(reviews_collection.find({"status": "approved"}, {"_id": 0}).sort("created_at", -1))
+    rejected = list(reviews_collection.find({"status": "rejected"}, {"_id": 0}).sort("created_at", -1))
+    
+    return {"reviews": pending + approved + rejected}
 
 
 @router.post("/admin/reviews/{review_id}/approve")
 async def approve_review(review_id: str, auth: bool = Depends(_require_admin)):
     """Approve a pending review."""
-    reviews = _get_reviews()
-    for r in reviews:
-        if r["id"] == review_id:
-            r["status"] = "approved"
-            _set_reviews(reviews)
-            return {"success": True, "message": "Review approved"}
-    raise HTTPException(status_code=404, detail="Review not found")
+    if reviews_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    result = reviews_collection.update_one({"id": review_id}, {"$set": {"status": "approved"}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Review not found")
+    return {"success": True, "message": "Review approved"}
 
 
 @router.post("/admin/reviews/{review_id}/reject")
 async def reject_review(review_id: str, auth: bool = Depends(_require_admin)):
     """Reject a pending review."""
-    reviews = _get_reviews()
-    for r in reviews:
-        if r["id"] == review_id:
-            r["status"] = "rejected"
-            _set_reviews(reviews)
-            return {"success": True, "message": "Review rejected"}
-    raise HTTPException(status_code=404, detail="Review not found")
+    if reviews_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    result = reviews_collection.update_one({"id": review_id}, {"$set": {"status": "rejected"}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Review not found")
+    return {"success": True, "message": "Review rejected"}
 
 @router.delete("/admin/reviews/{review_id}")
 async def delete_review(review_id: str, auth: bool = Depends(_require_admin)):
     """Delete a review."""
-    reviews = _get_reviews()
-    filtered_reviews = [r for r in reviews if r["id"] != review_id]
-    if len(filtered_reviews) == len(reviews):
+    if reviews_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    result = reviews_collection.delete_one({"id": review_id})
+    if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Review not found")
-    _set_reviews(filtered_reviews)
     return {"success": True, "message": "Review deleted"}
+
