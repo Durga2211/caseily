@@ -37,12 +37,14 @@ async def submit_review(
     if photo and photo.filename:
         ext = os.path.splitext(photo.filename)[1] or ".png"
         photo_filename = f"review_{review_id}{ext}"
-        photo_path = os.path.join(UPLOADS_DIR, photo_filename)
         try:
-            with open(photo_path, "wb") as f:
-                shutil.copyfileobj(photo.file, f)
-        except IOError:
-            photo_filename = None  # Skip photo on read-only fs
+            from ..db import fs
+            if fs is not None:
+                fs.put(photo.file, filename=photo_filename, content_type=photo.content_type)
+            else:
+                photo_filename = None
+        except Exception as e:
+            photo_filename = None
 
     review = {
         "id": review_id,

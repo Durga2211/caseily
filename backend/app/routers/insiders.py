@@ -1,34 +1,16 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import json
 import uuid
 import os
-import shutil
 from datetime import datetime
+from ..db import insiders_collection, fs
 
 router = APIRouter(prefix="/api", tags=["insiders"])
-
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "insiders_db.json")
-UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 
 ADMIN_TOKEN = "caseily-admin-token-2024"
 security = HTTPBearer(auto_error=False)
 
-# ─── DB helpers ──────────────────────────────────────────────────────────
-def _load_db():
-    if not os.path.exists(DB_PATH):
-        return []
-    with open(DB_PATH, "r") as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return []
-
-def _save_db(data):
-    with open(DB_PATH, "w") as f:
-        json.dump(data, f, indent=2, default=str)
 
 def _require_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if not credentials or credentials.credentials != ADMIN_TOKEN:
@@ -40,22 +22,26 @@ def _require_admin(credentials: HTTPAuthorizationCredentials = Depends(security)
 @router.get("/insiders")
 async def get_insider_posts():
     """Get all insider posts."""
-    posts = _load_db()
-    # Sort by created_at descending
-    posts.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-    return {"posts": posts}
+    if insiders_collection is None:
+        return {"posts": []}
+    cursor = insiders_collection.find({}, {"_id": 0}).sort("created_at", -1)
+    return {"posts": list(cursor)}
 
 
 @router.post("/insiders/{post_id}/like")
 async def like_post(post_id: str):
     """Like a post."""
-    posts = _load_db()
-    for post in posts:
-        if post["id"] == post_id:
-            post["likes"] = post.get("likes", 0) + 1
-            _save_db(posts)
-            return {"success": True, "likes": post["likes"]}
-    raise HTTPException(status_code=404, detail="Post not found")
+    if insiders_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    result = insiders_collection.find_one_and_update(
+        {"id": post_id},
+        {"$inc": {"likes": 1}},
+        return_document=True
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return {"success": True, "likes": result["likes"]}
 
 @router.post("/insiders/{post_id}/comment")
 async def add_comment(post_id: str, request: Request):
@@ -65,21 +51,24 @@ async def add_comment(post_id: str, request: Request):
     if not text:
         raise HTTPException(status_code=400, detail="Missing comment text")
         
-    posts = _load_db()
-    for post in posts:
-        if post["id"] == post_id:
-            if "comments" not in post:
-                post["comments"] = []
-            new_comment = {
-                "id": str(uuid.uuid4())[:8],
-                "text": str(text).strip(),
-                "created_at": datetime.now().isoformat(),
-                "author": "User" # hardcoded for now since no auth
-            }
-            post["comments"].append(new_comment)
-            _save_db(posts)
-            return {"success": True, "comment": new_comment}
-    raise HTTPException(status_code=404, detail="Post not found")
+    if insiders_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    new_comment = {
+        "id": str(uuid.uuid4())[:8],
+        "text": str(text).strip(),
+        "created_at": datetime.now().isoformat(),
+        "author": "User" # hardcoded for now since no auth
+    }
+    
+    result = insiders_collection.update_one(
+        {"id": post_id},
+        {"$push": {"comments": new_comment}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return {"success": True, "comment": new_comment}
 
 
 @router.post("/insiders")
@@ -100,10 +89,12 @@ async def public_create_insider_post(
             if img and img.filename:
                 ext = os.path.splitext(img.filename)[1] or ".png"
                 img_filename = f"insider_{post_id}_{i}{ext}"
-                img_path = os.path.join(UPLOADS_DIR, img_filename)
-                with open(img_path, "wb") as f:
-                    shutil.copyfileobj(img.file, f)
-                image_filenames.append(img_filename)
+                try:
+                    if fs is not None:
+                        fs.put(img.file, filename=img_filename, content_type=img.content_type)
+                        image_filenames.append(img_filename)
+                except Exception:
+                    pass
             
     post = {
         "id": post_id,
@@ -116,9 +107,9 @@ async def public_create_insider_post(
         "comments": []
     }
 
-    posts = _load_db()
-    posts.append(post)
-    _save_db(posts)
+    if insiders_collection is not None:
+        insiders_collection.insert_one(post)
+    post.pop("_id", None)
 
     return {"success": True, "message": "Post created successfully!", "post": post}
 
@@ -144,10 +135,12 @@ async def create_insider_post(
             if img and img.filename:
                 ext = os.path.splitext(img.filename)[1] or ".png"
                 img_filename = f"insider_{post_id}_{i}{ext}"
-                img_path = os.path.join(UPLOADS_DIR, img_filename)
-                with open(img_path, "wb") as f:
-                    shutil.copyfileobj(img.file, f)
-                image_filenames.append(img_filename)
+                try:
+                    if fs is not None:
+                        fs.put(img.file, filename=img_filename, content_type=img.content_type)
+                        image_filenames.append(img_filename)
+                except Exception:
+                    pass
             
     post = {
         "id": post_id,
@@ -160,9 +153,9 @@ async def create_insider_post(
         "comments": []
     }
 
-    posts = _load_db()
-    posts.append(post)
-    _save_db(posts)
+    if insiders_collection is not None:
+        insiders_collection.insert_one(post)
+    post.pop("_id", None)
 
     return {"success": True, "message": "Post created successfully!", "post": post}
 
@@ -170,10 +163,11 @@ async def create_insider_post(
 @router.delete("/admin/insiders/{post_id}")
 async def delete_insider_post(post_id: str, auth: bool = Depends(_require_admin)):
     """Delete a post (Admin only)."""
-    posts = _load_db()
-    filtered = [p for p in posts if p["id"] != post_id]
-    if len(filtered) == len(posts):
+    if insiders_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    result = insiders_collection.delete_one({"id": post_id})
+    if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Post not found")
         
-    _save_db(filtered)
     return {"success": True, "message": "Post deleted successfully!"}
