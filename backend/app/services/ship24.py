@@ -69,6 +69,11 @@ async def create_tracker(
 
     # Resolve courier code: explicit > guessed > auto-detect
     resolved_courier = courier_code or _guess_courier(tracking_number)
+    
+    # Handle legacy cached frontend dropdown states
+    if resolved_courier == "indiapost":
+        resolved_courier = "in-post"
+        
     used_auto_detect = resolved_courier is None
     if resolved_courier:
         payload["courierCode"] = [resolved_courier]
