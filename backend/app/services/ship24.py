@@ -18,7 +18,7 @@ COURIER_PATTERNS: list[tuple[re.Pattern, str, str]] = [
     # BlueDart — usually starts with digits, 8-11 chars
     (re.compile(r"^\d{8,11}$"), "bluedart", "BlueDart"),
     # India Post / Speed Post — 13 chars starting with E/R/C + 2-letter country
-    (re.compile(r"^[A-Z]{2}\d{9}[A-Z]{2}$"), "indiapost", "India Post"),
+    (re.compile(r"^[A-Z]{2}\d{9}[A-Z]{2}$"), "in-post", "India Post"),
     # DTDC — alphanumeric, often starts with a letter
     (re.compile(r"^[A-Z]\d{8,}$"), "dtdc", "DTDC"),
     # Ekart — typically starts with FMPP or OD
@@ -107,11 +107,9 @@ async def create_tracker(
             except Exception:
                 pass
             # Ship24 returns existing tracker on duplicate
-            existing_id = (
-                body.get("data", {})
-                .get("tracker", {})
-                .get("trackerId")
-            )
+            data_dict = body.get("data") or {}
+            tracker_dict = data_dict.get("tracker") or {}
+            existing_id = tracker_dict.get("trackerId")
             if existing_id:
                 logger.info("Tracker already exists: %s", existing_id)
                 return {"trackerId": existing_id, "raw": body, "used_auto_detect": payload.get("_used_auto_detect", True)}
@@ -395,7 +393,7 @@ async def get_carriers() -> list[dict]:
     return [
         {"key": "delhivery", "name": "Delhivery", "country_iso": "IN"},
         {"key": "bluedart", "name": "BlueDart", "country_iso": "IN"},
-        {"key": "indiapost", "name": "India Post", "country_iso": "IN"},
+        {"key": "in-post", "name": "India Post", "country_iso": "IN"},
         {"key": "dtdc", "name": "DTDC", "country_iso": "IN"},
         {"key": "ekart", "name": "Ekart Logistics", "country_iso": "IN"},
         {"key": "usps", "name": "USPS", "country_iso": "US"},
