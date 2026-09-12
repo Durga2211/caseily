@@ -1642,15 +1642,21 @@ function App() {
                         <div className={getStatusPillClass(result.status_tag)}><span className="dot" />{result.status}</div>
                       </div>
                       {result.events && result.events.length > 0 && (
-                        <div className="timeline">
+                        <div className="timeline" style={{ marginTop: '32px' }}>
                           {result.events.map((evt, i) => (
-                            <div key={i} className={`timeline-item ${i === 0 ? 'active' : ''}`}>
-                              <div className="timeline-dot" />
-                              <div className="timeline-content">
-                                <div className="timeline-date">{new Date(evt.datetime).toLocaleString()}</div>
-                                <div className="timeline-desc">{evt.description}</div>
-                                {evt.location && <div className="timeline-loc">📍 {evt.location}</div>}
+                            <div key={i} className={`tl-step ${i === 0 ? 'current' : ''}`} style={{ animationDelay: `${i * 0.05}s` }}>
+                              <div className="tl-step-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingLeft: '8px' }}>
+                                <h3 style={{ margin: 0, fontSize: '15px', color: i === 0 ? 'var(--ink-strong)' : 'var(--ink)' }}>{evt.description}</h3>
+                                <div style={{ fontSize: '12px', color: 'var(--ink-faint)', whiteSpace: 'nowrap' }}>
+                                  {evt.datetime ? new Date(evt.datetime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                                </div>
                               </div>
+                              {evt.location && (
+                                <p className="step-location" style={{ paddingLeft: '8px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--ink-muted)' }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                  {evt.location}
+                                </p>
+                              )}
                             </div>
                           ))}
                         </div>
