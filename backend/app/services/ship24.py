@@ -350,11 +350,21 @@ def normalise_tracking_data(raw_response: dict, tracking_number: str, used_auto_
     if current_milestone == "exception":
         display_status = "Exception"
 
+    # ── Format raw events for the detailed timeline ──────────────────
+    formatted_events = []
+    for evt in events:
+        formatted_events.append({
+            "datetime": evt.get("occurrenceDatetime") or evt.get("datetime"),
+            "description": evt.get("status") or evt.get("statusMilestone") or "Update received",
+            "location": evt.get("location")
+        })
+
     return {
         "status": display_status,
         "status_tag": status_tag,
         "message": None,
         "steps": steps,
+        "events": formatted_events,
         "courier_name": courier_name,
         "courier_tracking_url": None,
     }
