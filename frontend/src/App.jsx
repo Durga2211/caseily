@@ -1260,7 +1260,7 @@ function App() {
                 <div className="marquee-container" style={{ display: 'flex', width: 'max-content', animation: 'marquee 30s linear infinite' }}>
                   {[...['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png'], ...['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png']].map((img, index) => (
                     <div key={`${img}-${index}`} style={{ flexShrink: 0, width: '220px', height: '400px', borderRadius: '16px', overflow: 'hidden', marginRight: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                      <img src={`/ourfamily/${img}`} alt="Our Family" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={`/ourfamily/${img}`} alt="Our Family" style={{ width: '100%', height: '124%', objectFit: 'cover', objectPosition: 'center', marginTop: '-12%' }} />
                     </div>
                   ))}
                 </div>
