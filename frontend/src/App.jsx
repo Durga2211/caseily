@@ -1239,12 +1239,38 @@ function App() {
       <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
            <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '32px' }}>
                  <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Community Wall</h2>
               </div>
-              <div className="reviews-page-grid">
-                  {combinedReviews.map((post, i) => renderCommunityWallCard(post, i))}
+
+              <div style={{ marginBottom: '48px', overflow: 'hidden' }}>
+                <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px', color: 'var(--ink-strong)' }}>InsiderFam</h3>
+                <div className="marquee-container" style={{ display: 'flex', width: 'max-content', animation: 'marquee 40s linear infinite' }}>
+                  {[...['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.jpg', '8.png', '9.png', '10.png', '11.png', '12.png'], ...['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.jpg', '8.png', '9.png', '10.png', '11.png', '12.png']].map((img, index) => (
+                    <div key={`${img}-${index}`} style={{ flexShrink: 0, width: '220px', height: '330px', borderRadius: '16px', overflow: 'hidden', marginRight: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                      <img src={`/insiderfam/${img}`} alt="InsiderFam" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '48px', overflow: 'hidden' }}>
+                <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px', color: 'var(--ink-strong)' }}>Our Family</h3>
+                <div className="marquee-container" style={{ display: 'flex', width: 'max-content', animation: 'marquee 30s linear infinite' }}>
+                  {[...['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png'], ...['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png']].map((img, index) => (
+                    <div key={`${img}-${index}`} style={{ flexShrink: 0, width: '220px', height: '400px', borderRadius: '16px', overflow: 'hidden', marginRight: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                      <img src={`/ourfamily/${img}`} alt="Our Family" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '48px' }}>
+                <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '24px', color: 'var(--ink-strong)' }}>Reviews</h3>
+                <div className="reviews-page-grid">
+                    {combinedReviews.map((post, i) => renderCommunityWallCard(post, i))}
+                </div>
               </div>
            </div>
            
