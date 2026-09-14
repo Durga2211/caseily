@@ -388,8 +388,22 @@ function SplashScreen() {
       </div>
 
       <div className="splash-v2-center">
-        <div className="splash-v2-headline">
+        <div className="splash-v2-headline" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div className="splash-v2-wordmark">CASEILY</div>
+          <div style={{
+            background: '#ffffff',
+            color: '#1e3fd1',
+            padding: '4px 20px',
+            borderRadius: '8px',
+            fontSize: '32px',
+            fontWeight: '900',
+            marginTop: '8px',
+            boxShadow: '0 8px 16px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.8)',
+            transform: 'rotate(-4deg)',
+            letterSpacing: '1px'
+          }}>
+            INSIDER
+          </div>
         </div>
         
         <div className="splash-v2-bottom-shape">
@@ -1067,17 +1081,14 @@ function App() {
   const filteredCouriers = COURIERS.filter(c => c.name.toLowerCase().includes(courierSearch.toLowerCase()))
   const selectedCourierObj = COURIERS.find(c => c.key === selectedCourier)
   const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Select Courier (optional, e.g., US...'
-  const combinedReviews = [
-    ...FALLBACK_REVIEWS,
-    ...approvedReviews.map(r => ({
-      name: r.name || 'Anonymous',
-      time: 'Just now',
-      text: r.quote,
-      image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
-      likes: (r.quote.length * 7) % 200 + 15,
-      comments: (r.quote.length * 3) % 20 + 2
-    }))
-  ];
+  const combinedReviews = approvedReviews.map(r => ({
+    name: r.name || 'Anonymous',
+    time: 'Just now',
+    text: r.quote,
+    image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
+    likes: (r.quote.length * 7) % 200 + 15,
+    comments: (r.quote.length * 3) % 20 + 2
+  }));
 
   const renderReviewForm = () => (
     <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
@@ -1956,7 +1967,7 @@ function App() {
         {/* ─── HERO TITLE ─── */}
         <div className="container" style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
           <h1 className="hero-heading" style={{ color: '#ffffff', margin: 0, fontSize: '32px', lineHeight: '1.2' }}>
-            The Ultimate Hub for Premium Cases.<br/>Live Tracking. Community Reviews.<br/>Creator Partnerships.
+            The only digital sanctuary where refreshing your parcel status counts as cardio, our blogs overanalyze charging bricks, and our insider reviews tell you if a case can survive an argument with your ex.
           </h1>
           <p className="hero-subtitle desktop-only" style={{ color: 'rgba(255,255,255,0.8)', marginTop: '16px' }}>
             Everything you need, right here.
@@ -2183,8 +2194,7 @@ function App() {
         </div>
       </section>
 
-      {/* ─── OUR HAPPY CUSTOMERS ─── */}
-      <HappyCustomers />
+      {/* ─── OUR HAPPY CUSTOMERS (REMOVED) ─── */}
 
       {/* ═══════════════════════════════════════════════════════════════
          SHOP BANNER
