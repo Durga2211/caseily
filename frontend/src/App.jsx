@@ -91,6 +91,30 @@ const HIGHLIGHTS = [
       '/our_products/img4.png',
     ],
   },
+  {
+    id: 'about_us',
+    label: 'About Us',
+    emoji: '🤝',
+    stories: ['/og-image.png'],
+  },
+  {
+    id: 'our_vision',
+    label: 'Our Vision',
+    emoji: '👁️',
+    stories: ['/og-image.png'],
+  },
+  {
+    id: 'brands_we_deal',
+    label: 'Brands We Deal',
+    emoji: '📱',
+    stories: ['/og-image.png'],
+  },
+  {
+    id: 'knowledge',
+    label: 'Knowledge',
+    emoji: '🧠',
+    stories: ['/og-image.png'],
+  },
 ]
 
 // ─── HELPERS ────────────────────────────────────────────────────────────
@@ -987,7 +1011,7 @@ function App() {
   const [currentPromoIndex, setCurrentPromoIndex] = useState(0)
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentPromoIndex(prev => (prev + 1) % 3)
+      setCurrentPromoIndex(prev => (prev + 1) % 2)
     }, 4000)
     return () => clearInterval(timer)
   }, [])
@@ -1461,44 +1485,161 @@ function App() {
       } catch (err) { console.error(err) }
     }
 
+    const INSIDER_MEMBERS = [
+      { name: 'Arjun', color: '#f59e0b' },
+      { name: 'Priya', color: '#ec4899' },
+      { name: 'Rohit', color: '#8b5cf6' },
+      { name: 'Ananya', color: '#10b981' },
+      { name: 'Vikram', color: '#3b82f6' },
+    ]
+
+    const INSIDER_ROOMS = [
+      { name: 'Unboxing Videos', count: '5', active: '25 users', emoji: '📦', id: 'unboxing' },
+      { name: 'Custom Orders', count: '3', active: '10 users', emoji: '🎨', id: 'custom-orders' },
+    ]
+
+    const INSIDER_GAMES = [
+      { name: 'Daily Trivia', emoji: '🧩' },
+      { name: 'Puzzle Challenge', emoji: '🧠' },
+    ]
+
     return (
-      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fafafa' }}>
-        <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid #dbdbdb', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center' }}>
-          <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: '#262626' }}>&larr;</button>
-          <div style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: '700', color: '#262626' }}>CASEILY Insiders</div>
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+        {/* Header */}
+        <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <span style={{ fontSize: '20px', fontWeight: '900', fontFamily: '"Poppins", sans-serif', letterSpacing: '1px' }}>
+              <span style={{ color: 'var(--accent)' }}>CASEILY</span>
+              <span style={{ color: 'var(--ink-strong)', fontWeight: '600' }}> Insider</span>
+            </span>
+          </div>
           <div style={{ width: '24px' }}></div>
         </header>
 
-        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 0' }}>
-          
-          <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '16px', border: '1px solid #dbdbdb', marginBottom: '24px' }}>
-            <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '12px', color: '#262626' }}>Create Post</div>
+        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px' }}>
+
+          {/* ─── MY INSIDER HUB ─── */}
+          <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '16px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', pointerEvents: 'none', userSelect: 'none', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '14px' }}>🔒</span>
+              <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0, letterSpacing: '0.5px', textTransform: 'uppercase' }}>My Insider Hub</h2>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {INSIDER_MEMBERS.map((m, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', opacity: 0.7 }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: `linear-gradient(135deg, ${m.color}, ${m.color}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent)', fontSize: '16px', fontWeight: '700', color: '#fff' }}>
+                    {m.name.charAt(0)}
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--ink-muted)', fontWeight: '600', maxWidth: '50px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ─── QUICK POST ─── */}
+          <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '20px', marginBottom: '20px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--ink-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Quick Post</div>
             <form onSubmit={handleUserCreatePost} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <select value={userPostForm.type} onChange={e => setUserPostForm({...userPostForm, type: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #efefef', background: '#fafafa', outline: 'none', fontSize: '14px' }}>
-                <option value="text">Text Post</option>
-                <option value="image">Image Post</option>
-              </select>
-              <textarea placeholder="What's on your mind?" value={userPostForm.content} onChange={e => setUserPostForm({...userPostForm, content: e.target.value})} rows={3} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #efefef', background: '#fafafa', outline: 'none', resize: 'vertical', fontSize: '14px' }} required />
-              {(userPostForm.type === 'image' || userPostForm.type === 'text') && (
-                <input type="file" accept="image/*" multiple onChange={e => setUserPostPhotos(e.target.files)} style={{ padding: '8px' }} />
-              )}
-              <button type="submit" style={{ padding: '10px', borderRadius: '8px', background: '#0095f6', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Post</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <label style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', border: '1px dashed var(--border)' }}>
+                    ＋
+                    <input type="file" accept="image/*" multiple onChange={e => setUserPostPhotos(e.target.files)} style={{ display: 'none' }} />
+                  </label>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', border: '1px dashed var(--border)' }}>📷</div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '2px' }}>CREATE AN INSIDER POST</div>
+                  <div style={{ fontSize: '13px', color: 'var(--ink-muted)' }}>Share images, videos, and questions with the fam.</div>
+                </div>
+              </div>
+              <textarea placeholder="What's on your mind?" value={userPostForm.content} onChange={e => setUserPostForm({...userPostForm, content: e.target.value})} rows={2} style={{ padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-secondary)', outline: 'none', resize: 'vertical', fontSize: '14px', fontFamily: 'inherit', color: 'var(--ink-strong)' }} required />
+              <button type="submit" style={{ padding: '12px', borderRadius: '12px', background: 'var(--accent)', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '15px', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)' }}>Post to Insider</button>
             </form>
           </div>
 
-          {insidersPosts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#8e8e8e' }}>No posts yet.</div>
-          ) : (
-            insidersPosts.map(post => {
-              return (
-                <article key={post.id} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid #dbdbdb', borderRadius: '8px', marginBottom: '24px' }}>
-                  <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #efefef' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
-                      <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>C</span>
+          {/* ─── EXCLUSIVE DROPS (full width, above rooms) ─── */}
+          <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '20px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent)', margin: '0 0 4px 0' }}>Exclusive Drops</h3>
+              <div style={{ fontSize: '22px', fontWeight: '900', fontFamily: '"SF Mono", "Fira Code", monospace', color: 'var(--ink-strong)', letterSpacing: '1px' }}>
+                07:18:00:29
+              </div>
+            </div>
+            <button style={{ background: 'var(--accent)', color: '#ffffff', fontWeight: '700', padding: '12px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)' }}>
+              Claim Drop
+            </button>
+          </div>
+
+          {/* ─── ROOMS (clickable, navigates to new page) ─── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+            {INSIDER_ROOMS.map((r, i) => (
+              <div key={i} onClick={() => { window.history.pushState({}, '', `/insider-room/${r.id}`); setCurrentPath(`/insider-room/${r.id}`); window.scrollTo(0, 0); }} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>{r.emoji}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--ink-strong)', lineHeight: '1.2' }}>{r.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--ink-muted)', marginTop: '2px' }}>({r.count})</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--ink-muted)', fontWeight: '600' }}>👥 {r.active}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ─── COMMUNITY CONTEST (full width, same size as games) ─── */}
+          <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '18px 20px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '22px' }}>🏆</span>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Community Contest</h3>
+                  <div style={{ fontSize: '12px', color: 'var(--ink-muted)', fontWeight: '600', marginTop: '2px' }}>Best Case Design (July)</div>
+                </div>
+              </div>
+              <button style={{ background: 'var(--accent)', color: '#ffffff', fontWeight: '700', padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)' }}>
+                Vote Now
+              </button>
+            </div>
+          </div>
+
+          {/* ─── INSIDER GAMES ─── */}
+          <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '18px 20px', marginBottom: '20px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Insider Games</h3>
+              <button style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '20px', padding: '6px 14px', color: 'var(--accent)', fontWeight: '700', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                VIEW ALL GAMES <span style={{ fontSize: '14px' }}>›</span>
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '20px', marginTop: '16px' }}>
+              {INSIDER_GAMES.map((g, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>{g.emoji}</div>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--ink-strong)' }}>{g.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ─── FULL INSIDER FEED (posts from API) ─── */}
+          <div style={{ marginBottom: '100px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>📰 Latest Posts</h3>
+            {insidersPosts.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--ink-muted)', background: 'var(--bg-card)', borderRadius: '16px', boxShadow: 'var(--shadow-card)' }}>No posts yet. Be the first to share!</div>
+            ) : (
+              insidersPosts.map(post => (
+                <article key={post.id} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', marginBottom: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
+                  <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
+                      <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 'bold' }}>{(post.author || 'U').charAt(0)}</span>
                     </div>
                     <div>
-                      <div style={{ fontWeight: '600', fontSize: '14px', color: '#262626' }}>{post.author}</div>
-                      <div style={{ fontSize: '12px', color: '#8e8e8e' }}>{new Date(post.created_at).toLocaleDateString()}</div>
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--ink-strong)' }}>{post.author}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>{new Date(post.created_at).toLocaleDateString()}</div>
                     </div>
                   </div>
 
@@ -1514,59 +1655,114 @@ function App() {
 
                   <div style={{ padding: '16px' }}>
                     {post.type === 'text' && (
-                      <p style={{ margin: '0 0 16px 0', fontSize: '24px', fontWeight: '500', color: 'var(--ink-strong)', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '500', color: 'var(--ink-strong)', lineHeight: '1.5', wordBreak: 'break-word' }}>
                         {post.content}
                       </p>
                     )}
 
                     <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
-                      <button onClick={() => handleLike(post.id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                      <button onClick={() => handleLike(post.id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-muted)', fontSize: '14px' }}>
+                        ❤️ {post.likes || 0}
                       </button>
                     </div>
-                    
-                    <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>{post.likes || 0} likes</div>
 
                     {post.type !== 'text' && (
-                      <p style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#262626', lineHeight: '1.5', wordBreak: 'break-word' }}>
-                        <span style={{ fontWeight: '600', marginRight: '6px' }}>{post.author}</span>
+                      <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--ink-strong)', lineHeight: '1.5', wordBreak: 'break-word' }}>
+                        <span style={{ fontWeight: '700', marginRight: '6px' }}>{post.author}</span>
                         {post.content}
                       </p>
                     )}
 
-                    {/* Comments Section */}
                     {post.comments && post.comments.length > 0 && (
-                      <div style={{ marginBottom: '12px', maxHeight: '150px', overflowY: 'auto' }}>
+                      <div style={{ marginBottom: '12px', maxHeight: '120px', overflowY: 'auto' }}>
                         {post.comments.map(c => (
-                          <div key={c.id} style={{ fontSize: '14px', marginBottom: '4px' }}>
-                            <span style={{ fontWeight: '600', marginRight: '6px' }}>{c.author}</span>
+                          <div key={c.id} style={{ fontSize: '13px', marginBottom: '4px', color: 'var(--ink-strong)' }}>
+                            <span style={{ fontWeight: '700', marginRight: '6px' }}>{c.author}</span>
                             {c.text}
                           </div>
                         ))}
                       </div>
                     )}
                     
-                    <div style={{ display: 'flex', borderTop: '1px solid #efefef', paddingTop: '12px', marginTop: '12px' }}>
+                    <div style={{ display: 'flex', borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '8px' }}>
                       <input 
                         type="text" 
                         placeholder="Add a comment..." 
                         value={commentInput[post.id] || ''}
                         onChange={e => setCommentInput({...commentInput, [post.id]: e.target.value})}
-                        style={{ border: 'none', flex: 1, outline: 'none', fontSize: '14px' }}
+                        style={{ border: 'none', flex: 1, outline: 'none', fontSize: '14px', background: 'transparent', color: 'var(--ink-strong)' }}
                       />
                       <button 
                         onClick={() => handleComment(post.id)}
-                        style={{ background: 'none', border: 'none', color: '#0095f6', fontWeight: '600', cursor: 'pointer', opacity: commentInput[post.id]?.trim() ? 1 : 0.5 }}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: '700', cursor: 'pointer', opacity: commentInput[post.id]?.trim() ? 1 : 0.5 }}
                       >
                         Post
                       </button>
                     </div>
                   </div>
                 </article>
-              )
-            })
-          )}
+              ))
+            )}
+          </div>
         </main>
+
+        {/* ─── BOTTOM ACTION BAR ─── */}
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg-card)', borderTop: '1px solid var(--border)', padding: '10px 0 12px', display: 'flex', justifyContent: 'space-around', zIndex: 50, boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
+          <button style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent)', letterSpacing: '0.3px' }}>New Post</span>
+          </button>
+          <button style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/><path d="M14 2h6a2 2 0 0 1 2 2v6"/><path d="M10 14L20 4"/></svg>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--ink-muted)', letterSpacing: '0.3px' }}>Perks</span>
+          </button>
+          <button style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--ink-muted)', letterSpacing: '0.3px' }}>Rules</span>
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (currentPath.startsWith('/insider-room/')) {
+    const roomId = currentPath.split('/').pop()
+    const roomName = roomId === 'unboxing' ? 'Unboxing Videos' : 'Custom Orders'
+    const roomEmoji = roomId === 'unboxing' ? '📦' : '🎨'
+    
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+        {/* Header */}
+        <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <button onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>{roomEmoji}</span> {roomName}
+            </span>
+          </div>
+          <div style={{ width: '24px' }}></div>
+        </header>
+
+        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', opacity: 0.5, padding: '40px 20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>{roomEmoji}</div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', margin: '0 0 8px 0' }}>Welcome to {roomName}</h3>
+            <p style={{ fontSize: '14px', color: 'var(--ink-muted)', maxWidth: '280px', margin: '0 auto' }}>
+              Connect with other insiders, share your experiences, and discover new ideas.
+            </p>
+          </div>
+        </main>
+        
+        {/* Chat Input Bar */}
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg-card)', borderTop: '1px solid var(--border)', padding: '12px 16px', zIndex: 50, boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
+          <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '12px' }}>
+            <button style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0 }}>＋</button>
+            <input type="text" placeholder={`Message ${roomName}...`} style={{ flex: 1, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '0 16px', fontSize: '14px', outline: 'none', color: 'var(--ink-strong)' }} />
+            <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
@@ -1982,18 +2178,15 @@ function App() {
           <div style={{ overflow: 'hidden', borderRadius: '32px', boxShadow: '0 12px 32px rgba(0,0,0,0.08)' }}>
             <div style={{ 
               display: 'flex', 
-              width: '300%', 
-              transform: `translateX(-${currentPromoIndex * 33.3333}%)`, 
+              width: '200%', 
+              transform: `translateX(-${currentPromoIndex * 50}%)`, 
               transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' 
             }}>
-              <div style={{ width: '33.3333%', flexShrink: 0, aspectRatio: '16/9' }}>
+              <div style={{ width: '50%', flexShrink: 0, aspectRatio: '16/9' }}>
+                <img src="/banner_wallet.png" alt="Caseilyplus+" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
+              </div>
+              <div style={{ width: '50%', flexShrink: 0, aspectRatio: '16/9' }}>
                 <img src="/banner_apple.png" alt="Apple Event" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
-              </div>
-              <div style={{ width: '33.3333%', flexShrink: 0, aspectRatio: '16/9' }}>
-                <img src="/banner_galaxy.png" alt="Galaxy Z Fold7" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
-              </div>
-              <div style={{ width: '33.3333%', flexShrink: 0, aspectRatio: '16/9' }}>
-                <img src="/banner_fold.png" alt="Galaxy Fold" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
               </div>
             </div>
           </div>
@@ -2062,7 +2255,7 @@ function App() {
       {/* ─── INSTAGRAM HIGHLIGHTS ─── */}
       <section id="highlights" className="highlights-section">
         <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '24px'}}>✨</span><h2 className="highlights-title" style={{ fontSize: '24px', fontWeight: '900', margin: 0, background: 'linear-gradient(90deg, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Spotlight</h2></div>
-        <div className="highlights-scroll" style={{ gap: '20px' }}>
+        <div className="highlights-scroll" style={{ gap: '20px', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
           {(() => {
             const dynamicHighlights = HIGHLIGHTS.map(h => {
               if (h.id === 'reviews') {
@@ -2072,10 +2265,14 @@ function App() {
               return h
             })
             return dynamicHighlights.map(h => (
-              <div key={h.id} className="highlight-item" onClick={() => setActiveStoryHighlight(h)}>
+              <div key={h.id} className="highlight-item" onClick={() => { if (h.id === 'happy_customers') { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); } else { setActiveStoryHighlight(h); } }} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>
                 <div className="highlight-ring" style={{ background: 'none', border: '2px solid #2563eb', padding: '4px' }}>
                   <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    <img src={h.cover} alt={h.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {h.emoji ? (
+                      <span style={{ fontSize: '32px' }}>{h.emoji}</span>
+                    ) : (
+                      <img src={h.cover} alt={h.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
                   </div>
                 </div>
                 <span className="highlight-label" style={{ fontWeight: '600' }}>{h.label}</span>
