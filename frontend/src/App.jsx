@@ -3,6 +3,8 @@ import './App.css'
 import { useTilt } from './useTilt'
 import { TiltCard } from './TiltCard'
 import TicTacToe from './TicTacToe'
+import { TicTacToeGame, ConnectFourGame, MemoryMatchGame } from './InsiderGames'
+import ReelsPage from './ReelsPage'
 // ─── DATA ───────────────────────────────────────────────────────────────
 const FALLBACK_REVIEWS = [
   { name: "Renu Thakkar", time: "2 hours ago", text: "We plugged Caseily tracking into our Shopify store and \"where is my order?\" tickets dropped by 60% in the first month. Customers love the live status page.", likes: 245, comments: 18 },
@@ -1499,8 +1501,9 @@ function App() {
     ]
 
     const INSIDER_GAMES = [
-      { name: 'Daily Trivia', emoji: '🧩' },
-      { name: 'Puzzle Challenge', emoji: '🧠' },
+      { name: 'Tic Tac Toe', emoji: '❌', id: 'tic-tac-toe' },
+      { name: 'Connect Four', emoji: '🔴', id: 'connect-four' },
+      { name: 'Memory Match', emoji: '🃏', id: 'memory-match' },
     ]
 
     return (
@@ -1511,13 +1514,18 @@ function App() {
           <div style={{ flex: 1, textAlign: 'center' }}>
             <span style={{ fontSize: '20px', fontWeight: '900', fontFamily: '"Poppins", sans-serif', letterSpacing: '1px' }}>
               <span style={{ color: 'var(--accent)' }}>CASEILY</span>
-              <span style={{ color: 'var(--ink-strong)', fontWeight: '600' }}> Insider</span>
+              <span style={{ color: 'var(--ink-strong)', fontWeight: '600' }}>insider</span>
             </span>
           </div>
-          <div style={{ width: '24px' }}></div>
+          <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', fontSize: '11px', fontWeight: '700', borderRadius: '12px', padding: '6px 12px', cursor: 'pointer', color: 'var(--ink-strong)' }}>Exit</button>
         </header>
 
         <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px' }}>
+
+          {/* ─── BANNER ─── */}
+          <div style={{ marginBottom: '16px', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
+            <img src="/insider-banner.png" alt="Caseily Insider" style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+          </div>
 
           {/* ─── MY INSIDER HUB ─── */}
           <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '16px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', pointerEvents: 'none', userSelect: 'none', position: 'relative' }}>
@@ -1572,23 +1580,16 @@ function App() {
             </button>
           </div>
 
-          {/* ─── ROOMS (clickable, navigates to new page) ─── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-            {INSIDER_ROOMS.map((r, i) => (
-              <div key={i} onClick={() => { window.history.pushState({}, '', `/insider-room/${r.id}`); setCurrentPath(`/insider-room/${r.id}`); window.scrollTo(0, 0); }} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>{r.emoji}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--ink-strong)', lineHeight: '1.2' }}>{r.name}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--ink-muted)', marginTop: '2px' }}>({r.count})</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--ink-muted)', fontWeight: '600' }}>👥 {r.active}</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </div>
+          {/* ─── JOIN ROOM BRANDING ─── */}
+          <div onClick={() => { window.history.pushState({}, '', '/join-rooms'); setCurrentPath('/join-rooms'); window.scrollTo(0, 0); }} style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '18px 20px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '22px' }}>🚪</span>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Join Room Branding</h3>
+                <div style={{ fontSize: '12px', color: 'var(--ink-muted)', fontWeight: '600', marginTop: '2px' }}>Connect with insiders</div>
               </div>
-            ))}
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </div>
 
           {/* ─── COMMUNITY CONTEST (full width, same size as games) ─── */}
@@ -1609,17 +1610,17 @@ function App() {
 
           {/* ─── INSIDER GAMES ─── */}
           <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '18px 20px', marginBottom: '20px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Insider Games</h3>
-              <button style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '20px', padding: '6px 14px', color: 'var(--accent)', fontWeight: '700', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                VIEW ALL GAMES <span style={{ fontSize: '14px' }}>›</span>
+              <button onClick={() => { window.history.pushState({}, '', '/insider-games'); setCurrentPath('/insider-games'); window.scrollTo(0, 0); }} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '20px', padding: '6px 14px', color: 'var(--accent)', fontWeight: '700', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                VIEW ALL <span style={{ fontSize: '14px' }}>›</span>
               </button>
             </div>
-            <div style={{ display: 'flex', gap: '20px', marginTop: '16px' }}>
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', scrollbarWidth: 'none' }}>
               {INSIDER_GAMES.map((g, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>{g.emoji}</div>
-                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--ink-strong)' }}>{g.name}</span>
+                <div key={i} onClick={() => { window.history.pushState({}, '', `/insider-game/${g.id}`); setCurrentPath(`/insider-game/${g.id}`); window.scrollTo(0, 0); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', background: 'var(--bg-secondary)', borderRadius: '14px', padding: '10px 16px', border: '1px solid var(--border)', whiteSpace: 'nowrap', transition: 'transform 0.15s ease' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>{g.emoji}</div>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--ink-strong)' }}>{g.name}</span>
                 </div>
               ))}
             </div>
@@ -1725,6 +1726,44 @@ function App() {
     )
   }
 
+  if (currentPath === '/join-rooms') {
+    const INSIDER_ROOMS = [
+      { name: 'Unboxing Videos', count: '5', active: '25 users', emoji: '📦', id: 'unboxing' },
+      { name: 'Custom Orders', count: '3', active: '10 users', emoji: '🎨', id: 'custom-orders' },
+    ]
+    
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+        {/* Header */}
+        <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <button onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>Join Room Branding</span>
+          </div>
+          <div style={{ width: '24px' }}></div>
+        </header>
+
+        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Available Rooms</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+            {INSIDER_ROOMS.map((r, i) => (
+              <div key={i} onClick={() => { window.history.pushState({}, '', `/insider-room/${r.id}`); setCurrentPath(`/insider-room/${r.id}`); window.scrollTo(0, 0); }} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'box-shadow 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>{r.emoji}</div>
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--ink-strong)' }}>{r.name}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--ink-muted)', marginTop: '4px' }}>{r.count} Active discussions • 👥 {r.active}</div>
+                  </div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   if (currentPath.startsWith('/insider-room/')) {
     const roomId = currentPath.split('/').pop()
     const roomName = roomId === 'unboxing' ? 'Unboxing Videos' : 'Custom Orders'
@@ -1765,6 +1804,81 @@ function App() {
         </div>
       </div>
     )
+  }
+
+  if (currentPath === '/insider-games') {
+    const games = [
+      { name: 'Tic Tac Toe', emoji: '❌', id: 'tic-tac-toe', desc: 'Classic 3×3 grid. Beat the computer!' },
+      { name: 'Connect Four', emoji: '🔴', id: 'connect-four', desc: 'Drop discs & connect 4 in a row!' },
+      { name: 'Memory Match', emoji: '🃏', id: 'memory-match', desc: 'Flip cards & find matching pairs!' },
+    ]
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+        <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <button onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>🎮 Insider Games</span>
+          </div>
+          <div style={{ width: '24px' }}></div>
+        </header>
+        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px' }}>
+          {games.map((g, i) => (
+            <div key={i} onClick={() => { window.history.pushState({}, '', `/insider-game/${g.id}`); setCurrentPath(`/insider-game/${g.id}`); window.scrollTo(0, 0); }} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>{g.emoji}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--ink-strong)' }}>{g.name}</div>
+                <div style={{ fontSize: '13px', color: 'var(--ink-muted)', marginTop: '4px' }}>{g.desc}</div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          ))}
+        </main>
+      </div>
+    )
+  }
+
+  if (currentPath.startsWith('/insider-game/')) {
+    const gameId = currentPath.split('/').pop()
+    const goBack = () => { window.history.pushState({}, '', '/insider-games'); setCurrentPath('/insider-games'); window.scrollTo(0, 0); }
+
+    const gameConfig = {
+      'tic-tac-toe': { title: '❌ Tic Tac Toe', component: <TicTacToeGame />, desc: 'Tap any empty square to place your X. Get three in a row (horizontal, vertical, or diagonal) before the computer does!' },
+      'connect-four': { title: '🔴 Connect Four', component: <ConnectFourGame />, desc: 'Tap the ▼ arrow to drop your red disc into a column. Connect four discs in a row — horizontally, vertically, or diagonally — to win!' },
+      'memory-match': { title: '🃏 Memory Match', component: <MemoryMatchGame />, desc: 'Tap two cards to flip them. If they match, they stay face up. Find all 8 pairs in as few moves as possible!' },
+    }
+
+    const game = gameConfig[gameId]
+    if (game) {
+      return (
+        <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+          <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <button onClick={goBack} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+            <div style={{ flex: 1, textAlign: 'center' }}><span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>{game.title}</span></div>
+            <div style={{ width: '24px' }}></div>
+          </header>
+          <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '30px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+            {game.component}
+            <div style={{ background: 'var(--bg-card)', borderRadius: '14px', padding: '14px 18px', border: '1px solid var(--border)', maxWidth: '320px', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>How to Play</div>
+              <div style={{ fontSize: '13px', color: 'var(--ink-muted)', lineHeight: '1.5' }}>{game.desc}</div>
+            </div>
+          </main>
+        </div>
+      )
+    }
+  }
+
+  if (currentPath === '/reels') {
+    const computedReels = [
+      ...FALLBACK_REELS.map((r, i) => ({ ...r, index: i })),
+      ...backendReels.map((r, i) => ({ 
+        id: r.id, 
+        videoSrc: r.is_local_promo ? `/${r.video}` : `${API_URL}/uploads/${r.video}`, 
+        text: r.caption, 
+        index: i + FALLBACK_REELS.length 
+      }))
+    ];
+    return <ReelsPage allReels={computedReels} onClose={() => { window.history.pushState({}, '', '/'); setCurrentPath('/'); window.scrollTo(0, 0); }} API_URL={API_URL} />
   }
 
   if (currentPath === '/news') {
@@ -2043,15 +2157,7 @@ function App() {
   // ═════════════════════════════════════════════════════════════════════
   // RENDER
   // ═════════════════════════════════════════════════════════════════════
-  const allReels = [
-    ...FALLBACK_REELS.map((r, i) => ({ ...r, index: i })),
-    ...backendReels.map((r, i) => ({ 
-      id: r.id, 
-      videoSrc: r.is_local_promo ? `/${r.video}` : `${API_URL}/uploads/${r.video}`, 
-      text: r.caption, 
-      index: i + FALLBACK_REELS.length 
-    }))
-  ];
+
 
   return (
     <div className="app-wrapper">
@@ -2205,6 +2311,10 @@ function App() {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
               </div>
               
+              <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '50%' }} onClick={() => { window.history.pushState({}, '', '/reels'); setCurrentPath('/reels'); window.scrollTo(0, 0); }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+              </div>
+
               <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '50%' }} onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
               </div>
@@ -2290,51 +2400,7 @@ function App() {
         />
       )}
 
-      {/* ─── TRENDING REELS ─── */}
-      <section id="trending-reels" className="section" style={{ padding: '10px 20px 40px', maxWidth: '800px', margin: '0 auto' }}>
-        <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '24px'}}>🔥</span><h2 className="highlights-title" style={{ fontSize: '24px', fontWeight: '900', margin: 0, background: 'linear-gradient(90deg, #ef4444, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Trending Reels</h2></div>
-        <div className="cw-scroll" style={{ padding: '8px', display: 'flex', gap: '16px', overflowX: 'auto', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', width: '100%', touchAction: 'pan-x' }}>
-          {allReels.map((item) => (
-            <div key={item.id} onClick={() => setActiveReelNum(item.index)} style={{ 
-              borderRadius: '16px', 
-              overflow: 'hidden', 
-              backgroundColor: '#000', 
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              position: 'relative',
-              flex: '0 0 45%',
-              minWidth: '140px',
-              maxWidth: '240px',
-              aspectRatio: '9/16',
-              cursor: 'pointer',
-              scrollSnapAlign: 'start'
-            }}>
-              <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-              </div>
-              <video 
-                src={item.videoSrc} 
-                muted
-                autoPlay
-                loop
-                playsInline
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
-              ></video>
-              <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '30px 12px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '13px', fontWeight: 'bold', textAlign: 'left', zIndex: 2 }}>
-                {item.text}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Reel Viewer Modal */}
-      {activeReelNum !== null && (
-        <ReelViewer
-          initialNum={activeReelNum}
-          allReels={allReels}
-          onClose={() => setActiveReelNum(null)}
-        />
-      )}
 
       {/* ═══════════════════════════════════════════════════════════════
          COMMUNITY WALL
