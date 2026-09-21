@@ -29,19 +29,6 @@ const FALLBACK_REELS = [
   { id: 'h6', videoSrc: '/promo2.mp4', text: 'Day in the life' }
 ];
 
-const COURIERS = [
-  { key: '', name: 'Auto-detect / Not sure', country: '' },
-  { key: 'delhivery', name: 'Delhivery', country: 'IN' },
-  { key: 'bluedart', name: 'Blue Dart', country: 'IN' },
-  { key: 'dtdc', name: 'DTDC', country: 'IN' },
-  { key: 'ekart', name: 'Ekart Logistics', country: 'IN' },
-  { key: 'xpressbees', name: 'Xpressbees', country: 'IN' },
-  { key: 'indiapost', name: 'India Post', country: 'IN' },
-  { key: 'fedex', name: 'FedEx', country: 'US' },
-  { key: 'dhl', name: 'DHL', country: 'DE' },
-  { key: 'ups', name: 'UPS', country: 'US' },
-]
-
 const BLOGS = [
   { category: 'Tips', title: 'How we built real-time tracking for 10+ carriers', color: '#d9a05b' },
   { category: 'Guide', title: '5 tips to reduce "Where is my order?" support tickets', color: '#4a5556' },
@@ -911,6 +898,18 @@ function App() {
   const [selectedCourier, setSelectedCourier] = useState('')
   const [courierOpen, setCourierOpen] = useState(false)
   const [courierSearch, setCourierSearch] = useState('')
+  const [couriers, setCouriers] = useState([{key: '', name: 'Auto-detect / Not sure', country_iso: ''}])
+  
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/carriers`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.carriers && data.carriers.length > 0) {
+          setCouriers([{key: '', name: 'Auto-detect / Not sure', country_iso: ''}, ...data.carriers])
+        }
+      })
+      .catch(err => console.error("Failed to load couriers", err))
+  }, [])
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -1104,9 +1103,12 @@ function App() {
   const isNotFound = result?.status_tag === 'not_found'
   const isError = result?.status_tag === 'error'
   const hasMessage = !!result?.message
-  const filteredCouriers = COURIERS.filter(c => c.name.toLowerCase().includes(courierSearch.toLowerCase()))
-  const selectedCourierObj = COURIERS.find(c => c.key === selectedCourier)
-  const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Select Courier (optional, e.g., US...'
+  const filteredCouriers = couriers.filter(c => 
+    c.name.toLowerCase().includes(courierSearch.toLowerCase()) || 
+    c.key.toLowerCase().includes(courierSearch.toLowerCase())
+  )
+  const selectedCourierObj = couriers.find(c => c.key === selectedCourier) || couriers[0]
+  const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Auto-detect / Not sure'
   const combinedReviews = approvedReviews.map(r => ({
     name: r.name || 'Anonymous',
     time: 'Just now',
@@ -1279,6 +1281,11 @@ function App() {
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '32px' }}>
                  <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Community Wall</h2>
+              </div>
+
+              {/* ─── BANNER ─── */}
+              <div style={{ marginBottom: '32px', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
+                <img src="/insider-banner.png" alt="Community Wall Banner" style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
               </div>
 
               <div style={{ marginBottom: '48px', overflow: 'hidden' }}>
@@ -1524,7 +1531,7 @@ function App() {
 
           {/* ─── BANNER ─── */}
           <div style={{ marginBottom: '16px', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
-            <img src="/insider-banner.png" alt="Caseily Insider" style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+            <div style={{ width: '100%', height: '200px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '18px' }}>Banner Placeholder</div>
           </div>
 
           {/* ─── MY INSIDER HUB ─── */}
@@ -1960,7 +1967,7 @@ function App() {
                     <div className="courier-dropdown-list">
                       {filteredCouriers.map(c => (
                         <div key={c.key} className={`courier-dropdown-item ${selectedCourier === c.key ? 'selected' : ''}`} onClick={() => { setSelectedCourier(c.key); setCourierOpen(false) }}>
-                          <span className="flag">{c.country ? isoToFlag(c.country) : '🔍'}</span>
+                          <span className="flag">{c.country_iso ? isoToFlag(c.country_iso) : '🔍'}</span>
                           <span className="item-name">{c.name}</span>
                           {selectedCourier === c.key && <svg className="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                         </div>
@@ -1978,7 +1985,7 @@ function App() {
               {/* Results */}
               {showResults && (
                 <div className="results-section" style={{ marginTop: '24px' }}>
-                  {loading && <div className="loading-container"><div className="spinner" /><p>Fetching tracking info…</p><p className="loading-hint">This may take up to a minute for new shipments</p></div>}
+                  {loading && <div className="loading-container"><div className="spinner" /><p>Fetching from courier…</p><p className="loading-hint">This may take up to a minute</p></div>}
                   {error && <p className="status-text error">{error}</p>}
                   {result && (
                     <div className="result">
@@ -1988,6 +1995,11 @@ function App() {
                         {result.courier_name && <div className="selected-courier-badge"><span className="badge-name">{result.courier_name}</span></div>}
                         <div className={getStatusPillClass(result.status_tag)}><span className="dot" />{result.status}</div>
                       </div>
+                      {result.message && (
+                        <div style={{ marginTop: '16px', padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', color: 'var(--ink-muted)', fontSize: '14px', lineHeight: '1.5' }}>
+                          {result.message}
+                        </div>
+                      )}
                       {result.events && result.events.length > 0 && (
                         <div className="timeline" style={{ marginTop: '32px' }}>
                           {result.events.map((evt, i) => (
