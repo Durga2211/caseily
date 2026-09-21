@@ -152,5 +152,15 @@
     "tag": "Verified buyer",
     "color": "#ef4444",
     "is_migrated": true
+  },
+  {
+    "id": "6a77adef",
+    "name": "Durga",
+    "city": "",
+    "stars": 5,
+    "quote": "Nice product ...",
+    "photo": null,
+    "status": "approved",
+    "created_at": "2026-09-10T06:50:25.712476"
   }
 ]

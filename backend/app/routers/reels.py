@@ -99,3 +99,53 @@ async def delete_reel(
     _save_db(reels)
 
     return {"message": "Reel deleted successfully"}
+
+
+# ─── Public interaction endpoints ────────────────────────────────────
+
+@router.post("/reels/{reel_id}/like")
+async def toggle_like(reel_id: str):
+    """Toggle like on a reel and return updated count."""
+    reels = _load_db()
+    reel = next((r for r in reels if r["id"] == reel_id), None)
+    if not reel:
+        reel = {"id": reel_id, "likes": 0, "comments": [], "is_stub": True}
+        reels.append(reel)
+    
+    reel["likes"] = reel.get("likes", 0) + 1
+    _save_db(reels)
+    return {"likes": reel["likes"]}
+
+
+@router.post("/reels/{reel_id}/comment")
+async def add_comment(reel_id: str, body: dict):
+    """Add a comment to a reel."""
+    reels = _load_db()
+    reel = next((r for r in reels if r["id"] == reel_id), None)
+    if not reel:
+        reel = {"id": reel_id, "likes": 0, "comments": [], "is_stub": True}
+        reels.append(reel)
+    
+    comment = {
+        "id": str(uuid.uuid4())[:8],
+        "name": body.get("name", "Anonymous"),
+        "text": body.get("text", ""),
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    
+    if "comments" not in reel:
+        reel["comments"] = []
+    reel["comments"].append(comment)
+    _save_db(reels)
+    return {"comment": comment, "total_comments": len(reel["comments"])}
+
+
+@router.get("/reels/{reel_id}/comments")
+async def get_comments(reel_id: str):
+    """Get all comments for a reel."""
+    reels = _load_db()
+    reel = next((r for r in reels if r["id"] == reel_id), None)
+    if not reel:
+        return {"comments": []}
+    
+    return {"comments": reel.get("comments", [])}
