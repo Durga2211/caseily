@@ -950,7 +950,7 @@ function App() {
   }
 
   // ─── Review form state ───────────────────────────────────────────────
-  const [reviewForm, setReviewForm] = useState({ name: '', city: '', stars: 5, quote: '' })
+  const [reviewForm, setReviewForm] = useState({ name: '', city: '', stars: 0, quote: '' })
   const [reviewPhoto, setReviewPhoto] = useState(null)
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [reviewSuccess, setReviewSuccess] = useState(false)
@@ -986,6 +986,10 @@ function App() {
 
   async function handleReviewSubmit(e) {
     e.preventDefault()
+    if (reviewForm.stars === 0) {
+      setReviewError('Please select a star rating before submitting.')
+      return
+    }
     setReviewSubmitting(true)
     setReviewError('')
     try {
@@ -998,7 +1002,7 @@ function App() {
       const res = await fetch(`${API_URL}/api/reviews`, { method: 'POST', body: form })
       if (!res.ok) throw new Error('Submission failed')
       setReviewSuccess(true)
-      setReviewForm({ name: '', city: '', stars: 5, quote: '' })
+      setReviewForm({ name: '', city: '', stars: 0, quote: '' })
       setReviewPhoto(null)
       setTimeout(() => setReviewSuccess(false), 4000)
     } catch (err) {
@@ -1115,7 +1119,8 @@ function App() {
     text: r.quote,
     image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
     likes: (r.quote.length * 7) % 200 + 15,
-    comments: (r.quote.length * 3) % 20 + 2
+    comments: (r.quote.length * 3) % 20 + 2,
+    stars: r.stars || 5
   }));
 
   const renderReviewForm = () => (
@@ -1182,6 +1187,11 @@ function App() {
         <div className="cw-meta">
           <div className="cw-name">{post.name}</div>
           <div className="cw-time">{post.time}</div>
+          {post.stars && (
+            <div style={{ color: '#f59e0b', fontSize: '13px', marginTop: '2px', letterSpacing: '2px' }}>
+              {'★'.repeat(post.stars)}{'☆'.repeat(5 - post.stars)}
+            </div>
+          )}
         </div>
         <div className="cw-dots">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
@@ -1300,7 +1310,7 @@ function App() {
               </div>
 
               <div style={{ marginBottom: '48px' }}>
-                <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px', color: 'var(--ink-strong)' }}>Our Family</h3>
+                <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px', color: 'var(--ink-strong)' }}>#UnfilteredFeedback</h3>
                 <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '16px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', snapType: 'x mandatory' }}>
                   {['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png', '10.png', '11.png', '12.png', '13.png', '14.png', '15.png', '16.png', '17.png', '18.png'].map((img, index) => (
                     <div key={`${img}-${index}`} style={{ flexShrink: 0, width: '220px', height: '400px', borderRadius: '16px', overflow: 'hidden', scrollSnapAlign: 'start', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
@@ -2279,10 +2289,8 @@ function App() {
         </div>
 
         {/* ─── HERO TITLE ─── */}
-        <div className="container" style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
-          <h1 className="hero-heading" style={{ color: '#ffffff', margin: 0, fontSize: '32px', lineHeight: '1.2' }}>
-            The only digital sanctuary where refreshing your parcel status counts as cardio, our blogs overanalyze charging bricks, and our insider reviews tell you if a case can survive an argument with your ex.
-          </h1>
+        <div className="container" style={{ textAlign: 'center', paddingTop: '16px', paddingBottom: '32px' }}>
+          <img src="/hero-image.jpg" alt="Caseily Hero" style={{ width: '100%', maxWidth: '600px', borderRadius: '24px', boxShadow: '0 12px 32px rgba(0,0,0,0.15)', display: 'block', margin: '0 auto' }} />
           <p className="hero-subtitle desktop-only" style={{ color: 'rgba(255,255,255,0.8)', marginTop: '16px' }}>
             Everything you need, right here.
           </p>
