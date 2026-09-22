@@ -614,15 +614,24 @@ function AdminDashboard() {
     }
 
     try {
-      await fetch(`${API_URL}/api/admin/news`, {
+      const res = await fetch(`${API_URL}/api/admin/news`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: form
       })
+      if (!res.ok) {
+        const errText = await res.text()
+        alert('Failed to publish: ' + errText)
+        return
+      }
       setNewsForm({ title: '', category: 'Updates', content: '', color: '#3b82f6' })
       setNewsPhoto(null)
       fetchNews()
-    } catch (err) { console.error(err) }
+      alert('Article published successfully!')
+    } catch (err) { 
+      console.error(err)
+      alert('Error: ' + err.message)
+    }
   }
 
   async function handleDeleteNews(id) {
@@ -2709,7 +2718,7 @@ function App() {
         </div>
         
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
-          {publicNews.length > 0 ? (
+          {publicNews.length > 1 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
               {publicNews.slice(0, 4).map((b) => (
                 <div key={b.id} onClick={() => { setSelectedNews(b); window.history.pushState({}, '', '/news-detail'); setCurrentPath('/news-detail'); window.scrollTo(0, 0); }} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
@@ -2721,9 +2730,15 @@ function App() {
                 </div>
               ))}
             </div>
-          ) : (
-            <p style={{ textAlign: 'center', color: '#64748b', fontSize: '14px' }}>No posts available.</p>
-          )}
+          ) : publicNews.length === 1 ? (
+            <div onClick={() => { setSelectedNews(publicNews[0]); window.history.pushState({}, '', '/news-detail'); setCurrentPath('/news-detail'); window.scrollTo(0, 0); }} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
+              <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '16px', overflow: 'hidden', marginBottom: '16px', backgroundColor: publicNews[0].color }}>
+                {publicNews[0].photo && <img src={`${API_URL}/uploads/${publicNews[0].photo}`} alt="Article cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: '800', color: publicNews[0].color, marginBottom: '8px', textTransform: 'uppercase' }}>{publicNews[0].category}</span>
+              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.3 }}>{publicNews[0].title}</h3>
+            </div>
+          ) : null}
         </div>
       </section>
 
