@@ -460,7 +460,10 @@ function AdminDashboard() {
   const [adminNotifications, setAdminNotifications] = useState([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
   const [notifForm, setNotifForm] = useState({ text: '' })
-
+  const [news, setNews] = useState([])
+  const [loadingNews, setLoadingNews] = useState(false)
+  const [newsForm, setNewsForm] = useState({ title: '', category: 'Updates', content: '', color: '#3b82f6' })
+  const [newsPhoto, setNewsPhoto] = useState(null)
   const isLoggedIn = !!token
 
   async function handleLogin(e) {
@@ -519,11 +522,22 @@ function AdminDashboard() {
     setLoadingNotifications(false)
   }
 
+  async function fetchNews() {
+    setLoadingNews(true)
+    try {
+      const res = await fetch(`${API_URL}/api/news`)
+      const data = await res.json()
+      setNews(data.news || [])
+    } catch (err) { console.error(err) }
+    setLoadingNews(false)
+  }
+
   useEffect(() => {
     if (isLoggedIn) {
       if (adminTab === 'reviews') fetchReviews()
       if (adminTab === 'insiders') fetchInsiders()
       if (adminTab === 'notifications') fetchAdminNotifications()
+      if (adminTab === 'news') fetchNews()
     }
   }, [isLoggedIn, adminTab])
 
@@ -585,6 +599,40 @@ function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       })
       fetchAdminNotifications()
+    } catch (err) { console.error(err) }
+  }
+
+  async function handleCreateNews(e) {
+    e.preventDefault()
+    const form = new FormData()
+    form.append('title', newsForm.title)
+    form.append('category', newsForm.category)
+    form.append('content', newsForm.content)
+    form.append('color', newsForm.color)
+    if (newsPhoto) {
+      form.append('photo', newsPhoto)
+    }
+
+    try {
+      await fetch(`${API_URL}/api/admin/news`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      })
+      setNewsForm({ title: '', category: 'Updates', content: '', color: '#3b82f6' })
+      setNewsPhoto(null)
+      fetchNews()
+    } catch (err) { console.error(err) }
+  }
+
+  async function handleDeleteNews(id) {
+    if (!window.confirm('Delete this article?')) return;
+    try {
+      await fetch(`${API_URL}/api/admin/news/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      fetchNews()
     } catch (err) { console.error(err) }
   }
 
@@ -680,8 +728,9 @@ function AdminDashboard() {
           <button onClick={() => setAdminTab('reviews')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'reviews' ? '#1e3fd1' : 'transparent', color: adminTab === 'reviews' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Reviews</button>
           <button onClick={() => setAdminTab('insiders')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'insiders' ? '#1e3fd1' : 'transparent', color: adminTab === 'insiders' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Insiders</button>
           <button onClick={() => setAdminTab('notifications')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'notifications' ? '#1e3fd1' : 'transparent', color: adminTab === 'notifications' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Notifications</button>
+          <button onClick={() => setAdminTab('news')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'news' ? '#1e3fd1' : 'transparent', color: adminTab === 'news' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>News</button>
           <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 4px' }}></div>
-          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : fetchAdminNotifications} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
+          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : adminTab === 'news' ? fetchNews : fetchAdminNotifications} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
           <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
           <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
         </div>
@@ -777,6 +826,45 @@ function AdminDashboard() {
               </div>
             )}
           </>
+        ) : adminTab === 'news' ? (
+          <>
+            <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Publish News & Tips</h2>
+              <form onSubmit={handleCreateNews} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <input type="text" placeholder="Article Title" value={newsForm.title} onChange={e => setNewsForm({...newsForm, title: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }} required />
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <select value={newsForm.category} onChange={e => setNewsForm({...newsForm, category: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', flex: 1 }}>
+                    <option value="Tips">Tips</option>
+                    <option value="Guide">Guide</option>
+                    <option value="Case study">Case study</option>
+                    <option value="Updates">Updates</option>
+                    <option value="Announcement">Announcement</option>
+                  </select>
+                  <input type="color" value={newsForm.color} onChange={e => setNewsForm({...newsForm, color: e.target.value})} style={{ padding: '4px', borderRadius: '12px', border: '1px solid #e2e8f0', height: '44px', width: '60px' }} />
+                </div>
+                <input type="file" accept="image/*" onChange={e => setNewsPhoto(e.target.files[0])} style={{ padding: '8px', border: '1px solid #e2e8f0', borderRadius: '12px' }} />
+                <textarea placeholder="Article Content..." value={newsForm.content} onChange={e => setNewsForm({...newsForm, content: e.target.value})} rows={6} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', resize: 'vertical' }} required />
+                <button type="submit" style={{ padding: '12px', borderRadius: '12px', background: '#1e3fd1', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer' }}>Publish Article</button>
+              </form>
+            </div>
+
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Published Articles ({news.length})</h2>
+            {loadingNews ? <p>Loading...</p> : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {news.map(article => (
+                  <div key={article.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', background: '#f8fafc' }}>
+                    <div>
+                      <span style={{ fontSize: '12px', fontWeight: '800', color: article.color, textTransform: 'uppercase' }}>{article.category}</span>
+                      <h3 style={{ margin: '4px 0 8px 0', fontSize: '16px', color: 'var(--ink-strong)' }}>{article.title}</h3>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>{new Date(article.created_at).toLocaleString()} • {article.likes} Likes</div>
+                    </div>
+                    <button onClick={() => handleDeleteNews(article.id)} style={{ padding: '8px 12px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Delete</button>
+                  </div>
+                ))}
+                {news.length === 0 && <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No articles published.</p>}
+              </div>
+            )}
+          </>
         ) : null}
       </div>
     </div>
@@ -857,6 +945,8 @@ function App() {
   const [notifications, setNotifications] = useState([])
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
+  const [publicNews, setPublicNews] = useState([])
+  const [selectedNews, setSelectedNews] = useState(null)
   const notifRef = useRef(null)
 
   useEffect(() => {
@@ -866,6 +956,11 @@ function App() {
         setNotifications(data.notifications || [])
         if (data.notifications && data.notifications.length > 0) setHasUnread(true)
       })
+      .catch(console.error)
+
+    fetch(`${API_URL || ''}/api/news`)
+      .then(res => res.json())
+      .then(data => setPublicNews(data.news || []))
       .catch(console.error)
   }, [currentPath])
 
@@ -1113,9 +1208,21 @@ function App() {
   )
   const selectedCourierObj = couriers.find(c => c.key === selectedCourier) || couriers[0]
   const courierDisplayText = selectedCourierObj?.key ? selectedCourierObj.name : 'Auto-detect / Not sure'
+  const formatReviewDate = (dateStr, seed) => {
+    if (dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+    const now = new Date();
+    const daysAgo = (seed % 7) + 1;
+    now.setDate(now.getDate() - daysAgo);
+    now.setHours(now.getHours() - (seed % 24));
+    return now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+
   const combinedReviews = approvedReviews.map(r => ({
     name: r.name || 'Anonymous',
-    time: 'Just now',
+    time: formatReviewDate(r.created_at, r.quote.length),
     text: r.quote,
     image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
     likes: (r.quote.length * 7) % 200 + 15,
@@ -1198,7 +1305,7 @@ function App() {
         </div>
       </div>
       {post.text && <div className="cw-text">{post.text}</div>}
-      {post.image && <img className="cw-image" src={post.image} alt="Review" />}
+      {post.image && <img className="cw-image" src={post.image} alt="Review" loading="lazy" />}
       <div className="cw-footer">
         <div className="cw-action" onClick={(e) => handleLikeToggle(i, e)} style={{ color: likedPosts.has(i) ? '#ef4444' : 'currentColor', cursor: 'pointer' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill={likedPosts.has(i) ? "#ef4444" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -1539,10 +1646,6 @@ function App() {
 
         <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px' }}>
 
-          {/* ─── BANNER ─── */}
-          <div style={{ marginBottom: '16px', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
-            <div style={{ width: '100%', height: '200px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold', fontSize: '18px' }}>Banner Placeholder</div>
-          </div>
 
           {/* ─── MY INSIDER HUB ─── */}
           <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '16px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', pointerEvents: 'none', userSelect: 'none', position: 'relative' }}>
@@ -1908,16 +2011,92 @@ function App() {
                  <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>News and tips</h2>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '24px' }}>
-                {BLOGS.map((b, i) => (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                {publicNews.map((b) => (
+                  <div key={b.id} onClick={() => { setSelectedNews(b); window.history.pushState({}, '', '/news-detail'); setCurrentPath('/news-detail'); window.scrollTo(0,0) }} style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', cursor: 'pointer' }}>
                     <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '16px', backgroundColor: b.color }}>
+                      {b.photo && <img src={`${API_URL}/uploads/${b.photo}`} alt="Article cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#3b82f6', marginBottom: '8px', textTransform: 'uppercase' }}>{b.category}</span>
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: b.color, marginBottom: '8px', textTransform: 'uppercase' }}>{b.category}</span>
                     <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: 'var(--ink-strong)', lineHeight: 1.4 }}>{b.title}</h3>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '12px' }}>{new Date(b.created_at).toLocaleDateString()}</div>
+                  </div>
+                ))}
+                {publicNews.length === 0 && <p style={{ color: '#64748b', gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>No news available yet.</p>}
+              </div>
+           </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (currentPath === '/news-detail' && selectedNews) {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-default)' }}>
+        <header style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', background: 'var(--bg-card)', position: 'sticky', top: 0, zIndex: 10 }}>
+          <button onClick={() => { window.history.pushState({}, '', '/news'); setCurrentPath('/news'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+          <div style={{ fontWeight: '700', fontSize: '16px', color: 'var(--ink-strong)' }}>Article</div>
+        </header>
+        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+          <div style={{ width: '100%', height: '240px', backgroundColor: selectedNews.color }}>
+            {selectedNews.photo && <img src={`${API_URL}/uploads/${selectedNews.photo}`} alt="Article cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+          </div>
+          <div style={{ padding: '24px 20px' }}>
+            <span style={{ fontSize: '13px', fontWeight: '800', color: selectedNews.color, textTransform: 'uppercase' }}>{selectedNews.category}</span>
+            <h1 style={{ margin: '8px 0 16px 0', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', lineHeight: 1.3 }}>{selectedNews.title}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '32px', color: '#64748b', fontSize: '14px' }}>
+              <span>{new Date(selectedNews.created_at).toLocaleString()}</span>
+            </div>
+            
+            <div style={{ fontSize: '16px', lineHeight: 1.6, color: '#334155', whiteSpace: 'pre-wrap', marginBottom: '40px' }}>
+              {selectedNews.content}
+            </div>
+
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                <button onClick={async () => {
+                  await fetch(`${API_URL}/api/news/${selectedNews.id}/like`, { method: 'POST' });
+                  setSelectedNews(prev => ({...prev, likes: (prev.likes||0) + 1}));
+                }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', borderRadius: '16px', background: '#fee2e2', border: 'none', cursor: 'pointer', color: '#ef4444', fontWeight: '600' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  {selectedNews.likes || 0} Likes
+                </button>
+              </div>
+
+              <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '16px' }}>Comments ({selectedNews.comments?.length || 0})</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+                {selectedNews.comments?.map(c => (
+                  <div key={c.id} style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--ink-strong)' }}>{c.username}</span>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '15px', color: '#334155' }}>{c.text}</p>
                   </div>
                 ))}
               </div>
-           </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const form = new FormData(e.target);
+                const text = form.get('text');
+                const username = form.get('username') || 'Anonymous User';
+                const res = await fetch(`${API_URL}/api/news/${selectedNews.id}/comment`, {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({ text, username })
+                });
+                const data = await res.json();
+                if (data.success) {
+                  setSelectedNews(prev => ({...prev, comments: [...(prev.comments||[]), data.comment]}));
+                  e.target.reset();
+                }
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input name="username" placeholder="Your name (optional)" style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
+                <textarea name="text" placeholder="Add a comment..." required rows="3" style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', resize: 'vertical', fontSize: '14px' }}></textarea>
+                <button type="submit" style={{ padding: '14px', borderRadius: '12px', background: 'var(--ink-strong)', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '15px' }}>Post Comment</button>
+              </form>
+            </div>
+          </div>
         </main>
       </div>
     )
@@ -2185,7 +2364,7 @@ function App() {
     <div className="app-wrapper">
       <SplashScreen />
 
-      <div style={{ backgroundColor: 'var(--accent)', position: 'relative', zIndex: 1, paddingBottom: '80px' }}>
+      <div style={{ backgroundColor: '#ffffff', position: 'relative', zIndex: 1, paddingBottom: '80px' }}>
         {/* ─── NAVBAR ─── */}
         <nav className="navbar" style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid #e2e8f0' }}>
           <div className="navbar-left" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -2214,7 +2393,10 @@ function App() {
                 </div>
               )}
             </div>
-            <div className="desktop-logo" style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '28px', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase', cursor: 'pointer' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>CASEILY</div>
+            <div className="desktop-logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>
+              <span style={{ color: '#1e3fd1', fontWeight: 900, fontSize: 'clamp(20px, 4vw, 28px)', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase' }}>CASEILY</span>
+              <span style={{ color: 'var(--ink-strong)', fontWeight: 700, fontSize: 'clamp(16px, 3vw, 22px)', fontFamily: '"Poppins", sans-serif', marginLeft: '2px' }}>insider</span>
+            </div>
           </div>
           <div className="navbar-links">
             {['track','reviews','blog','community','faq'].map(id => (
@@ -2261,7 +2443,10 @@ function App() {
               </div>
             )}
           </div>
-          <div className="desktop-logo" style={{ color: '#1e3fd1', fontWeight: 900, fontSize: '24px', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase', cursor: 'pointer' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>CASEILY</div>
+          <div className="desktop-logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>
+            <span style={{ color: '#1e3fd1', fontWeight: 900, fontSize: 'clamp(20px, 4vw, 24px)', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase' }}>CASEILY</span>
+            <span style={{ color: 'var(--ink-strong)', fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', fontFamily: '"Poppins", sans-serif', marginLeft: '2px' }}>insider</span>
+          </div>
           
           <div style={{ position: 'absolute', right: '20px', display: 'flex', alignItems: 'center', gap: '12px' }} ref={shortcutRef}>
             <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ backgroundColor: 'transparent', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--ink-strong)', fontSize: '20px' }}>
@@ -2289,11 +2474,8 @@ function App() {
         </div>
 
         {/* ─── HERO TITLE ─── */}
-        <div className="container" style={{ textAlign: 'center', paddingTop: '16px', paddingBottom: '32px' }}>
-          <img src="/hero-image.jpg" alt="Caseily Hero" style={{ width: '100%', maxWidth: '600px', borderRadius: '24px', boxShadow: '0 12px 32px rgba(0,0,0,0.15)', display: 'block', margin: '0 auto' }} />
-          <p className="hero-subtitle desktop-only" style={{ color: 'rgba(255,255,255,0.8)', marginTop: '16px' }}>
-            Everything you need, right here.
-          </p>
+        <div style={{ width: '100%', padding: '0', backgroundColor: '#ffffff' }}>
+          <img src="/hero-image-v3.png" alt="Caseily Hero" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
         </div>
       </div>
 
@@ -2527,16 +2709,21 @@ function App() {
         </div>
         
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
-            {BLOGS.map((b, i) => (
-              <div key={i} onClick={() => { window.history.pushState({}, '', '/news'); setCurrentPath('/news'); window.scrollTo(0, 0); }} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
-                <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '12px', backgroundColor: b.color }}>
+          {publicNews.length > 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+              {publicNews.slice(0, 4).map((b) => (
+                <div key={b.id} onClick={() => { setSelectedNews(b); window.history.pushState({}, '', '/news-detail'); setCurrentPath('/news-detail'); window.scrollTo(0, 0); }} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
+                  <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '12px', backgroundColor: b.color }}>
+                    {b.photo && <img src={`${API_URL}/uploads/${b.photo}`} alt="Article cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                  </div>
+                  <span style={{ fontSize: '14px', fontWeight: '800', color: b.color, marginBottom: '4px', textTransform: 'uppercase' }}>{b.category}</span>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{b.title}</h3>
                 </div>
-                <span style={{ fontSize: '14px', fontWeight: '800', color: '#94a3b8', marginBottom: '4px' }}>{b.category}</span>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{b.title}</h3>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ textAlign: 'center', color: '#64748b', fontSize: '14px' }}>No posts available.</p>
+          )}
         </div>
       </section>
 
