@@ -29,7 +29,13 @@ async def get_upload(filename: str):
     try:
         # get the latest version if multiple exist
         grid_out = fs.get_last_version(filename=filename)
-        return StreamingResponse(grid_out, media_type=grid_out.content_type)
+        return StreamingResponse(
+            grid_out, 
+            media_type=grid_out.content_type,
+            headers={
+                "Cache-Control": "public, max-age=31536000, immutable"
+            }
+        )
     except gridfs.errors.NoFile:
         raise HTTPException(status_code=404, detail="File not found")
 
