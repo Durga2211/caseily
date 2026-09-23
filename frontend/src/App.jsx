@@ -1011,6 +1011,8 @@ function App() {
   const [hasUnread, setHasUnread] = useState(false)
   const [publicNews, setPublicNews] = useState([])
   const [selectedNews, setSelectedNews] = useState(null)
+  const [roomMessages, setRoomMessages] = useState([])
+  const [messageInput, setMessageInput] = useState('')
   const notifRef = useRef(null)
 
   useEffect(() => {
@@ -1027,6 +1029,68 @@ function App() {
       .then(data => setPublicNews(data.news || []))
       .catch(console.error)
   }, [currentPath])
+
+  useEffect(() => {
+    if (currentPath.startsWith('/insider-room/')) {
+      const roomId = currentPath.split('/').pop()
+      const fetchMsgs = () => {
+        fetch(`${API_URL || ''}/api/insiders/rooms/${roomId}/messages`)
+          .then(res => res.json())
+          .then(data => setRoomMessages(data.messages || []))
+          .catch(console.error)
+      }
+      fetchMsgs()
+      const interval = setInterval(fetchMsgs, 5000)
+      return () => clearInterval(interval)
+    } else {
+      setRoomMessages([])
+    }
+  }, [currentPath])
+
+  async function handleSendMessage(roomId, e) {
+    if (e) e.preventDefault()
+    
+    if (!messageInput.trim()) return
+    
+    const formData = new FormData()
+    formData.append('text', messageInput)
+    
+    setMessageInput('') // Optimistic clear
+    try {
+      const res = await fetch(`${API_URL || ''}/api/insiders/rooms/${roomId}/messages`, {
+        method: 'POST',
+        body: formData
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setRoomMessages(prev => [...prev, data.message])
+      }
+    } catch (err) { console.error(err) }
+  }
+
+  async function handleDumpMeme(roomId, e) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const res = await fetch(`${API_URL || ''}/api/insiders/rooms/${roomId}/messages`, {
+          method: 'POST',
+          body: formData
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setRoomMessages(prev => [...prev, data.message]);
+        }
+      } catch (err) { console.error(err); }
+    };
+    input.click();
+  }
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
@@ -1942,19 +2006,37 @@ function App() {
                     setCurrentPath(`/insider-room/${r.id}`); 
                     window.scrollTo(0, 0); 
                   } else {
-                    const phone = window.prompt("Enter your phone number to request access to the VIP Vault:");
+                    const phone = window.prompt("Enter your phone number to access or request the VIP Vault:");
                     if (phone && phone.trim() !== "") {
                       try {
-                        const res = await fetch(`${API_URL}/api/insiders/vip-request`, {
+                        const checkRes = await fetch(`${API_URL}/api/insiders/vip-check`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ phone: phone.trim() })
                         });
-                        const data = await res.json();
-                        if (data.success) {
-                          alert("Our member will connect with you shortly");
+                        const checkData = await checkRes.json();
+                        
+                        if (checkData.approved) {
+                          window.history.pushState({}, '', `/insider-room/${r.id}`); 
+                          setCurrentPath(`/insider-room/${r.id}`); 
+                          window.scrollTo(0, 0);
+                        } else if (checkData.status === "pending") {
+                          alert("Your request is still pending. Our member will connect with you shortly.");
+                        } else if (checkData.status === "rejected") {
+                          alert("Your request for VIP access was not approved at this time.");
                         } else {
-                          alert("Failed to submit request.");
+                          // Not found, so submit new request
+                          const res = await fetch(`${API_URL}/api/insiders/vip-request`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone: phone.trim() })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            alert("Our member will connect with you shortly");
+                          } else {
+                            alert("Failed to submit request.");
+                          }
                         }
                       } catch (err) {
                         alert("Error connecting to server.");
@@ -1967,7 +2049,7 @@ function App() {
                     <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>{r.emoji}</div>
                     <div>
                       <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--ink-strong)' }}>{r.name} {r.locked && '🔒'}</div>
-                      <div style={{ fontSize: '14px', color: '#64748b', marginTop: '6px', lineHeight: 1.4 }}>{r.desc}</div>
+                      <div style={{ fontSize: '14px', color: '#64748b', marginTop: '6px', lineHeight: 1.4 }}>{r.subtitle}</div>
                     </div>
                   </div>
                   {!r.locked && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '12px' }}><polyline points="9 18 15 12 9 6"></polyline></svg>}
@@ -1982,41 +2064,240 @@ function App() {
 
   if (currentPath.startsWith('/insider-room/')) {
     const roomId = currentPath.split('/').pop()
-    const roomName = roomId === 'unboxing' ? 'Unboxing Videos' : 'Custom Orders'
-    const roomEmoji = roomId === 'unboxing' ? '📦' : '🎨'
+    const roomDetails = {
+      'care': { name: 'Care, Skins & Installations', emoji: '🛡️' },
+      'addicts': { name: 'Accessory Addicts Anonymous', emoji: '💸' },
+      'lounge': { name: 'Late-Night Work & Chill Lounge', emoji: '🎧' },
+      'weekend': { name: 'Weekend Plans & Getaways', emoji: '🏖️' },
+      'green-room': { name: 'The Green Room / Member Hangout', emoji: '🛋️' },
+      'memes': { name: 'Dumb Meme Dumpster', emoji: '🗑️' },
+      'vault': { name: 'Flash Drop Friday (VIP Vault)', emoji: '⚡' }
+    }
     
+    const room = roomDetails[roomId] || { name: 'Room', emoji: '🚪' }
+    
+    // Custom logic per room
+    const isDarkMode = roomId === 'lounge';
+    const bgPrimary = isDarkMode ? '#121212' : 'var(--bg-secondary)';
+    const bgCard = isDarkMode ? '#1e1e1e' : 'var(--bg-card)';
+    const textStrong = isDarkMode ? '#ffffff' : 'var(--ink-strong)';
+    const textMuted = isDarkMode ? '#a0a0a0' : 'var(--ink-muted)';
+    const borderColor = isDarkMode ? '#333333' : 'var(--border)';
+
+    const renderRoomContent = () => {
+      switch (roomId) {
+        case 'care':
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ background: bgCard, borderRadius: '16px', padding: '16px', border: `1px solid ${borderColor}`, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 12px 0', color: textStrong }}>Top Guides</h3>
+                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+                  <div style={{ width: '120px', flexShrink: 0, height: '80px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>▶ Bubble-Free Install</div>
+                  <div style={{ width: '120px', flexShrink: 0, height: '80px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>▶ Case Cleaning</div>
+                </div>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ background: bgCard, borderRadius: '16px', padding: '16px', border: `1px solid ${borderColor}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>S</div>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: textStrong }}>Support Team <span style={{ color: '#22c55e', fontSize: '12px' }}>✓ Verified Advice</span></span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px', color: textStrong, lineHeight: 1.5 }}>Make sure to use the included microfiber cloth and dust-removal sticker before applying your screen protector!</p>
+                </div>
+                {roomMessages.map((msg, i) => (
+                  <div key={msg.id || i} style={{ background: bgCard, borderRadius: '16px', padding: '16px', border: `1px solid ${borderColor}` }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: textStrong, lineHeight: 1.5 }}>{msg.text}</p>
+                    {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        case 'addicts':
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ height: '160px', borderRadius: '12px', background: 'url(/creators-club/how_it_works.png) center/cover', border: `1px solid ${borderColor}` }}></div>
+                <div style={{ height: '160px', borderRadius: '12px', background: 'url(/creators-club/free_product.png) center/cover', border: `1px solid ${borderColor}` }}></div>
+              </div>
+              <div style={{ background: '#fef2f2', borderRadius: '16px', padding: '16px', border: '1px solid #fecaca' }}>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: '#dc2626', marginBottom: '4px' }}>Confession #1042</div>
+                <p style={{ margin: 0, fontSize: '15px', color: '#7f1d1d', fontStyle: 'italic' }}>"I just bought my 7th MagSafe wallet because it matched my new shoes... I need help."</p>
+              </div>
+              {roomMessages.map((msg, i) => (
+                <div key={msg.id || i} style={{ background: '#fef2f2', borderRadius: '16px', padding: '16px', border: '1px solid #fecaca' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '800', color: '#dc2626', marginBottom: '4px' }}>Confession</div>
+                  <p style={{ margin: 0, fontSize: '15px', color: '#7f1d1d', fontStyle: 'italic' }}>"{msg.text}"</p>
+                  {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                </div>
+              ))}
+            </div>
+          )
+        case 'lounge':
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
+              <div style={{ background: 'linear-gradient(90deg, #4c1d95, #7c3aed)', borderRadius: '16px', padding: '16px', color: '#fff', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ fontSize: '24px' }}>🎧</div>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Currently Playing</div>
+                  <div style={{ fontSize: '16px', fontWeight: '800' }}>Lo-fi chill beats to focus/study to</div>
+                </div>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>J</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', color: textMuted, marginBottom: '4px' }}>Jason • <span style={{ color: '#a78bfa' }}>🌙 Burning the midnight oil</span></div>
+                    <div style={{ background: bgCard, padding: '12px', borderRadius: '0 12px 12px 12px', color: textStrong, fontSize: '14px' }}>Wrapping up this presentation. Anyone else still up?</div>
+                  </div>
+                </div>
+                {roomMessages.map((msg, i) => (
+                  <div key={msg.id || i} style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>U</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', color: textMuted, marginBottom: '4px' }}>User • <span style={{ color: '#a78bfa' }}>🌙 Burning the midnight oil</span></div>
+                      <div style={{ background: bgCard, padding: '12px', borderRadius: '0 12px 12px 12px', color: textStrong, fontSize: '14px' }}>
+                        {msg.text}
+                        {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        case 'weekend':
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ height: '200px', borderRadius: '16px', background: 'url(/banner_apple.png) center/cover', border: `1px solid ${borderColor}`, display: 'flex', alignItems: 'flex-end', padding: '16px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.9)', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>📍 Current Vibe: Weekend Getaway</div>
+              </div>
+              <div style={{ background: bgCard, borderRadius: '16px', padding: '16px', border: `1px solid ${borderColor}` }}>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: textStrong, marginBottom: '8px' }}>📍 Miami Beach, FL</div>
+                <p style={{ margin: 0, fontSize: '14px', color: textMuted }}>Just relaxing. Thinking about doing absolutely nothing today.</p>
+              </div>
+              {roomMessages.map((msg, i) => (
+                <div key={msg.id || i} style={{ background: bgCard, borderRadius: '16px', padding: '16px', border: `1px solid ${borderColor}` }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: textStrong, marginBottom: '8px' }}>📍 Somewhere, Earth</div>
+                  <p style={{ margin: 0, fontSize: '14px', color: textMuted }}>{msg.text}</p>
+                  {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                </div>
+              ))}
+            </div>
+          )
+        case 'green-room':
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ background: '#ecfdf5', border: '1px solid #10b981', color: '#065f46', padding: '12px', borderRadius: '12px', textAlign: 'center', fontSize: '14px', fontWeight: '700' }}>
+                👋 Welcome insiders!
+              </div>
+              {roomMessages.map((msg, i) => (
+                <div key={msg.id || i} style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>👋</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ background: bgCard, padding: '12px', borderRadius: '0 12px 12px 12px', color: textStrong, fontSize: '14px', border: `1px solid ${borderColor}` }}>
+                      {msg.text}
+                      {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        case 'memes':
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {roomMessages.map((msg, i) => (
+                <div key={msg.id || i} style={{ background: bgCard, borderRadius: '16px', border: `1px solid ${borderColor}`, overflow: 'hidden' }}>
+                  {msg.image ? (
+                    <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', display: 'block', backgroundColor: '#e2e8f0', minHeight: '200px', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ padding: '20px', textAlign: 'center', color: textStrong }}>{msg.text}</div>
+                  )}
+                  <div style={{ padding: '12px', display: 'flex', justifyContent: 'space-around', background: 'var(--bg-secondary)' }}>
+                    <span style={{ fontSize: '24px' }}>😂</span>
+                    <span style={{ fontSize: '24px' }}>💀</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        case 'vault':
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', borderRadius: '16px', padding: '24px', border: '1px solid #334155', color: '#fff', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)' }}>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>⚡</div>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '800', letterSpacing: '0.5px' }}>VIP Vault Active</h3>
+                <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8', lineHeight: 1.5 }}>
+                  You have unlocked exclusive access. Secret perks, limited drops, and early stock access will appear here weekly.
+                </p>
+                <div style={{ marginTop: '20px', display: 'inline-block', background: '#3b82f6', color: '#fff', padding: '8px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Next Drop: Friday 12:00 PM
+                </div>
+              </div>
+
+              <div style={{ background: '#fef3c7', borderRadius: '16px', padding: '16px', border: '1px solid #fde68a', color: '#92400e' }}>
+                <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🎁</span> Current Perk
+                </div>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>
+                  Use code <strong style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px dashed #d97706' }}>VAULT20</strong> for 20% off all MagSafe accessories. Valid for the next 24 hours only.
+                </p>
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {roomMessages.map((msg, i) => (
+                  <div key={msg.id || i} style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>U</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', color: textMuted, marginBottom: '4px' }}>VIP Member</div>
+                      <div style={{ background: bgCard, padding: '12px', borderRadius: '0 12px 12px 12px', color: textStrong, fontSize: '14px', border: `1px solid ${borderColor}` }}>
+                        {msg.text}
+                        {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        default:
+          return <div style={{ textAlign: 'center', color: textMuted }}>Room content coming soon.</div>
+      }
+    }
+
     return (
-      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: bgPrimary }}>
         {/* Header */}
-        <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-          <button onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+        <header style={{ backgroundColor: bgCard, borderBottom: `1px solid ${borderColor}`, padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <button onClick={() => { window.history.pushState({}, '', '/join-rooms'); setCurrentPath('/join-rooms'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: textStrong }}>&larr;</button>
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <span>{roomEmoji}</span> {roomName}
+            <span style={{ fontSize: '18px', fontWeight: '800', color: textStrong, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>{room.emoji}</span> {room.name}
             </span>
           </div>
           <div style={{ width: '24px' }}></div>
         </header>
 
-        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', opacity: 0.5, padding: '40px 20px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>{roomEmoji}</div>
-            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', margin: '0 0 8px 0' }}>Welcome to {roomName}</h3>
-            <p style={{ fontSize: '14px', color: 'var(--ink-muted)', maxWidth: '280px', margin: '0 auto' }}>
-              Connect with other insiders, share your experiences, and discover new ideas.
-            </p>
-          </div>
+        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px', display: 'flex', flexDirection: 'column', paddingBottom: '80px' }}>
+          {renderRoomContent()}
         </main>
         
         {/* Chat Input Bar */}
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg-card)', borderTop: '1px solid var(--border)', padding: '12px 16px', zIndex: 50, boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
-          <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '12px' }}>
-            <button style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0 }}>＋</button>
-            <input type="text" placeholder={`Message ${roomName}...`} style={{ flex: 1, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '0 16px', fontSize: '14px', outline: 'none', color: 'var(--ink-strong)' }} />
-            <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            </button>
-          </div>
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: bgCard, borderTop: `1px solid ${borderColor}`, padding: '12px 16px', zIndex: 50, boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
+          <form onSubmit={(e) => handleSendMessage(roomId, e)} style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '12px' }}>
+            <button type="button" style={{ background: bgPrimary, border: `1px solid ${borderColor}`, borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, color: textStrong }}>＋</button>
+            {roomId === 'memes' ? (
+              <button type="button" onClick={(e) => handleDumpMeme(roomId, e)} style={{ flex: 1, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '800', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>🗑️ Dump Meme</button>
+            ) : (
+              <input type="text" value={messageInput} onChange={e => setMessageInput(e.target.value)} placeholder={`Message ${room.name}...`} style={{ flex: 1, background: bgPrimary, border: `1px solid ${borderColor}`, borderRadius: '12px', padding: '0 16px', fontSize: '14px', outline: 'none', color: textStrong }} />
+            )}
+            {roomId !== 'memes' && (
+              <button type="submit" style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </button>
+            )}
+          </form>
         </div>
       </div>
     )
