@@ -1857,8 +1857,13 @@ function App() {
 
   if (currentPath === '/join-rooms') {
     const INSIDER_ROOMS = [
-      { name: 'Unboxing Videos', count: '5', active: '25 users', emoji: '📦', id: 'unboxing' },
-      { name: 'Custom Orders', count: '3', active: '10 users', emoji: '🎨', id: 'custom-orders' },
+      { name: 'Care, Skins & Installations', emoji: '🛡️', subtitle: 'Screen protector tips, case maintenance, and alignment help', desc: 'Practical troubleshooting, bubble-free installation videos, and cleaning advice that reduces customer support tickets.', id: 'care' },
+      { name: 'Accessory Addicts Anonymous', emoji: '💸', subtitle: 'Confess how many cases you own vs. how many you use', desc: 'People post flat-lay shots of their drawer hoard—12 cases, 6 MagSafe wallets, 4 lanyards—and confess why they still felt the urge to buy another one this week.', id: 'addicts' },
+      { name: 'Late-Night Work & Chill Lounge', emoji: '🎧', subtitle: 'Lo-fi beats, focus room, and casual after-hours talk', desc: 'A virtual "co-working lobby" where members drop their current Spotify jam or desk view, check in while burning the midnight oil, and chat during work breaks.', id: 'lounge' },
+      { name: 'Weekend Plans & Getaways', emoji: '🏖️', subtitle: 'Road trips, chill Sundays, or doing absolutely nothing', desc: 'An easygoing lifestyle room to talk about weekend escapes, good local food spots, or simply bragging about sleeping until noon.', id: 'weekend' },
+      { name: 'The Green Room / Member Hangout', emoji: '🛋️', subtitle: 'Casual open mic, say hi, and meet fellow insiders', desc: 'The default lobby of the community. Introduce yourself, drop a reaction, or just lurk and read through the daily chatter.', id: 'green-room' },
+      { name: 'Dumb Meme Dumpster', emoji: '🗑️', subtitle: 'Zero context, stolen tech memes, pure brainrot', desc: 'Quick-hit humor room where anyone can dump their favorite tech reels, relatable WhatsApp stickers, or screenshot-worthy internet jokes without explanation.', id: 'memes' },
+      { name: 'Flash Drop Friday (VIP Vault)', emoji: '⚡', subtitle: 'Limited drops, mystery discount codes, and quick giveaways', desc: 'Keeps retention high by training members to open the app at a specific weekly hour to catch secret perks or early stock access.', id: 'vault', locked: true },
     ]
     
     return (
@@ -1876,15 +1881,18 @@ function App() {
           <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Available Rooms</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
             {INSIDER_ROOMS.map((r, i) => (
-              <div key={i} onClick={() => { window.history.pushState({}, '', `/insider-room/${r.id}`); setCurrentPath(`/insider-room/${r.id}`); window.scrollTo(0, 0); }} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'box-shadow 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>{r.emoji}</div>
-                  <div>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--ink-strong)' }}>{r.name}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--ink-muted)', marginTop: '4px' }}>{r.count} Active discussions • 👥 {r.active}</div>
+              <div key={i} onClick={() => { if (!r.locked) { window.history.pushState({}, '', `/insider-room/${r.id}`); setCurrentPath(`/insider-room/${r.id}`); window.scrollTo(0, 0); } }} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', cursor: r.locked ? 'not-allowed' : 'pointer', transition: 'box-shadow 0.2s ease', opacity: r.locked ? 0.7 : 1 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', gap: '14px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>{r.emoji}</div>
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--ink-strong)' }}>{r.name} {r.locked && '🔒'}</div>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--ink-muted)', marginTop: '4px' }}>{r.subtitle}</div>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginTop: '8px', lineHeight: 1.4 }}>{r.desc}</div>
+                    </div>
                   </div>
+                  {!r.locked && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '12px' }}><polyline points="9 18 15 12 9 6"></polyline></svg>}
                 </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
               </div>
             ))}
           </div>
