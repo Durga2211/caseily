@@ -39,7 +39,7 @@ const REVIEWS_DATA = [
   },
 ];
 
-const FILTERS = ['All Reviews 💬', 'With Photos 📸', '5-Star Rating ⭐'];
+const FILTERS = ['All Reviews 💬', '5-Star Rating ⭐'];
 
 
 /* ── Card gradient palettes ── */
@@ -86,12 +86,12 @@ const S = {
     transition: 'all 0.25s ease', fontFamily: 'inherit',
   }),
   stackArea: {
-    position: 'relative', width: '100%', height: 420,
+    position: 'relative', width: '100%', height: 400,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     marginBottom: 24, padding: '0 24px', boxSizing: 'border-box',
   },
   card: {
-    position: 'absolute', width: 'calc(100% - 80px)', maxWidth: 280, height: 400,
+    position: 'absolute', width: 'calc(100% - 60px)', maxWidth: 310, height: 380,
     borderRadius: 22, padding: '20px 16px', boxSizing: 'border-box',
     color: '#fff', display: 'flex', flexDirection: 'column',
     cursor: 'grab', overflow: 'hidden',
@@ -112,7 +112,7 @@ const S = {
   datePill: {
     fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.65)',
     background: 'rgba(0,0,0,0.15)', padding: '3px 10px', borderRadius: 100,
-    flexShrink: 0,
+    flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90px',
   },
   ratingPill: {
     display: 'inline-flex', alignItems: 'center', gap: 3,
@@ -137,7 +137,7 @@ const S = {
     boxShadow: '0 4px 14px rgba(0,0,0,0.15)', transition: 'transform 0.2s',
   },
   navArrow: (side) => ({
-    position: 'absolute', [side]: 2, top: '50%', transform: 'translateY(-50%)',
+    position: 'absolute', [side]: -15, top: '50%', transform: 'translateY(-50%)',
     width: 36, height: 36, borderRadius: '50%', background: '#fff',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     border: '1px solid #e2e8f0', boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
@@ -207,8 +207,7 @@ export default function CommunityWall({ reviews = REVIEWS_DATA, onBackgroundClic
 
   // Derive filtered reviews
   let filtered = [...normalizedReviews];
-  if (activeFilter === 'With Photos 📸') filtered = filtered.filter(r => r.hasPhoto);
-  else if (activeFilter === '5-Star Rating ⭐') filtered = filtered.filter(r => r.rating >= 4.5);
+  if (activeFilter === '5-Star Rating ⭐') filtered = filtered.filter(r => r.rating >= 4.5);
   if (filtered.length === 0) filtered = normalizedReviews;
 
   const safeIndex = filtered.length > 0 ? (currentIndex % filtered.length || 0) : 0;
@@ -222,7 +221,7 @@ export default function CommunityWall({ reviews = REVIEWS_DATA, onBackgroundClic
   };
 
   return (
-    <div style={S.wrapper} onClick={onBackgroundClick}>
+    <div style={S.wrapper}>
       {/* ── HEADER ── */}
       <div style={S.header} onClick={(e) => e.stopPropagation()}>
         <div style={S.titleRow}>
@@ -264,11 +263,9 @@ export default function CommunityWall({ reviews = REVIEWS_DATA, onBackgroundClic
                   opacity: offset === 0 ? 1 : offset === 1 ? 0.75 : 0.45,
                 }}
                 exit={{ scale: 1.05, opacity: 0, y: -30 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                drag={offset === 0 ? 'x' : false}
-                dragConstraints={{ left: 0, right: 0 }}
-                onDragEnd={offset === 0 ? handleDragEnd : undefined}
-                style={{ ...S.card, background: theme.bg }}
+                transition={{ duration: 0 }}
+                style={{ ...S.card, background: theme.bg, cursor: offset === 0 ? 'pointer' : 'default' }}
+                onClick={offset === 0 ? onBackgroundClick : undefined}
               >
                 {/* Top Row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
@@ -279,7 +276,6 @@ export default function CommunityWall({ reviews = REVIEWS_DATA, onBackgroundClic
                       {review.verified && <div style={S.verifiedPill}>✓ Verified Buyer</div>}
                     </div>
                   </div>
-                  <span style={S.datePill}>{review.date}</span>
                 </div>
 
                 {/* Rating */}
@@ -321,12 +317,12 @@ export default function CommunityWall({ reviews = REVIEWS_DATA, onBackgroundClic
         {/* Nav Arrows */}
         {filtered.length > 1 && (
           <>
-            <button style={S.navArrow('left')} onClick={prev}
+            <button style={S.navArrow('left')} onClick={(e) => { e.stopPropagation(); prev(); }}
               onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-50%) scale(1.12)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'translateY(-50%) scale(1)'}>
               <ChevronLeft size={20} strokeWidth={2.5} />
             </button>
-            <button style={S.navArrow('right')} onClick={next}
+            <button style={S.navArrow('right')} onClick={(e) => { e.stopPropagation(); next(); }}
               onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-50%) scale(1.12)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'translateY(-50%) scale(1)'}>
               <ChevronRight size={20} strokeWidth={2.5} />

@@ -1182,7 +1182,7 @@ function ColorfulReviewsDeck({ reviews = [], onSelectReview, onLikeToggle, liked
 
   const filteredReviews = useMemo(() => {
     if (!reviews || reviews.length === 0) return [];
-    if (filter === 'photos') return reviews.filter(r => r.image);
+
     if (filter === 'five_star') return reviews.filter(r => r.stars === 5);
     if (filter === 'verified') return reviews.filter(r => r.city || r.name);
     return reviews;
@@ -1303,7 +1303,6 @@ function ColorfulReviewsDeck({ reviews = [], onSelectReview, onLikeToggle, liked
       <div className="cw-category-chips">
         {[
           { id: 'all', label: 'All Reviews 💬' },
-          { id: 'photos', label: 'With Photos 📸' },
           { id: 'five_star', label: '5-Star Ratings ⭐' },
           { id: 'verified', label: 'Verified Buyers 💎' }
         ].map(chip => (
@@ -1392,9 +1391,7 @@ function ColorfulReviewsDeck({ reviews = [], onSelectReview, onLikeToggle, liked
                     ? `0 24px 50px -12px ${theme.glow}, 0 12px 24px -6px rgba(0,0,0,0.22)`
                     : `0 12px 30px -10px ${theme.glow}`,
                   transform: transformStyle,
-                  transition: isDragging && offset === 0
-                    ? 'none'
-                    : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease, box-shadow 0.35s ease',
+                  transition: 'none',
                   zIndex: offset === 0 ? 10 : 5,
                   opacity: offset === 0 ? 1 : 0.88,
                   cursor: offset === 0 ? (isDragging ? 'grabbing' : 'grab') : 'pointer'
@@ -3747,7 +3744,7 @@ function App() {
         </div>
 
         {/* ─── HERO TITLE ─── */}
-        <div style={{ width: '100%', padding: '0', backgroundColor: '#ffffff' }}>
+        <div style={{ width: '100%', padding: '0', backgroundColor: 'transparent' }}>
           <img src="/hero-image-v3.png" alt="Caseily Hero" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
         </div>
       </div>
