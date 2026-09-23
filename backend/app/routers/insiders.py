@@ -4,7 +4,8 @@ from typing import List
 import uuid
 import os
 from datetime import datetime
-from ..db import insiders_collection, fs
+from ..db import insiders_collection, fs, vip_requests_collection
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api", tags=["insiders"])
 
@@ -113,6 +114,26 @@ async def public_create_insider_post(
 
     return {"success": True, "message": "Post created successfully!", "post": post}
 
+class VIPRequest(BaseModel):
+    phone: str
+
+@router.post("/insiders/vip-request")
+async def create_vip_request(payload: VIPRequest):
+    """Request access to VIP locked room."""
+    if vip_requests_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    req = {
+        "id": str(uuid.uuid4())[:8],
+        "phone": payload.phone.strip(),
+        "status": "pending",
+        "created_at": datetime.now().isoformat()
+    }
+    
+    vip_requests_collection.insert_one(req)
+    req.pop("_id", None)
+    return {"success": True, "message": "Request submitted"}
+
 
 # ─── Admin endpoints ─────────────────────────────────────────────────────
 
@@ -171,3 +192,34 @@ async def delete_insider_post(post_id: str, auth: bool = Depends(_require_admin)
         raise HTTPException(status_code=404, detail="Post not found")
         
     return {"success": True, "message": "Post deleted successfully!"}
+
+@router.get("/admin/vip-requests")
+async def get_vip_requests(auth: bool = Depends(_require_admin)):
+    """Get all VIP requests for admin."""
+    if vip_requests_collection is None:
+        return {"requests": []}
+    
+    # Sort pending first, then by date
+    pending = list(vip_requests_collection.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1))
+    approved = list(vip_requests_collection.find({"status": "approved"}, {"_id": 0}).sort("created_at", -1))
+    rejected = list(vip_requests_collection.find({"status": "rejected"}, {"_id": 0}).sort("created_at", -1))
+    
+    return {"requests": pending + approved + rejected}
+
+@router.post("/admin/vip-requests/{req_id}/action")
+async def action_vip_request(req_id: str, payload: dict, auth: bool = Depends(_require_admin)):
+    """Approve or reject a VIP request."""
+    if vip_requests_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    action = payload.get("action")
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    status = "approved" if action == "approve" else "rejected"
+    result = vip_requests_collection.update_one({"id": req_id}, {"$set": {"status": status}})
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Request not found")
+        
+    return {"success": True, "status": status}

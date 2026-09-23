@@ -19,6 +19,7 @@ if MONGO_URI:
     notifications_collection = db["notifications"]
     insiders_collection = db["insiders"]
     news_collection = db["news"]
+    vip_requests_collection = db["vip_requests"]
 else:
     print("WARNING: MONGO_URI not found in environment. Database connection will fail.")
     client = None
@@ -28,3 +29,4 @@ else:
     notifications_collection = None
     insiders_collection = None
     news_collection = None
+    vip_requests_collection = None
