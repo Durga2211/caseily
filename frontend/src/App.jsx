@@ -705,7 +705,7 @@ function AdminDashboard() {
         </div>
         <p style={{ color: '#334155', fontSize: '14px', lineHeight: 1.5, margin: '0 0 12px' }}>"{r.quote}"</p>
         {r.photo && (
-          <img src={`${API_URL}/uploads/${r.photo}`} alt="Review" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
+          <img src={`${API_URL}/uploads/${r.photo}`} alt="Review" loading="lazy" decoding="async" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
         )}
         <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>{new Date(r.created_at).toLocaleString()}</div>
         {r.status === 'pending' && (
@@ -1353,7 +1353,7 @@ function App() {
               {/* Review Image */}
               {post.image && (
                 <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
-                  <img src={post.image} alt="Review photo" style={{ width: '100%', display: 'block', borderRadius: '16px', objectFit: 'cover' }} />
+                  <img src={post.image} alt="Review photo" loading="lazy" decoding="async" style={{ width: '100%', display: 'block', borderRadius: '16px', objectFit: 'cover' }} />
                 </div>
               )}
 
@@ -2023,7 +2023,7 @@ function App() {
                 {publicNews.map((b) => (
                   <div key={b.id} onClick={() => { setSelectedNews(b); window.history.pushState({}, '', '/news-detail'); setCurrentPath('/news-detail'); window.scrollTo(0,0) }} style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', cursor: 'pointer' }}>
                     <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '16px', backgroundColor: b.color }}>
-                      {b.photo && <img src={`${API_URL}/uploads/${b.photo}`} alt="Article cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                      {b.photo && <img src={`${API_URL}/uploads/${b.photo}`} alt="Article cover" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                     </div>
                     <span style={{ fontSize: '12px', fontWeight: '800', color: b.color, marginBottom: '8px', textTransform: 'uppercase' }}>{b.category}</span>
                     <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: 'var(--ink-strong)', lineHeight: 1.4 }}>{b.title}</h3>
@@ -2047,7 +2047,7 @@ function App() {
         </header>
         <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%' }}>
           <div style={{ width: '100%', height: '240px', backgroundColor: selectedNews.color }}>
-            {selectedNews.photo && <img src={`${API_URL}/uploads/${selectedNews.photo}`} alt="Article cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+            {selectedNews.photo && <img src={`${API_URL}/uploads/${selectedNews.photo}`} alt="Article cover" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
           </div>
           <div style={{ padding: '24px 20px' }}>
             <span style={{ fontSize: '13px', fontWeight: '800', color: selectedNews.color, textTransform: 'uppercase' }}>{selectedNews.category}</span>
@@ -2723,7 +2723,7 @@ function App() {
               {publicNews.slice(0, 4).map((b) => (
                 <div key={b.id} onClick={() => { setSelectedNews(b); window.history.pushState({}, '', '/news-detail'); setCurrentPath('/news-detail'); window.scrollTo(0, 0); }} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
                   <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '12px', backgroundColor: b.color }}>
-                    {b.photo && <img src={`${API_URL}/uploads/${b.photo}`} alt="Article cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    {b.photo && <img src={`${API_URL}/uploads/${b.photo}`} alt="Article cover" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                   </div>
                   <span style={{ fontSize: '14px', fontWeight: '800', color: b.color, marginBottom: '4px', textTransform: 'uppercase' }}>{b.category}</span>
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#000000', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{b.title}</h3>
@@ -2733,7 +2733,7 @@ function App() {
           ) : publicNews.length === 1 ? (
             <div onClick={() => { setSelectedNews(publicNews[0]); window.history.pushState({}, '', '/news-detail'); setCurrentPath('/news-detail'); window.scrollTo(0, 0); }} style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
               <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '16px', overflow: 'hidden', marginBottom: '16px', backgroundColor: publicNews[0].color }}>
-                {publicNews[0].photo && <img src={`${API_URL}/uploads/${publicNews[0].photo}`} alt="Article cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                {publicNews[0].photo && <img src={`${API_URL}/uploads/${publicNews[0].photo}`} alt="Article cover" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>
               <span style={{ fontSize: '14px', fontWeight: '800', color: publicNews[0].color, marginBottom: '8px', textTransform: 'uppercase' }}>{publicNews[0].category}</span>
               <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: '#000000', lineHeight: 1.3 }}>{publicNews[0].title}</h3>
