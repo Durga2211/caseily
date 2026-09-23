@@ -2032,133 +2032,338 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
 }
 
 
-/* ─── COMMUNITY WALL ─── */
+/* ─── COMMUNITY WALL (COLORFUL & ANIMATION-BASED) ─── */
 .community-wall-section {
-  padding: 20px 20px 60px;
-  max-width: 1000px;
+  padding: 24px 0 40px;
+  max-width: 960px;
   margin: 0 auto;
+  position: relative;
+  overflow: visible;
+  box-sizing: border-box;
 }
 .cw-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 0 8px;
+  margin-bottom: 18px;
+  padding: 0 4px;
 }
 .cw-title {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 900;
-  color: #000;
   letter-spacing: -0.5px;
   margin: 0;
 }
 .cw-show-all {
-  color: #1e3a8a;
-  font-weight: 600;
+  color: #2563eb;
+  font-weight: 700;
+  font-size: 14px;
   text-decoration: none;
   cursor: pointer;
+  background: rgba(37, 99, 235, 0.08);
+  padding: 6px 14px;
+  border-radius: 100px;
+  transition: all 0.2s ease;
 }
-.cw-scroll {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding: 8px;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
+.cw-show-all:hover {
+  background: rgba(37, 99, 235, 0.15);
+  transform: translateX(2px);
 }
-.cw-scroll::-webkit-scrollbar { display: none; }
 
-.cw-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  border: 1px solid #f1f5f9;
-  padding: 16px;
+/* Category Filter Chips (Like Reference Header) */
+.cw-category-chips {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 24px;
+  padding: 4px 2px;
+}
+.cw-category-chips::-webkit-scrollbar { display: none; }
+.cw-chip {
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e2e8f0;
+  background: var(--bg-card, #ffffff);
+  color: #475569;
+  transition: all 0.2s ease;
+}
+.cw-chip.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+/* Deck Stage & Stack Container - Perfectly Centered */
+.cw-stage-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  user-select: none;
   display: flex;
   flex-direction: column;
-}
-
-.cw-scroll .cw-card {
-  min-width: 280px;
-  max-width: 280px;
-  scroll-snap-align: start;
-}
-
-.cw-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-
-.cw-user {
-  display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  box-sizing: border-box;
 }
-.cw-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #e2e8f0;
+.cw-stage-container {
+  position: relative;
+  width: 100%;
+  height: 490px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  color: #475569;
-  margin-right: 10px;
-  object-fit: cover;
+  perspective: 1200px;
+  touch-action: pan-y;
+  overflow: visible;
+  box-sizing: border-box;
 }
-.cw-meta {
-  flex: 1;
+
+/* Individual Stacked Card - Centered via inset and margin auto */
+.cw-deck-card {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: calc(100% - 24px);
+  max-width: 350px;
+  height: 460px;
+  border-radius: 28px;
+  padding: 22px;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: grab;
+  will-change: transform, opacity;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-sizing: border-box;
 }
-.cw-name {
-  font-size: 14px;
+.cw-deck-card:active {
+  cursor: grabbing;
+}
+
+/* Glassmorphism Elements inside Colorful Cards */
+.cw-glass-pill {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+  padding: 4px 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: #0f172a;
-  line-height: 1.2;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
-.cw-time {
-  font-size: 12px;
-  color: #64748b;
+.cw-stars-pill {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
-.cw-dots {
-  color: #64748b;
+.cw-glass-like-btn {
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 100px;
+  padding: 6px 14px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.15s ease, background 0.2s ease;
 }
-.cw-text {
-  font-size: 14px;
-  color: #334155;
+.cw-glass-like-btn:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.3);
+}
+.cw-glass-like-btn:active {
+  transform: scale(0.95);
+}
+
+/* Card Headline / Quote */
+.cw-card-quote {
+  font-size: 17px;
+  font-weight: 800;
   line-height: 1.4;
-  margin-bottom: 12px;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  margin: 10px 0 14px 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.cw-image {
+
+/* Photo Container */
+.cw-card-img-wrap {
   width: 100%;
-  height: 180px;
-  border-radius: 12px;
-  object-fit: cover;
+  height: 170px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  background: rgba(0, 0, 0, 0.15);
   margin-bottom: 12px;
-  background: #f8fafc;
 }
-.cw-footer {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  color: #64748b;
+.cw-card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Action Button ("Start watching" Reference Style) */
+.cw-action-pill-btn {
+  background: #ffffff;
+  border-radius: 100px;
+  padding: 11px 22px;
   font-size: 14px;
-  font-weight: 500;
-  margin-top: auto;
-}
-.cw-action {
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   align-items: center;
   gap: 6px;
 }
+.cw-action-pill-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.cw-action-pill-btn:active {
+  transform: scale(0.97);
+}
+
+/* Floating Navigation Arrows */
+.cw-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 25;
+  color: #0f172a;
+  transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.cw-nav-arrow:hover {
+  background: #ffffff;
+  transform: translateY(-50%) scale(1.12);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+}
+.cw-nav-arrow.prev {
+  left: -14px;
+}
+.cw-nav-arrow.next {
+  right: -14px;
+}
+
+/* Dots Pagination Track */
+.cw-dots-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+.cw-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 100px;
+  background: #cbd5e1;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+}
+.cw-dot.active {
+  width: 26px;
+  background: #0f172a;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+/* Swipe Hint */
+.cw-swipe-hint {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* ─── FULL REVIEWS PAGE GRID (COLORFUL UPGRADE) ─── */
 .reviews-page-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 20px;
+}
+.cw-card {
+  border-radius: 24px;
+  padding: 20px;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+.cw-card:hover {
+  transform: translateY(-6px) scale(1.01);
+}
+
+@media (max-width: 480px) {
+  .cw-stage-container {
+    height: 460px;
+  }
+  .cw-deck-card {
+    max-width: 330px;
+    height: 440px;
+    padding: 18px;
+  }
+  .cw-nav-arrow.prev {
+    left: -6px;
+  }
+  .cw-nav-arrow.next {
+    right: -6px;
+  }
 }
 
 /* Reels scroll fix */

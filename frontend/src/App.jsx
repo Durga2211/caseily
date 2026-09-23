@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import './App.css'
 import { useTilt } from './useTilt'
 import { TiltCard } from './TiltCard'
 import TicTacToe from './TicTacToe'
 import { TicTacToeGame, ConnectFourGame, MemoryMatchGame } from './InsiderGames'
 import ReelsPage from './ReelsPage'
+import CommunityWall from './components/CommunityWall'
 // ─── DATA ───────────────────────────────────────────────────────────────
 const FALLBACK_REVIEWS = [
   { name: "Renu Thakkar", time: "2 hours ago", text: "We plugged Caseily tracking into our Shopify store and \"where is my order?\" tickets dropped by 60% in the first month. Customers love the live status page.", likes: 245, comments: 18 },
@@ -466,7 +467,23 @@ function AdminDashboard() {
   const [newsPhoto, setNewsPhoto] = useState(null)
   const [vipRequests, setVipRequests] = useState([])
   const [loadingVip, setLoadingVip] = useState(false)
+  const [registeredUsers, setRegisteredUsers] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [adminDrops, setAdminDrops] = useState([])
+  const [loadingDrops, setLoadingDrops] = useState(false)
+  const [dropForm, setDropForm] = useState({ title: '', subtitle: '', price: '', expires: '', expireColor: '#fef08a', expireText: '#854d0e', disabled: false })
+  const [dropImage, setDropImage] = useState(null)
   const isLoggedIn = !!token
+
+  async function fetchUsers() {
+    setLoadingUsers(true)
+    try {
+      const res = await fetch(`${API_URL}/api/auth/users`)
+      const data = await res.json()
+      setRegisteredUsers(data || [])
+    } catch (err) { console.error(err) }
+    setLoadingUsers(false)
+  }
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -487,6 +504,45 @@ function AdminDashboard() {
   function handleLogout() {
     setToken('')
     localStorage.removeItem('caseily-admin-token')
+  }
+
+  async function fetchAdminDrops() {
+    setLoadingDrops(true)
+    try {
+      const res = await fetch(`${API_URL}/api/admin/drops`)
+      const data = await res.json()
+      setAdminDrops(data || [])
+    } catch (err) { console.error(err) }
+    setLoadingDrops(false)
+  }
+
+  async function handleDropSubmit(e) {
+    e.preventDefault()
+    try {
+      const form = new FormData()
+      form.append('title', dropForm.title)
+      form.append('subtitle', dropForm.subtitle)
+      form.append('price', dropForm.price)
+      form.append('expires', dropForm.expires)
+      form.append('expireColor', dropForm.expireColor)
+      form.append('expireText', dropForm.expireText)
+      form.append('disabled', dropForm.disabled)
+      if (dropImage) form.append('image', dropImage)
+      
+      const res = await fetch(`${API_URL}/api/admin/drops`, { method: 'POST', body: form })
+      if (res.ok) {
+        setDropForm({ title: '', subtitle: '', price: '', expires: '', expireColor: '#fef08a', expireText: '#854d0e', disabled: false })
+        setDropImage(null)
+        fetchAdminDrops()
+      }
+    } catch (err) { console.error(err) }
+  }
+
+  async function handleDropDelete(id) {
+    try {
+      await fetch(`${API_URL}/api/admin/drops/${id}`, { method: 'DELETE' })
+      fetchAdminDrops()
+    } catch (err) { console.error(err) }
   }
 
   async function fetchReviews() {
@@ -541,6 +597,8 @@ function AdminDashboard() {
       if (adminTab === 'notifications') fetchAdminNotifications()
       if (adminTab === 'news') fetchNews()
       if (adminTab === 'vip') fetchVipRequests()
+      if (adminTab === 'users') fetchUsers()
+      if (adminTab === 'drops') fetchAdminDrops()
     }
   }, [isLoggedIn, adminTab])
 
@@ -765,8 +823,10 @@ function AdminDashboard() {
           <button onClick={() => setAdminTab('notifications')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'notifications' ? '#1e3fd1' : 'transparent', color: adminTab === 'notifications' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Notifications</button>
           <button onClick={() => setAdminTab('news')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'news' ? '#1e3fd1' : 'transparent', color: adminTab === 'news' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>News</button>
           <button onClick={() => setAdminTab('vip')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'vip' ? '#1e3fd1' : 'transparent', color: adminTab === 'vip' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>VIP Requests</button>
+          <button onClick={() => setAdminTab('users')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'users' ? '#1e3fd1' : 'transparent', color: adminTab === 'users' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Users</button>
+          <button onClick={() => setAdminTab('drops')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'drops' ? '#1e3fd1' : 'transparent', color: adminTab === 'drops' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Drops</button>
           <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 4px' }}></div>
-          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : adminTab === 'news' ? fetchNews : fetchAdminNotifications} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
+          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : adminTab === 'news' ? fetchNews : adminTab === 'vip' ? fetchVipRequests : adminTab === 'drops' ? fetchAdminDrops : fetchUsers} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
           <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
           <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
         </div>
@@ -929,6 +989,63 @@ function AdminDashboard() {
               </div>
             )}
           </>
+        ) : adminTab === 'users' ? (
+          <>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Registered Users ({registeredUsers.length})</h2>
+            {loadingUsers ? <p>Loading...</p> : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {registeredUsers.map(user => (
+                  <div key={user.id} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontWeight: '800', fontSize: '18px', color: 'var(--ink-strong)' }}>{user.name}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--ink-muted)', marginTop: '4px' }}>Phone: {user.phone}</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>Joined: {new Date(user.created_at).toLocaleString()}</div>
+                  </div>
+                ))}
+                {registeredUsers.length === 0 && <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No registered users.</p>}
+              </div>
+            )}
+          </>
+        ) : adminTab === 'drops' ? (
+          <>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Exclusive Drops</h2>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>Create New Drop</h3>
+              <form onSubmit={handleDropSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input type="text" placeholder="Title (e.g. Indian Exclusive)" value={dropForm.title} onChange={e => setDropForm({ ...dropForm, title: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} required />
+                <input type="text" placeholder="Subtitle (e.g. Limited Run)" value={dropForm.subtitle} onChange={e => setDropForm({ ...dropForm, subtitle: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                <input type="text" placeholder="Price (e.g. ₹3,500)" value={dropForm.price} onChange={e => setDropForm({ ...dropForm, price: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                <input type="text" placeholder="Expires Text (e.g. Expires: 11h 23m)" value={dropForm.expires} onChange={e => setDropForm({ ...dropForm, expires: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <input type="text" placeholder="Expire Badge Color (#fef08a)" value={dropForm.expireColor} onChange={e => setDropForm({ ...dropForm, expireColor: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1 }} />
+                  <input type="text" placeholder="Expire Text Color (#854d0e)" value={dropForm.expireText} onChange={e => setDropForm({ ...dropForm, expireText: e.target.value })} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1 }} />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                  <input type="checkbox" checked={dropForm.disabled} onChange={e => setDropForm({ ...dropForm, disabled: e.target.checked })} />
+                  Disabled (Grayed out)
+                </label>
+                <input type="file" accept="image/*" onChange={e => setDropImage(e.target.files[0])} style={{ padding: '10px' }} />
+                <button type="submit" style={{ padding: '10px', background: '#1e3fd1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>Create Drop</button>
+              </form>
+            </div>
+            
+            <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: 'var(--ink-strong)' }}>Existing Drops</h3>
+            {loadingDrops ? <p>Loading...</p> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {adminDrops.map(d => (
+                  <div key={d._id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {d.image && <img src={`${API_URL}/uploads/${d.image}`} alt="drop" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }} />}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '700', color: 'var(--ink-strong)' }}>{d.title}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>{d.subtitle} • {d.price}</div>
+                      {d.expires && <div style={{ fontSize: '12px', marginTop: '4px', display: 'inline-block', padding: '2px 8px', borderRadius: '4px', background: d.expireColor, color: d.expireText }}>{d.expires}</div>}
+                    </div>
+                    <button onClick={() => handleDropDelete(d._id)} style={{ padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Delete</button>
+                  </div>
+                ))}
+                {adminDrops.length === 0 && <p style={{ color: '#64748b' }}>No drops found.</p>}
+              </div>
+            )}
+          </>
         ) : null}
       </div>
     </div>
@@ -1001,6 +1118,414 @@ function HappyCustomers() {
     </section>
   );
 }
+// ─── COLORFUL REVIEWS DECK (REFERENCE DESIGN & ANIMATED SWIPE) ───
+const REVIEW_THEMES = [
+  {
+    bg: 'linear-gradient(145deg, #9333EA 0%, #6B21A8 100%)', // Vibrant Purple (hero in reference)
+    accent: '#C084FC',
+    glow: 'rgba(147, 51, 234, 0.45)',
+    btnColor: '#6B21A8',
+    category: 'Art & Design',
+    tag: 'Community Favorite 💜'
+  },
+  {
+    bg: 'linear-gradient(145deg, #0284C7 0%, #0369A1 100%)', // Electric Blue (right peek / course card)
+    accent: '#38BDF8',
+    glow: 'rgba(2, 132, 199, 0.45)',
+    btnColor: '#0369A1',
+    category: 'MagSafe & Build',
+    tag: 'Top Quality ⚡'
+  },
+  {
+    bg: 'linear-gradient(145deg, #EC4899 0%, #BE185D 100%)', // Hot Pink / Magenta (course card)
+    accent: '#F472B6',
+    glow: 'rgba(236, 72, 153, 0.45)',
+    btnColor: '#BE185D',
+    category: 'Fit & Protection',
+    tag: 'Super Satisfied 💖'
+  },
+  {
+    bg: 'linear-gradient(145deg, #EA580C 0%, #C2410C 100%)', // Vibrant Tangerine (left peek)
+    accent: '#FB923C',
+    glow: 'rgba(234, 88, 12, 0.45)',
+    btnColor: '#C2410C',
+    category: 'Fast Shipping',
+    tag: 'Express Delivery 📦'
+  },
+  {
+    bg: 'linear-gradient(145deg, #059669 0%, #047857 100%)', // Emerald Green
+    accent: '#34D399',
+    glow: 'rgba(5, 150, 105, 0.45)',
+    btnColor: '#047857',
+    category: 'Premium Quality',
+    tag: 'Flawless Finish 🌿'
+  },
+  {
+    bg: 'linear-gradient(145deg, #4F46E5 0%, #3730A3 100%)', // Deep Indigo
+    accent: '#818CF8',
+    glow: 'rgba(79, 70, 229, 0.45)',
+    btnColor: '#3730A3',
+    category: 'Verified Purchase',
+    tag: 'Highly Recommended ⭐'
+  }
+];
+
+function ColorfulReviewsDeck({ reviews = [], onSelectReview, onLikeToggle, likedPosts = new Set(), onShowAll }) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [filter, setFilter] = useState('all');
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const startXRef = useRef(0);
+  const isMouseDownRef = useRef(false);
+
+  const filteredReviews = useMemo(() => {
+    if (!reviews || reviews.length === 0) return [];
+    if (filter === 'photos') return reviews.filter(r => r.image);
+    if (filter === 'five_star') return reviews.filter(r => r.stars === 5);
+    if (filter === 'verified') return reviews.filter(r => r.city || r.name);
+    return reviews;
+  }, [reviews, filter]);
+
+  const list = filteredReviews.length > 0 ? filteredReviews : reviews;
+  const total = list.length;
+  const safeIdx = total > 0 ? ((activeIdx % total) + total) % total : 0;
+
+  const next = () => {
+    if (total <= 1) return;
+    setActiveIdx(prev => (prev + 1) % total);
+  };
+  const prev = () => {
+    if (total <= 1) return;
+    setActiveIdx(prev => (prev - 1 + total) % total);
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [total]);
+
+  // Touch handlers
+  const handleTouchStart = (e) => {
+    startXRef.current = e.touches[0].clientX;
+    setIsDragging(true);
+  };
+  const handleTouchMove = (e) => {
+    if (!isDragging) return;
+    const currentX = e.touches[0].clientX;
+    setDragX(currentX - startXRef.current);
+  };
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    if (dragX < -45) next();
+    else if (dragX > 45) prev();
+    setDragX(0);
+    setIsDragging(false);
+  };
+
+  // Mouse drag handlers
+  const handleMouseDown = (e) => {
+    startXRef.current = e.clientX;
+    isMouseDownRef.current = true;
+    setIsDragging(true);
+  };
+  const handleMouseMove = (e) => {
+    if (!isMouseDownRef.current) return;
+    setDragX(e.clientX - startXRef.current);
+  };
+  const handleMouseUp = () => {
+    if (!isMouseDownRef.current) return;
+    if (dragX < -45) next();
+    else if (dragX > 45) prev();
+    setDragX(0);
+    isMouseDownRef.current = false;
+    setIsDragging(false);
+  };
+  const handleMouseLeave = () => {
+    if (isMouseDownRef.current) {
+      if (dragX < -45) next();
+      else if (dragX > 45) prev();
+      setDragX(0);
+      isMouseDownRef.current = false;
+      setIsDragging(false);
+    }
+  };
+
+  if (total === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-muted)' }}>
+        <p style={{ fontSize: '18px', fontWeight: '700' }}>No reviews found.</p>
+      </div>
+    );
+  }
+
+  // Pre-calculate the visible cards (previous, next, active)
+  const prevIdx = (safeIdx - 1 + total) % total;
+  const nextIdx = (safeIdx + 1) % total;
+
+  const visibleCards = total === 1
+    ? [{ post: list[safeIdx], index: safeIdx, offset: 0 }]
+    : total === 2
+    ? [
+        { post: list[prevIdx], index: prevIdx, offset: -1 },
+        { post: list[safeIdx], index: safeIdx, offset: 0 }
+      ]
+    : [
+        { post: list[prevIdx], index: prevIdx, offset: -1 },
+        { post: list[nextIdx], index: nextIdx, offset: 1 },
+        { post: list[safeIdx], index: safeIdx, offset: 0 }
+      ];
+
+  const activeTheme = REVIEW_THEMES[safeIdx % REVIEW_THEMES.length];
+
+  return (
+    <div>
+      {/* ─── HEADER ROW ─── */}
+      <div className="cw-header-row">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '26px' }}>💬</span>
+          <h2 className="cw-title" style={{ background: 'linear-gradient(90deg, #3b82f6, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Community Wall
+          </h2>
+        </div>
+        <a className="cw-show-all" onClick={onShowAll}>
+          Show all ({reviews.length}) &rarr;
+        </a>
+      </div>
+
+      {/* ─── CATEGORY CHIPS (REFERENCE STYLE TABS) ─── */}
+      <div className="cw-category-chips">
+        {[
+          { id: 'all', label: 'All Reviews 💬' },
+          { id: 'photos', label: 'With Photos 📸' },
+          { id: 'five_star', label: '5-Star Ratings ⭐' },
+          { id: 'verified', label: 'Verified Buyers 💎' }
+        ].map(chip => (
+          <button
+            key={chip.id}
+            className={`cw-chip ${filter === chip.id ? 'active' : ''}`}
+            onClick={() => {
+              setFilter(chip.id);
+              setActiveIdx(0);
+            }}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ─── STACKED STAGE / HERO CARD DECK ─── */}
+      <div
+        className="cw-stage-wrapper"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Floating Navigation Arrows */}
+        {total > 1 && (
+          <>
+            <button
+              className="cw-nav-arrow prev"
+              onClick={(e) => { e.stopPropagation(); prev(); }}
+              aria-label="Previous Review"
+              title="Previous Review"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <button
+              className="cw-nav-arrow next"
+              onClick={(e) => { e.stopPropagation(); next(); }}
+              aria-label="Next Review"
+              title="Next Review"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </>
+        )}
+
+        {/* The Card Stage */}
+        <div
+          className="cw-stage-container"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+        >
+          {visibleCards.map(({ post, index, offset }) => {
+            const theme = REVIEW_THEMES[index % REVIEW_THEMES.length];
+            const isLiked = likedPosts.has(index);
+
+            let transformStyle = '';
+            if (offset === 0) {
+              transformStyle = isDragging
+                ? `translate3d(${dragX}px, 0px, 0px) rotate(${dragX * 0.04}deg) scale(1)`
+                : `translate3d(0px, 0px, 0px) rotate(0deg) scale(1)`;
+            } else if (offset === -1) {
+              transformStyle = isDragging
+                ? `translate3d(calc(-20px + ${dragX * 0.35}px), 8px, -30px) scale(${0.92 + (dragX > 0 ? (dragX / 300) * 0.08 : 0)}) rotate(-3.5deg)`
+                : `translate3d(-20px, 8px, -30px) scale(0.92) rotate(-3.5deg)`;
+            } else if (offset === 1) {
+              transformStyle = isDragging
+                ? `translate3d(calc(20px + ${dragX * 0.35}px), 8px, -30px) scale(${0.92 - (dragX < 0 ? (dragX / 300) * 0.08 : 0)}) rotate(3.5deg)`
+                : `translate3d(20px, 8px, -30px) scale(0.92) rotate(3.5deg)`;
+            }
+
+            return (
+              <div
+                key={`deck-${post.name}-${index}-${offset}`}
+                className={`cw-deck-card ${offset === 0 ? 'is-active' : offset === -1 ? 'is-prev' : 'is-next'}`}
+                style={{
+                  background: theme.bg,
+                  boxShadow: offset === 0
+                    ? `0 24px 50px -12px ${theme.glow}, 0 12px 24px -6px rgba(0,0,0,0.22)`
+                    : `0 12px 30px -10px ${theme.glow}`,
+                  transform: transformStyle,
+                  transition: isDragging && offset === 0
+                    ? 'none'
+                    : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease, box-shadow 0.35s ease',
+                  zIndex: offset === 0 ? 10 : 5,
+                  opacity: offset === 0 ? 1 : 0.88,
+                  cursor: offset === 0 ? (isDragging ? 'grabbing' : 'grab') : 'pointer'
+                }}
+                onClick={() => {
+                  if (offset === -1) { prev(); return; }
+                  if (offset === 1) { next(); return; }
+                  if (offset === 0) { onSelectReview(post); }
+                }}
+              >
+                {/* Card Top Row */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(post.name)}&background=ffffff&color=${theme.btnColor.replace('#','')}&bold=true`}
+                        alt={post.name}
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.7)', objectFit: 'cover' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: '800', fontSize: '15px', color: '#ffffff', letterSpacing: '-0.3px', lineHeight: 1.2 }}>{post.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                          <span className="cw-glass-pill">{post.city || 'Verified Buyer'}</span>
+                          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)' }}>{post.time}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      className="cw-glass-like-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLikeToggle(index, e);
+                      }}
+                      title="Like review"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill={isLiked ? "#ff3366" : "none"} stroke={isLiked ? "#ff3366" : "#ffffff"} strokeWidth="2.5">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                      </svg>
+                      <span>{post.likes + (isLiked ? 1 : 0)}</span>
+                    </button>
+                  </div>
+
+                  {/* Rating & Category Pills */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <div className="cw-stars-pill">
+                      <span style={{ color: '#fbbf24', fontSize: '13px', letterSpacing: '2px' }}>{'★'.repeat(post.stars || 5)}</span>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#ffffff' }}>5.0</span>
+                    </div>
+                    <div className="cw-glass-pill">{theme.tag}</div>
+                  </div>
+
+                  {/* Quote Headline */}
+                  <div
+                    className="cw-card-quote"
+                    style={!post.image ? { flex: 1, display: 'flex', alignItems: 'center', fontSize: '18px', lineHeight: 1.45, WebkitLineClamp: 7, margin: '14px 0' } : {}}
+                  >
+                    "{post.text}"
+                  </div>
+                </div>
+
+                {/* Center Visual Asset (only if photo uploaded) */}
+                {post.image && (
+                  <div className="cw-card-img-wrap">
+                    <img src={post.image} alt="Customer Case Review" loading="lazy" />
+                  </div>
+                )}
+
+                {/* Card Bottom Bar ("Start watching" style) */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px' }}>
+                  <button
+                    className="cw-action-pill-btn"
+                    style={{ color: theme.btnColor }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectReview(post);
+                    }}
+                  >
+                    <span>Read full story</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                  </button>
+
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      color: '#fff'
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Dots Pagination Track */}
+        {total > 1 && (
+          <div className="cw-dots-track">
+            {list.slice(0, Math.min(8, total)).map((_, i) => (
+              <div
+                key={i}
+                className={`cw-dot ${i === safeIdx ? 'active' : ''}`}
+                style={i === safeIdx ? { background: activeTheme.bg } : {}}
+                onClick={() => setActiveIdx(i)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Swipe Hint */}
+        <div className="cw-swipe-hint">
+          <span>👈</span> Swipe left or right to explore reviews <span>👉</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 function App() {
@@ -1013,7 +1538,36 @@ function App() {
   const [selectedNews, setSelectedNews] = useState(null)
   const [roomMessages, setRoomMessages] = useState([])
   const [messageInput, setMessageInput] = useState('')
+  const [roomMemberships, setRoomMemberships] = useState(() => {
+    try {
+      const saved = localStorage.getItem('caseily_room_memberships');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  })
   const notifRef = useRef(null)
+  
+  const [currentUser, setCurrentUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('caseily_user')) || null; }
+    catch { return null; }
+  });
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  const [authForm, setAuthForm] = useState({ name: '', phone: '', password: '' });
+  const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('caseily_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('caseily_user');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('caseily_room_memberships', JSON.stringify(roomMemberships));
+  }, [roomMemberships]);
 
   useEffect(() => {
     fetch(`${API_URL || ''}/api/notifications`)
@@ -1026,7 +1580,19 @@ function App() {
 
     fetch(`${API_URL || ''}/api/news`)
       .then(res => res.json())
-      .then(data => setPublicNews(data.news || []))
+      .then(data => {
+        const news = data.news || [];
+        setPublicNews(news);
+        if (news.length > 0) {
+          setNotifications(prev => {
+            if (!prev.some(n => n.id === 'news-notif')) {
+              setHasUnread(true);
+              return [{ id: 'news-notif', text: `New Update: ${news[0].title}` }, ...prev];
+            }
+            return prev;
+          });
+        }
+      })
       .catch(console.error)
   }, [currentPath])
 
@@ -1047,6 +1613,67 @@ function App() {
     }
   }, [currentPath])
 
+  useEffect(() => {
+    const joinedRooms = Object.keys(roomMemberships).filter(id => roomMemberships[id].joined && !roomMemberships[id].muted);
+    if (joinedRooms.length === 0) return;
+
+    let lastCheck = new Date().toISOString();
+    const interval = setInterval(() => {
+      joinedRooms.forEach(roomId => {
+        // Skip fetching if we are currently looking at that room
+        if (currentPath === `/insider-room/${roomId}`) return;
+        
+        fetch(`${API_URL || ''}/api/insiders/rooms/${roomId}/messages`)
+          .then(res => res.json())
+          .then(data => {
+            const msgs = data.messages || [];
+            const newMsgs = msgs.filter(m => m.created_at > lastCheck && m.sender_name !== currentUser?.name);
+            if (newMsgs.length > 0) {
+              const roomName = {
+                'care': 'Care, Skins & Installations',
+                'addicts': 'Accessory Addicts Anonymous',
+                'lounge': 'Late-Night Work & Chill Lounge',
+                'weekend': 'Weekend Plans & Getaways',
+                'green-room': 'The Green Room / Member Hangout',
+                'memes': 'Dumb Meme Dumpster',
+                'vault': 'Flash Drop Friday (VIP Vault)'
+              }[roomId] || 'a joined room';
+              setNotifications(prev => [{ id: Date.now() + roomId, text: `New messages in ${roomName}` }, ...prev]);
+              setHasUnread(true);
+            }
+          })
+          .catch(console.error);
+      });
+      lastCheck = new Date().toISOString();
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [roomMemberships, currentPath, currentUser]);
+
+  async function handleAuthSubmit(e) {
+    if (e) e.preventDefault();
+    setAuthError('');
+    try {
+      const endpoint = authMode === 'signup' ? '/signup' : '/login';
+      const res = await fetch(`${API_URL || ''}/api/auth${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(authForm)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Authentication failed');
+      setCurrentUser(data);
+      setShowAuthModal(false);
+      setAuthForm({ name: '', phone: '', password: '' });
+    } catch (err) {
+      setAuthError(err.message);
+    }
+  }
+
+  function handleLogout() {
+    setCurrentUser(null);
+  }
+
   async function handleSendMessage(roomId, e) {
     if (e) e.preventDefault()
     
@@ -1054,6 +1681,9 @@ function App() {
     
     const formData = new FormData()
     formData.append('text', messageInput)
+    if (currentUser) {
+      formData.append('sender_name', currentUser.name);
+    }
     
     setMessageInput('') // Optimistic clear
     try {
@@ -1193,10 +1823,30 @@ function App() {
       .catch(() => {})
   }, [])
 
+  const [drops, setDrops] = useState([])
   useEffect(() => {
     fetch(`${API_URL}/api/reviews/approved`)
       .then(r => r.json())
       .then(data => setApprovedReviews(data.reviews || []))
+      .catch(() => {})
+  }, [])
+  
+  useEffect(() => {
+    fetch(`${API_URL}/api/drops`)
+      .then(r => r.json())
+      .then(data => {
+        const activeDrops = data || [];
+        setDrops(activeDrops);
+        if (activeDrops.length > 0 && !activeDrops[0].disabled) {
+          setNotifications(prev => {
+            if (!prev.some(n => n.id === 'drop-notif')) {
+              setHasUnread(true);
+              return [{ id: 'drop-notif', text: `Exclusive Drop: ${activeDrops[0].title} is live!` }, ...prev];
+            }
+            return prev;
+          });
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -1415,33 +2065,113 @@ function App() {
     </section>
   )
 
-  const renderCommunityWallCard = (post, i) => (
-    <div key={i} className="cw-card" onClick={() => { if (currentPath === '/reviews') { setSelectedReview(post); window.history.pushState({}, '', '/review-detail'); setCurrentPath('/review-detail'); window.scrollTo(0, 0); } else { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); } }}>
-      <div className="cw-user">
-        <img className="cw-avatar" src={`https://ui-avatars.com/api/?name=${post.name}&background=random`} alt={post.name} />
-        <div className="cw-meta">
-          <div className="cw-name">{post.name}</div>
-          <div className="cw-time">{post.time}</div>
-          {post.stars && (
-            <div style={{ color: '#f59e0b', fontSize: '13px', marginTop: '2px', letterSpacing: '2px' }}>
-              {'★'.repeat(post.stars)}{'☆'.repeat(5 - post.stars)}
+  const renderCommunityWallCard = (post, i) => {
+    const theme = REVIEW_THEMES[i % REVIEW_THEMES.length];
+    const isLiked = likedPosts.has(i);
+    return (
+      <div
+        key={i}
+        className="cw-card"
+        style={{
+          background: theme.bg,
+          boxShadow: `0 14px 34px -8px ${theme.glow}, 0 6px 16px rgba(0,0,0,0.12)`,
+          color: '#ffffff'
+        }}
+        onClick={() => {
+          if (currentPath === '/reviews') {
+            setSelectedReview(post);
+            window.history.pushState({}, '', '/review-detail');
+            setCurrentPath('/review-detail');
+            window.scrollTo(0, 0);
+          } else {
+            window.history.pushState({}, '', '/reviews');
+            setCurrentPath('/reviews');
+            window.scrollTo(0, 0);
+          }
+        }}
+      >
+        <div>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img
+                className="cw-avatar"
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(post.name)}&background=ffffff&color=${theme.btnColor.replace('#','')}&bold=true`}
+                alt={post.name}
+                style={{ width: '38px', height: '38px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.6)', objectFit: 'cover' }}
+              />
+              <div>
+                <div style={{ fontWeight: '800', fontSize: '15px', color: '#ffffff', letterSpacing: '-0.3px', lineHeight: 1.2 }}>{post.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                  <span className="cw-glass-pill">{post.city || 'Verified Buyer'}</span>
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)' }}>{post.time}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              className="cw-glass-like-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLikeToggle(i, e);
+              }}
+              title="Like review"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={isLiked ? "#ff3366" : "none"} stroke={isLiked ? "#ff3366" : "#ffffff"} strokeWidth="2.5">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              <span>{post.likes + (isLiked ? 1 : 0)}</span>
+            </button>
+          </div>
+
+          {/* Stars & Tag */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <div className="cw-stars-pill">
+              <span style={{ color: '#fbbf24', fontSize: '13px', letterSpacing: '2px' }}>{'★'.repeat(post.stars || 5)}</span>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#ffffff' }}>5.0</span>
+            </div>
+            <div className="cw-glass-pill">{theme.tag}</div>
+          </div>
+
+          {/* Quote */}
+          {post.text && (
+            <div className="cw-card-quote">
+              "{post.text}"
             </div>
           )}
         </div>
-        <div className="cw-dots">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+
+        {/* Image (only if user uploaded photo) */}
+        {post.image && (
+          <div className="cw-card-img-wrap">
+            <img src={post.image} alt="Review" loading="lazy" />
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+          <button
+            className="cw-action-pill-btn"
+            style={{ color: theme.btnColor }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedReview(post);
+              window.history.pushState({}, '', '/review-detail');
+              setCurrentPath('/review-detail');
+              window.scrollTo(0, 0);
+            }}
+          >
+            <span>Read full story</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Verified Purchase</span>
         </div>
       </div>
-      {post.text && <div className="cw-text">{post.text}</div>}
-      {post.image && <img className="cw-image" src={post.image} alt="Review" loading="lazy" />}
-      <div className="cw-footer">
-        <div className="cw-action" onClick={(e) => handleLikeToggle(i, e)} style={{ color: likedPosts.has(i) ? '#ef4444' : 'currentColor', cursor: 'pointer' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill={likedPosts.has(i) ? "#ef4444" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span>{post.likes + (likedPosts.has(i) ? 1 : 0)}</span>
-        </div>
-      </div>
-    </div>
-  )
+    );
+  };
 
   if (currentPath === '/review-detail' && selectedReview) {
     const post = selectedReview;
@@ -1687,6 +2417,60 @@ function App() {
       </div>
     )
   }
+  const insiderBanners = [
+    '/insider_banners/banner1.png',
+    '/insider_banners/banner2.png',
+    '/insider_banners/banner3.png'
+  ];
+
+  const InsiderBannerCarousel = () => {
+    const [idx, setIdx] = useState(0);
+
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setIdx((prev) => (prev + 1) % insiderBanners.length);
+      }, 4000);
+      return () => clearInterval(timer);
+    }, []);
+
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '250px', borderRadius: '20px', overflow: 'hidden', marginBottom: '24px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
+        {insiderBanners.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt={`Insider Banner ${i}`}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: i === idx ? 1 : 0,
+              transition: 'opacity 0.8s ease-in-out',
+              pointerEvents: 'none'
+            }}
+          />
+        ))}
+        <div style={{ position: 'absolute', bottom: '12px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '8px' }}>
+          {insiderBanners.map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: i === idx ? '#fff' : 'rgba(255,255,255,0.4)',
+                transition: 'background-color 0.4s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.5)'
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   if (currentPath === '/insiders') {
     const handleUserCreatePost = async (e) => {
@@ -1775,6 +2559,10 @@ function App() {
         <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px' }}>
 
 
+
+          {/* ─── INSIDER BANNER CAROUSEL ─── */}
+          <InsiderBannerCarousel />
+
           {/* ─── MY INSIDER HUB ─── */}
           <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '16px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', pointerEvents: 'none', userSelect: 'none', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '12px' }}>
@@ -1819,12 +2607,18 @@ function App() {
           <div style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '20px', marginBottom: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent)', margin: '0 0 4px 0' }}>Exclusive Drops</h3>
-              <div style={{ fontSize: '22px', fontWeight: '900', fontFamily: '"SF Mono", "Fira Code", monospace', color: 'var(--ink-strong)', letterSpacing: '1px' }}>
-                07:18:00:29
-              </div>
+              {drops.length > 0 ? (
+                <div style={{ fontSize: '22px', fontWeight: '900', fontFamily: '"SF Mono", "Fira Code", monospace', color: 'var(--ink-strong)', letterSpacing: '1px' }}>
+                  {drops[0].expires ? drops[0].expires.replace('Expires: ', '') : drops[0].title}
+                </div>
+              ) : (
+                <div style={{ fontSize: '14px', color: 'var(--ink-muted)' }}>
+                  Stay tuned for the next drop!
+                </div>
+              )}
             </div>
-            <button style={{ background: 'var(--accent)', color: '#ffffff', fontWeight: '700', padding: '12px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)' }}>
-              Claim Drop
+            <button onClick={() => { window.history.pushState({}, '', '/claim-drops'); setCurrentPath('/claim-drops'); window.scrollTo(0, 0); }} style={{ background: 'var(--accent)', color: '#ffffff', fontWeight: '700', padding: '12px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)' }}>
+              {drops.length > 0 ? 'Claim Drop' : 'View Drops'}
             </button>
           </div>
 
@@ -1833,7 +2627,7 @@ function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '22px' }}>🚪</span>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Join Room Branding</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Explore Rooms</h3>
                 <div style={{ fontSize: '12px', color: 'var(--ink-muted)', fontWeight: '600', marginTop: '2px' }}>Connect with insiders</div>
               </div>
             </div>
@@ -1991,7 +2785,7 @@ function App() {
         <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
           <button onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>Join Room Branding</span>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>Explore Rooms</span>
           </div>
           <div style={{ width: '24px' }}></div>
         </header>
@@ -2084,6 +2878,23 @@ function App() {
     const textMuted = isDarkMode ? '#a0a0a0' : 'var(--ink-muted)';
     const borderColor = isDarkMode ? '#333333' : 'var(--border)';
 
+    const isJoined = roomMemberships[roomId]?.joined || false;
+    const isMuted = roomMemberships[roomId]?.muted || false;
+    
+    const handleJoin = () => {
+      setRoomMemberships(prev => ({...prev, [roomId]: {...(prev[roomId] || {}), joined: true}}));
+      setNotifications(prev => [{ id: Date.now(), text: `You joined ${room.name}` }, ...prev]);
+      setHasUnread(true);
+    };
+    const handleLeave = () => {
+      if(window.confirm('Are you sure you want to leave this room?')) {
+        setRoomMemberships(prev => ({...prev, [roomId]: {...(prev[roomId] || {}), joined: false}}));
+        setNotifications(prev => [{ id: Date.now(), text: `You left ${room.name}` }, ...prev]);
+        setHasUnread(true);
+      }
+    };
+    const handleToggleMute = () => setRoomMemberships(prev => ({...prev, [roomId]: {...(prev[roomId] || {}), muted: !isMuted}}));
+
     const renderRoomContent = () => {
       switch (roomId) {
         case 'care':
@@ -2092,8 +2903,14 @@ function App() {
               <div style={{ background: bgCard, borderRadius: '16px', padding: '16px', border: `1px solid ${borderColor}`, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 12px 0', color: textStrong }}>Top Guides</h3>
                 <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-                  <div style={{ width: '120px', flexShrink: 0, height: '80px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>▶ Bubble-Free Install</div>
-                  <div style={{ width: '120px', flexShrink: 0, height: '80px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>▶ Case Cleaning</div>
+                  <a href="https://youtu.be/e7_VjVSBBlg" target="_blank" rel="noreferrer" style={{ width: '120px', flexShrink: 0, height: '80px', borderRadius: '8px', overflow: 'hidden', display: 'block', position: 'relative', textDecoration: 'none' }}>
+                    <img src="https://img.youtube.com/vi/e7_VjVSBBlg/hqdefault.jpg" alt="Install Guide" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.8)', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>▶ Install Guide</div>
+                  </a>
+                  <a href="https://youtu.be/e7_VjVSBBlg" target="_blank" rel="noreferrer" style={{ width: '120px', flexShrink: 0, height: '80px', borderRadius: '8px', overflow: 'hidden', display: 'block', position: 'relative', textDecoration: 'none' }}>
+                    <img src="https://images.unsplash.com/photo-1601524909162-ae8725290836?q=80&w=300" alt="Case Cleaning" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.8)', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>▶ Case Cleaning</div>
+                  </a>
                 </div>
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -2250,7 +3067,7 @@ function App() {
                   <div key={msg.id || i} style={{ display: 'flex', gap: '12px' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>U</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '13px', color: textMuted, marginBottom: '4px' }}>VIP Member</div>
+                      <div style={{ fontSize: '13px', color: textMuted, marginBottom: '4px' }}>{msg.sender_name || 'VIP Member'}</div>
                       <div style={{ background: bgCard, padding: '12px', borderRadius: '0 12px 12px 12px', color: textStrong, fontSize: '14px', border: `1px solid ${borderColor}` }}>
                         {msg.text}
                         {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
@@ -2269,14 +3086,25 @@ function App() {
     return (
       <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: bgPrimary }}>
         {/* Header */}
-        <header style={{ backgroundColor: bgCard, borderBottom: `1px solid ${borderColor}`, padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-          <button onClick={() => { window.history.pushState({}, '', '/join-rooms'); setCurrentPath('/join-rooms'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: textStrong }}>&larr;</button>
+        <header style={{ backgroundColor: bgCard, borderBottom: `1px solid ${borderColor}`, padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <button onClick={() => { window.history.pushState({}, '', '/join-rooms'); setCurrentPath('/join-rooms'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: textStrong, width: '40px', textAlign: 'left' }}>&larr;</button>
           <div style={{ flex: 1, textAlign: 'center' }}>
             <span style={{ fontSize: '18px', fontWeight: '800', color: textStrong, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               <span>{room.emoji}</span> {room.name}
             </span>
           </div>
-          <div style={{ width: '24px' }}></div>
+          <div style={{ width: '40px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            {isJoined && (
+              <>
+                <button onClick={handleToggleMute} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: isMuted ? textMuted : textStrong, padding: 0 }} title={isMuted ? "Unmute Room" : "Mute Room"}>
+                  {isMuted ? '🔕' : '🔔'}
+                </button>
+                <button onClick={handleLeave} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#ef4444', padding: 0 }} title="Leave Room">
+                  🚪
+                </button>
+              </>
+            )}
+          </div>
         </header>
 
         <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px', display: 'flex', flexDirection: 'column', paddingBottom: '80px' }}>
@@ -2285,20 +3113,85 @@ function App() {
         
         {/* Chat Input Bar */}
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: bgCard, borderTop: `1px solid ${borderColor}`, padding: '12px 16px', zIndex: 50, boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
-          <form onSubmit={(e) => handleSendMessage(roomId, e)} style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '12px' }}>
-            <button type="button" style={{ background: bgPrimary, border: `1px solid ${borderColor}`, borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, color: textStrong }}>＋</button>
-            {roomId === 'memes' ? (
-              <button type="button" onClick={(e) => handleDumpMeme(roomId, e)} style={{ flex: 1, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '800', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>🗑️ Dump Meme</button>
-            ) : (
-              <input type="text" value={messageInput} onChange={e => setMessageInput(e.target.value)} placeholder={`Message ${room.name}...`} style={{ flex: 1, background: bgPrimary, border: `1px solid ${borderColor}`, borderRadius: '12px', padding: '0 16px', fontSize: '14px', outline: 'none', color: textStrong }} />
-            )}
-            {roomId !== 'memes' && (
-              <button type="submit" style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            {!isJoined ? (
+              <button onClick={handleJoin} style={{ width: '100%', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '16px', fontWeight: '800', cursor: 'pointer', boxShadow: 'var(--shadow-btn)' }}>
+                Join Group
               </button>
+            ) : (
+              <form onSubmit={(e) => handleSendMessage(roomId, e)} style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" style={{ background: bgPrimary, border: `1px solid ${borderColor}`, borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, color: textStrong }}>＋</button>
+                {roomId === 'memes' ? (
+                  <button type="button" onClick={(e) => handleDumpMeme(roomId, e)} style={{ flex: 1, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '800', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>🗑️ Dump Meme</button>
+                ) : (
+                  <input type="text" value={messageInput} onChange={e => setMessageInput(e.target.value)} placeholder={`Message ${room.name}...`} style={{ flex: 1, background: bgPrimary, border: `1px solid ${borderColor}`, borderRadius: '12px', padding: '0 16px', fontSize: '14px', outline: 'none', color: textStrong }} />
+                )}
+                {roomId !== 'memes' && (
+                  <button type="submit" style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-btn)' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                  </button>
+                )}
+              </form>
             )}
-          </form>
+          </div>
         </div>
+      </div>
+    )
+  }
+
+  if (currentPath === '/claim-drops') {
+
+
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)' }}>
+        <header style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <button onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>🎟️</span> Exclusive Claim Drops
+            </span>
+          </div>
+          <div style={{ width: '24px' }}></div>
+        </header>
+
+        <main style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {drops.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-muted)' }}>
+              <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>🎟️</span>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '8px' }}>No active drops right now</h3>
+              <p style={{ fontSize: '15px' }}>Stay tuned! New exclusive drops are coming soon to the Insider fam.</p>
+            </div>
+          )}
+          {drops.map((drop) => (
+            <div key={drop._id} style={{ background: drop.disabled ? 'var(--bg-secondary)' : 'var(--bg-card)', borderRadius: '16px', padding: '16px', border: '1px solid var(--border)', boxShadow: drop.disabled ? 'none' : 'var(--shadow-card)', opacity: drop.disabled ? 0.9 : 1 }}>
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', position: 'relative' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '12px', background: '#f1f5f9', flexShrink: 0, overflow: 'hidden' }}>
+                  {drop.image && <img src={`${API_URL}/uploads/${drop.image}`} alt={drop.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  {drop.title && <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--ink-strong)' }}>{drop.title}</div>}
+                  {drop.price && <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--ink-strong)' }}>{drop.price}</div>}
+                  {drop.subtitle && <div style={{ fontSize: '14px', color: 'var(--ink-muted)' }}>{drop.subtitle}</div>}
+                </div>
+                
+                {drop.expires && (
+                  <div style={{ position: 'absolute', top: 0, right: 0, background: drop.expireColor, color: drop.expireText, padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' }}>
+                    {drop.expires}
+                  </div>
+                )}
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <button disabled={drop.disabled} style={{ padding: '12px', borderRadius: '12px', background: drop.disabled ? '#d1d5db' : '#22c55e', color: drop.disabled ? '#9ca3af' : '#fff', fontWeight: '800', border: 'none', cursor: drop.disabled ? 'not-allowed' : 'pointer', fontSize: '14px' }}>
+                  {drop.disabled ? 'Ended' : 'Claim Drop'}
+                </button>
+                <button style={{ padding: '12px', borderRadius: '12px', background: '#fee2e2', color: '#dc2626', fontWeight: '800', border: 'none', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </main>
       </div>
     )
   }
@@ -2789,6 +3682,9 @@ function App() {
             <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ color: 'var(--ink-strong)' }}>
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
+            <button onClick={() => setShowAuthModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: 'var(--ink-strong)', marginRight: '8px' }} title="Profile">
+              👤
+            </button>
             <a href="https://wa.me/919987759591" target="_blank" rel="noopener noreferrer" className="navbar-cta" style={{ backgroundColor: '#bfdbfe', color: 'var(--ink-strong)' }}>Contact us</a>
           </div>
         </nav>
@@ -2984,14 +3880,15 @@ function App() {
       {/* ═══════════════════════════════════════════════════════════════
          COMMUNITY WALL
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="reviews" className="community-wall-section">
-        <div className="cw-header-row">
-          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', justifyContent: 'center'}}><span style={{fontSize: '24px'}}>💬</span><h2 className="cw-title" style={{ margin: 0, background: 'linear-gradient(90deg, #3b82f6, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Community Wall</h2></div>
-          <a className="cw-show-all" onClick={() => { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); }}>Show all</a>
-        </div>
-        <div className="cw-scroll">
-          {combinedReviews.map((post, i) => renderCommunityWallCard(post, i))}
-        </div>
+      <section id="reviews" className="community-wall-section cursor-pointer">
+        <CommunityWall 
+          reviews={combinedReviews} 
+          onBackgroundClick={() => {
+            window.history.pushState({}, '', '/reviews');
+            setCurrentPath('/reviews');
+            window.scrollTo(0, 0);
+          }} 
+        />
       </section>
 
       {/* ─── DEAL OF THE DAY ─── */}
@@ -3263,6 +4160,54 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {showAuthModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000000, backdropFilter: 'blur(4px)' }} onClick={() => setShowAuthModal(false)}>
+          <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)' }}>
+                {currentUser ? 'Profile' : (authMode === 'login' ? 'Log In' : 'Sign Up')}
+              </h3>
+              <button onClick={() => setShowAuthModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--ink-muted)' }}>✕</button>
+            </div>
+            
+            {currentUser ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '12px' }}>
+                  <div style={{ fontSize: '14px', color: 'var(--ink-muted)' }}>Name</div>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--ink-strong)' }}>{currentUser.name}</div>
+                  <div style={{ fontSize: '14px', color: 'var(--ink-muted)', marginTop: '8px' }}>Phone</div>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--ink-strong)' }}>{currentUser.phone}</div>
+                </div>
+                <button onClick={handleLogout} style={{ width: '100%', padding: '12px', borderRadius: '12px', background: '#fee2e2', color: '#dc2626', fontWeight: '800', border: 'none', cursor: 'pointer' }}>
+                  Log Out
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {authError && <div style={{ color: '#ef4444', fontSize: '14px', textAlign: 'center', background: '#fee2e2', padding: '8px', borderRadius: '8px' }}>{authError}</div>}
+                
+                {authMode === 'signup' && (
+                  <input type="text" placeholder="Full Name" required value={authForm.name} onChange={e => setAuthForm(f => ({...f, name: e.target.value}))} style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }} />
+                )}
+                <input type="tel" placeholder="Phone Number" required value={authForm.phone} onChange={e => setAuthForm(f => ({...f, phone: e.target.value}))} style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }} />
+                <input type="password" placeholder="Password" required value={authForm.password} onChange={e => setAuthForm(f => ({...f, password: e.target.value}))} style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }} />
+                
+                <button type="submit" style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'var(--accent)', color: '#fff', fontWeight: '800', border: 'none', cursor: 'pointer', marginTop: '8px' }}>
+                  {authMode === 'login' ? 'Log In' : 'Sign Up'}
+                </button>
+                
+                <div style={{ textAlign: 'center', fontSize: '14px', color: 'var(--ink-muted)', marginTop: '8px' }}>
+                  {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
+                  <button type="button" onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(''); }} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: '700', cursor: 'pointer', padding: 0 }}>
+                    {authMode === 'login' ? 'Sign Up' : 'Log In'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   )
