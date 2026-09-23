@@ -464,6 +464,8 @@ function AdminDashboard() {
   const [loadingNews, setLoadingNews] = useState(false)
   const [newsForm, setNewsForm] = useState({ title: '', category: 'Updates', content: '', color: '#3b82f6' })
   const [newsPhoto, setNewsPhoto] = useState(null)
+  const [vipRequests, setVipRequests] = useState([])
+  const [loadingVip, setLoadingVip] = useState(false)
   const isLoggedIn = !!token
 
   async function handleLogin(e) {
@@ -538,8 +540,21 @@ function AdminDashboard() {
       if (adminTab === 'insiders') fetchInsiders()
       if (adminTab === 'notifications') fetchAdminNotifications()
       if (adminTab === 'news') fetchNews()
+      if (adminTab === 'vip') fetchVipRequests()
     }
   }, [isLoggedIn, adminTab])
+
+  async function fetchVipRequests() {
+    setLoadingVip(true)
+    try {
+      const res = await fetch(`${API_URL}/api/admin/vip-requests`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      setVipRequests(data.requests || [])
+    } catch (err) { console.error(err) }
+    setLoadingVip(false)
+  }
 
   async function handleCreateInsider(e) {
     e.preventDefault()
@@ -645,6 +660,17 @@ function AdminDashboard() {
     } catch (err) { console.error(err) }
   }
 
+  async function handleVipAction(id, action) {
+    try {
+      await fetch(`${API_URL}/api/admin/vip-requests/${id}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action })
+      })
+      fetchVipRequests()
+    } catch (err) { console.error(err) }
+  }
+
   async function handleAction(id, action) {
     try {
       await fetch(`${API_URL}/api/admin/reviews/${id}/${action}`, {
@@ -738,6 +764,7 @@ function AdminDashboard() {
           <button onClick={() => setAdminTab('insiders')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'insiders' ? '#1e3fd1' : 'transparent', color: adminTab === 'insiders' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Insiders</button>
           <button onClick={() => setAdminTab('notifications')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'notifications' ? '#1e3fd1' : 'transparent', color: adminTab === 'notifications' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Notifications</button>
           <button onClick={() => setAdminTab('news')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'news' ? '#1e3fd1' : 'transparent', color: adminTab === 'news' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>News</button>
+          <button onClick={() => setAdminTab('vip')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'vip' ? '#1e3fd1' : 'transparent', color: adminTab === 'vip' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>VIP Requests</button>
           <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 4px' }}></div>
           <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : adminTab === 'news' ? fetchNews : fetchAdminNotifications} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
           <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
@@ -871,6 +898,34 @@ function AdminDashboard() {
                   </div>
                 ))}
                 {news.length === 0 && <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No articles published.</p>}
+              </div>
+            )}
+          </>
+        ) : adminTab === 'vip' ? (
+          <>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>VIP Access Requests ({vipRequests.length})</h2>
+            {loadingVip ? <p>Loading...</p> : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {vipRequests.map(req => (
+                  <div key={req.id} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ fontWeight: '800', fontSize: '18px', color: 'var(--ink-strong)' }}>{req.phone}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Requested: {new Date(req.created_at).toLocaleString()}</div>
+                      </div>
+                      <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', background: req.status === 'approved' ? '#dcfce7' : req.status === 'rejected' ? '#fee2e2' : '#fef3c7', color: req.status === 'approved' ? '#16a34a' : req.status === 'rejected' ? '#dc2626' : '#d97706' }}>
+                        {req.status.toUpperCase()}
+                      </span>
+                    </div>
+                    {req.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                        <button onClick={() => handleVipAction(req.id, 'approve')} style={{ flex: 1, padding: '10px', borderRadius: '12px', background: '#22c55e', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✓ Accept</button>
+                        <button onClick={() => handleVipAction(req.id, 'reject')} style={{ flex: 1, padding: '10px', borderRadius: '12px', background: '#ef4444', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✕ Reject</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {vipRequests.length === 0 && <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No requests.</p>}
               </div>
             )}
           </>
@@ -1881,14 +1936,38 @@ function App() {
           <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Available Rooms</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
             {INSIDER_ROOMS.map((r, i) => (
-              <div key={i} onClick={() => { if (!r.locked) { window.history.pushState({}, '', `/insider-room/${r.id}`); setCurrentPath(`/insider-room/${r.id}`); window.scrollTo(0, 0); } }} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', cursor: r.locked ? 'not-allowed' : 'pointer', transition: 'box-shadow 0.2s ease', opacity: r.locked ? 0.7 : 1 }}>
+              <div key={i} onClick={async () => { 
+                  if (!r.locked) { 
+                    window.history.pushState({}, '', `/insider-room/${r.id}`); 
+                    setCurrentPath(`/insider-room/${r.id}`); 
+                    window.scrollTo(0, 0); 
+                  } else {
+                    const phone = window.prompt("Enter your phone number to request access to the VIP Vault:");
+                    if (phone && phone.trim() !== "") {
+                      try {
+                        const res = await fetch(`${API_URL}/api/insiders/vip-request`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ phone: phone.trim() })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert("Our member will connect with you shortly");
+                        } else {
+                          alert("Failed to submit request.");
+                        }
+                      } catch (err) {
+                        alert("Error connecting to server.");
+                      }
+                    }
+                  } 
+                }} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '16px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'box-shadow 0.2s ease', opacity: r.locked ? 0.9 : 1 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', gap: '14px' }}>
                     <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>{r.emoji}</div>
                     <div>
                       <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--ink-strong)' }}>{r.name} {r.locked && '🔒'}</div>
-                      <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--ink-muted)', marginTop: '4px' }}>{r.subtitle}</div>
-                      <div style={{ fontSize: '13px', color: '#64748b', marginTop: '8px', lineHeight: 1.4 }}>{r.desc}</div>
+                      <div style={{ fontSize: '14px', color: '#64748b', marginTop: '6px', lineHeight: 1.4 }}>{r.desc}</div>
                     </div>
                   </div>
                   {!r.locked && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '12px' }}><polyline points="9 18 15 12 9 6"></polyline></svg>}
