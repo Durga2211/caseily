@@ -1413,7 +1413,7 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
 .splash-v2 {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 9999999;
   background: linear-gradient(135deg, var(--logo-gradient-start), var(--logo-gradient-end));
   display: flex;
   flex-direction: column;
