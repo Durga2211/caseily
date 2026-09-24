@@ -474,7 +474,46 @@ function AdminDashboard() {
   const [loadingDrops, setLoadingDrops] = useState(false)
   const [dropForm, setDropForm] = useState({ title: '', subtitle: '', price: '', expires: '', expireColor: '#fef08a', expireText: '#854d0e', disabled: false })
   const [dropImage, setDropImage] = useState(null)
+  const [adminEvents, setAdminEvents] = useState([])
+  const [loadingEvents, setLoadingEvents] = useState(false)
+  const [eventForm, setEventForm] = useState({ title: '', description: '', date: '', time: '', location: '', video_url: '', banner_url: '' })
   const isLoggedIn = !!token
+
+  async function fetchAdminEvents() {
+    setLoadingEvents(true)
+    try {
+      const res = await fetch(`${API_URL}/api/events`)
+      const data = await res.json()
+      setAdminEvents(data || [])
+    } catch (err) { console.error(err) }
+    setLoadingEvents(false)
+  }
+
+  async function handleCreateEvent(e) {
+    e.preventDefault()
+    try {
+      const res = await fetch(`${API_URL}/api/admin/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(eventForm)
+      })
+      if (res.ok) {
+        setEventForm({ title: '', description: '', date: '', time: '', location: '', video_url: '', banner_url: '' })
+        fetchAdminEvents()
+      }
+    } catch (err) { console.error(err) }
+  }
+
+  async function handleDeleteEvent(id) {
+    if (!window.confirm('Delete event?')) return
+    try {
+      const res = await fetch(`${API_URL}/api/admin/events/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) fetchAdminEvents()
+    } catch (err) { console.error(err) }
+  }
 
   async function fetchUsers() {
     setLoadingUsers(true)
@@ -600,6 +639,7 @@ function AdminDashboard() {
       if (adminTab === 'vip') fetchVipRequests()
       if (adminTab === 'users') fetchUsers()
       if (adminTab === 'drops') fetchAdminDrops()
+      if (adminTab === 'events') fetchAdminEvents()
     }
   }, [isLoggedIn, adminTab])
 
@@ -853,8 +893,9 @@ function AdminDashboard() {
           <button onClick={() => setAdminTab('vip')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'vip' ? '#1e3fd1' : 'transparent', color: adminTab === 'vip' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>VIP Requests</button>
           <button onClick={() => setAdminTab('users')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'users' ? '#1e3fd1' : 'transparent', color: adminTab === 'users' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Users</button>
           <button onClick={() => setAdminTab('drops')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'drops' ? '#1e3fd1' : 'transparent', color: adminTab === 'drops' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Drops</button>
+          <button onClick={() => setAdminTab('events')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'events' ? '#1e3fd1' : 'transparent', color: adminTab === 'events' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Events</button>
           <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 4px' }}></div>
-          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : adminTab === 'news' ? fetchNews : adminTab === 'vip' ? fetchVipRequests : adminTab === 'drops' ? fetchAdminDrops : fetchUsers} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
+          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : adminTab === 'news' ? fetchNews : adminTab === 'vip' ? fetchVipRequests : adminTab === 'drops' ? fetchAdminDrops : adminTab === 'events' ? fetchAdminEvents : fetchUsers} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
           <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
           <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
         </div>
@@ -1096,6 +1137,38 @@ function AdminDashboard() {
                   </div>
                 ))}
                 {adminDrops.length === 0 && <p style={{ color: '#64748b' }}>No drops found.</p>}
+              </div>
+            )}
+          </>
+        ) : adminTab === 'events' ? (
+          <>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Manage Live Events (Stage)</h2>
+            <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
+              <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <input type="text" placeholder="Event Title" required value={eventForm.title} onChange={e => setEventForm(f => ({...f, title: e.target.value}))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                <textarea placeholder="Event Description" required value={eventForm.description} onChange={e => setEventForm(f => ({...f, description: e.target.value}))} rows={3} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <input type="date" required value={eventForm.date} onChange={e => setEventForm(f => ({...f, date: e.target.value}))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', flex: 1 }} />
+                  <input type="time" required value={eventForm.time} onChange={e => setEventForm(f => ({...f, time: e.target.value}))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', flex: 1 }} />
+                </div>
+                <input type="text" placeholder="Location" required value={eventForm.location} onChange={e => setEventForm(f => ({...f, location: e.target.value}))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                <input type="text" placeholder="Link/Video URL (optional)" value={eventForm.video_url} onChange={e => setEventForm(f => ({...f, video_url: e.target.value}))} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                <button type="submit" style={{ padding: '12px', borderRadius: '8px', background: '#1e3fd1', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer' }}>Create Event</button>
+              </form>
+            </div>
+            {loadingEvents ? <p>Loading events...</p> : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {adminEvents.map(ev => (
+                  <div key={ev.id} style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div style={{ fontWeight: '800', fontSize: '18px' }}>{ev.title}</div>
+                      <button onClick={() => handleDeleteEvent(ev.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>Delete</button>
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>{ev.date} at {ev.time} • {ev.location}</div>
+                    <div style={{ marginTop: '8px' }}>{ev.description}</div>
+                  </div>
+                ))}
+                {adminEvents.length === 0 && <p style={{ color: '#64748b' }}>No live events.</p>}
               </div>
             )}
           </>
@@ -1587,6 +1660,7 @@ function App() {
   const [publicNews, setPublicNews] = useState([])
   const [selectedNews, setSelectedNews] = useState(null)
   const [roomMessages, setRoomMessages] = useState([])
+  const [liveEvents, setLiveEvents] = useState([])
   const [messageInput, setMessageInput] = useState('')
   const [roomMemberships, setRoomMemberships] = useState(() => {
     try {
@@ -1643,6 +1717,11 @@ function App() {
           });
         }
       })
+      .catch(console.error)
+
+    fetch(`${API_URL || ''}/api/events`)
+      .then(res => res.json())
+      .then(data => setLiveEvents(data || []))
       .catch(console.error)
   }, [currentPath])
 
@@ -2526,6 +2605,7 @@ function App() {
     const handleUserCreatePost = async (e) => {
       e.preventDefault()
       const form = new FormData()
+      if (currentUser) form.append('author', currentUser.name)
       form.append('post_type', userPostForm.type)
       form.append('content', userPostForm.content)
       if (userPostPhotos && userPostPhotos.length > 0) {
@@ -2563,7 +2643,7 @@ function App() {
         const res = await fetch(`${API_URL}/api/insiders/${postId}/comment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
+          body: JSON.stringify({ text, author: currentUser ? currentUser.name : 'User' })
         })
         if (res.ok) {
           setCommentInput({ ...commentInput, [postId]: '' })
@@ -2868,21 +2948,7 @@ function App() {
           </div>
         </main>
 
-        {/* ─── BOTTOM ACTION BAR ─── */}
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg-card)', borderTop: '1px solid var(--border)', padding: '10px 0 12px', display: 'flex', justifyContent: 'space-around', zIndex: 50, boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
-          <button style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent)', letterSpacing: '0.3px' }}>New Post</span>
-          </button>
-          <button style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/><path d="M14 2h6a2 2 0 0 1 2 2v6"/><path d="M10 14L20 4"/></svg>
-            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--ink-muted)', letterSpacing: '0.3px' }}>Perks</span>
-          </button>
-          <button style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--ink-muted)', letterSpacing: '0.3px' }}>Rules</span>
-          </button>
-        </div>
+
       </div>
     )
   }
@@ -3998,6 +4064,41 @@ function App() {
 
 
       {/* ═══════════════════════════════════════════════════════════════
+         STAGE (LIVE EVENTS)
+         ═══════════════════════════════════════════════════════════════ */}
+      <section id="stage" style={{ padding: '40px 20px', maxWidth: '800px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: '900', color: 'var(--ink-strong)', marginBottom: '20px' }}>Stage</h2>
+        {liveEvents.length > 0 ? (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            {liveEvents.map(ev => (
+              <div key={ev.id} style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #ef4444, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '900', fontSize: '20px' }}>🎙️</div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>{ev.title}</h3>
+                    <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '600' }}>{ev.date} at {ev.time}</div>
+                  </div>
+                </div>
+                <p style={{ margin: 0, fontSize: '15px', color: 'var(--ink-muted)' }}>{ev.description}</p>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e3fd1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>📍</span> {ev.location}
+                </div>
+                {ev.video_url && (
+                  <a href={ev.video_url} target="_blank" rel="noreferrer" style={{ marginTop: '8px', padding: '10px 16px', background: '#1e3fd1', color: '#fff', borderRadius: '10px', textDecoration: 'none', fontWeight: '700', display: 'inline-block', textAlign: 'center' }}>Join Event</a>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding: '40px 20px', background: 'var(--bg-card)', borderRadius: '20px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎭</div>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#64748b' }}>No events for now</h3>
+            <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px', marginBottom: 0 }}>Check back later for live sessions!</p>
+          </div>
+        )}
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
          COMMUNITY WALL
          ═══════════════════════════════════════════════════════════════ */}
       <section id="reviews" className="community-wall-section cursor-pointer">
@@ -4203,6 +4304,7 @@ function App() {
 
 
       {/* ─── BOTTOM NAV PILL ─── */}
+      {currentPath !== '/insiders' && (
       <div className="mobile-dashboard" style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '12px 24px', display: 'flex', alignItems: 'center', boxShadow: '0 12px 32px rgba(0,0,0,0.2)', border: '1px solid var(--border)', zIndex: 99999, width: 'max-content', maxWidth: '90vw', justifyContent: 'space-between', backdropFilter: 'blur(20px)' }}>
         <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: activeSection === 'track' ? 'var(--accent)' : 'transparent', color: activeSection === 'track' ? '#ffffff' : 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => scrollTo('track')}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
@@ -4221,7 +4323,12 @@ function App() {
         <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '50%' }} onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         </div>
+
+        <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '50%' }} onClick={() => setShowAuthModal(true)} title="Profile">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
       </div>
+      )}
 
       {/* ─── FOOTER ─── */}
       <footer className="footer-large">
