@@ -456,7 +456,8 @@ function AdminDashboard() {
   const [adminTab, setAdminTab] = useState('reviews')
   const [insiders, setInsiders] = useState([])
   const [loadingInsiders, setLoadingInsiders] = useState(false)
-  const [insiderForm, setInsiderForm] = useState({ type: 'text', content: '' })
+  const [insiderForm, setInsiderForm] = useState({ type: 'text', content: '', target: 'feed' })
+  const [pollOptions, setPollOptions] = useState(['', ''])
   const [insiderPhotos, setInsiderPhotos] = useState([])
   const [adminNotifications, setAdminNotifications] = useState([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
@@ -617,24 +618,51 @@ function AdminDashboard() {
   async function handleCreateInsider(e) {
     e.preventDefault()
     const form = new FormData()
-    form.append('post_type', insiderForm.type)
-    form.append('content', insiderForm.content)
-    if (insiderPhotos && insiderPhotos.length > 0) {
-      Array.from(insiderPhotos).forEach(file => {
-        form.append('images', file)
-      })
+    
+    if (insiderForm.target === 'feed') {
+      form.append('post_type', insiderForm.type)
+      form.append('content', insiderForm.content)
+      if (insiderForm.type === 'poll') {
+        const validOptions = pollOptions.filter(o => o.trim() !== '');
+        if (validOptions.length < 2) return alert('Need at least 2 options for poll');
+        form.append('poll_options', JSON.stringify(validOptions));
+      }
+      if (insiderPhotos && insiderPhotos.length > 0) {
+        Array.from(insiderPhotos).forEach(file => {
+          form.append('images', file)
+        })
+      }
+      try {
+        await fetch(`${API_URL}/api/admin/insiders`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: form
+        })
+      } catch (err) { console.error(err) }
+    } else {
+      form.append('msg_type', insiderForm.type)
+      form.append('text', insiderForm.content)
+      form.append('sender_name', 'Admin')
+      if (insiderForm.type === 'poll') {
+        const validOptions = pollOptions.filter(o => o.trim() !== '');
+        if (validOptions.length < 2) return alert('Need at least 2 options for poll');
+        form.append('poll_options', JSON.stringify(validOptions));
+      }
+      if (insiderPhotos && insiderPhotos.length > 0) {
+        form.append('image', insiderPhotos[0])
+      }
+      try {
+        await fetch(`${API_URL}/api/insiders/rooms/${insiderForm.target}/messages`, {
+          method: 'POST',
+          body: form
+        })
+      } catch (err) { console.error(err) }
     }
 
-    try {
-      await fetch(`${API_URL}/api/admin/insiders`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form
-      })
-      setInsiderForm({ type: 'text', content: '' })
-      setInsiderPhotos([])
-      fetchInsiders()
-    } catch (err) { console.error(err) }
+    setInsiderForm({ type: 'text', content: '', target: 'feed' })
+    setInsiderPhotos([])
+    setPollOptions(['', ''])
+    fetchInsiders()
   }
 
   async function handleDeleteInsider(id) {
@@ -860,13 +888,38 @@ function AdminDashboard() {
             <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Create Insider Post</h2>
               <form onSubmit={handleCreateInsider} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <select value={insiderForm.target} onChange={e => setInsiderForm({...insiderForm, target: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#f8fafc', fontWeight: 'bold' }}>
+                  <option value="feed">Global Feed</option>
+                  <option value="care">Care & Setup Room</option>
+                  <option value="addicts">Case Addicts Room</option>
+                  <option value="lounge">The Lounge Room</option>
+                  <option value="weekend">Weekend Room</option>
+                  <option value="green-room">Green Room</option>
+                  <option value="memes">Memes Room</option>
+                </select>
                 <select value={insiderForm.type} onChange={e => setInsiderForm({...insiderForm, type: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                   <option value="text">Text Post</option>
                   <option value="image">Image Post</option>
+                  <option value="poll">Poll</option>
                 </select>
                 
-                <textarea placeholder="Post content..." value={insiderForm.content} onChange={e => setInsiderForm({...insiderForm, content: e.target.value})} rows={3} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', resize: 'vertical' }} required />
+                <textarea placeholder={insiderForm.type === 'poll' ? "Poll Question..." : "Post content..."} value={insiderForm.content} onChange={e => setInsiderForm({...insiderForm, content: e.target.value})} rows={3} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', resize: 'vertical' }} required />
                 
+                {insiderForm.type === 'poll' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {pollOptions.map((opt, idx) => (
+                      <input key={idx} type="text" placeholder={`Option ${idx + 1}`} value={opt} onChange={e => {
+                        const newOpts = [...pollOptions];
+                        newOpts[idx] = e.target.value;
+                        setPollOptions(newOpts);
+                      }} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                    ))}
+                    {pollOptions.length < 10 && (
+                      <button type="button" onClick={() => setPollOptions([...pollOptions, ''])} style={{ padding: '8px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>+ Add Option</button>
+                    )}
+                  </div>
+                )}
+
                 {(insiderForm.type === 'image' || insiderForm.type === 'text') && (
                   <input type="file" accept="image/*" multiple onChange={e => setInsiderPhotos(e.target.files)} style={{ padding: '8px' }} />
                 )}
@@ -1698,7 +1751,7 @@ function App() {
   async function handleDumpMeme(roomId, e) {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/*,video/*';
     input.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -2700,6 +2753,37 @@ function App() {
                       </p>
                     )}
 
+                    {post.type === 'poll' && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '700', color: 'var(--ink-strong)' }}>
+                          {post.content}
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {post.poll_options && post.poll_options.map((opt, idx) => {
+                            const totalVotes = post.poll_options.reduce((acc, o) => acc + o.votes, 0);
+                            const percent = totalVotes === 0 ? 0 : Math.round((opt.votes / totalVotes) * 100);
+                            return (
+                              <button key={idx} onClick={async () => {
+                                try {
+                                  const res = await fetch(`${API_URL || ''}/api/insiders/${post.id}/vote`, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ option_index: idx })
+                                  });
+                                  if (res.ok) fetchInsiders();
+                                } catch (e) {}
+                              }} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', textAlign: 'left', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+                                <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: `${percent}%`, background: 'var(--accent)', opacity: 0.2 }}></div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 1, color: 'var(--ink-strong)', fontWeight: '500' }}>
+                                  <span>{opt.text}</span>
+                                  <span>{percent}%</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
                       <button onClick={() => handleLike(post.id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-muted)', fontSize: '14px' }}>
                         ❤️ {post.likes || 0}
@@ -2892,6 +2976,36 @@ function App() {
     };
     const handleToggleMute = () => setRoomMemberships(prev => ({...prev, [roomId]: {...(prev[roomId] || {}), muted: !isMuted}}));
 
+    const RoomPoll = ({ msg }) => (
+      <div style={{ marginBottom: '16px', width: '100%' }}>
+        <p style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: '800', color: textStrong }}>{msg.text}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {msg.poll_options && msg.poll_options.map((opt, idx) => {
+            const totalVotes = msg.poll_options.reduce((acc, o) => acc + o.votes, 0);
+            const percent = totalVotes === 0 ? 0 : Math.round((opt.votes / totalVotes) * 100);
+            return (
+              <button key={idx} onClick={async () => {
+                try {
+                  await fetch(`${API_URL || ''}/api/insiders/rooms/${roomId}/messages/${msg.id}/vote`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ option_index: idx })
+                  });
+                  const res = await fetch(`${API_URL || ''}/api/insiders/rooms/${roomId}/messages`);
+                  const data = await res.json();
+                  setRoomMessages(data.messages);
+                } catch (e) {}
+              }} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', textAlign: 'left', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: `${percent}%`, background: 'var(--accent)', opacity: 0.2 }}></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 1, color: textStrong, fontWeight: '500', fontSize: '14px' }}>
+                  <span>{opt.text}</span><span>{percent}%</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+
     const renderRoomContent = () => {
       switch (roomId) {
         case 'care':
@@ -2920,8 +3034,12 @@ function App() {
                 </div>
                 {roomMessages.map((msg, i) => (
                   <div key={msg.id || i} style={{ background: bgCard, borderRadius: '16px', padding: '16px', border: `1px solid ${borderColor}` }}>
-                    <p style={{ margin: 0, fontSize: '14px', color: textStrong, lineHeight: 1.5 }}>{msg.text}</p>
-                    {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                    {msg.type === 'poll' ? <RoomPoll msg={msg} /> : (
+                      <>
+                        <p style={{ margin: 0, fontSize: '14px', color: textStrong, lineHeight: 1.5 }}>{msg.text}</p>
+                        {msg.image && (msg.image.match(/\.(mp4|mov|webm)$/i) ? <video src={`${API_URL || ''}/uploads/${msg.image}`} controls style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} /> : <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />)}
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2941,8 +3059,12 @@ function App() {
               {roomMessages.map((msg, i) => (
                 <div key={msg.id || i} style={{ background: '#fef2f2', borderRadius: '16px', padding: '16px', border: '1px solid #fecaca' }}>
                   <div style={{ fontSize: '14px', fontWeight: '800', color: '#dc2626', marginBottom: '4px' }}>Confession</div>
-                  <p style={{ margin: 0, fontSize: '15px', color: '#7f1d1d', fontStyle: 'italic' }}>"{msg.text}"</p>
-                  {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                  {msg.type === 'poll' ? <RoomPoll msg={msg} /> : (
+                    <>
+                      <p style={{ margin: 0, fontSize: '15px', color: '#7f1d1d', fontStyle: 'italic' }}>"{msg.text}"</p>
+                      {msg.image && (msg.image.match(/\.(mp4|mov|webm)$/i) ? <video src={`${API_URL || ''}/uploads/${msg.image}`} controls style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} /> : <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />)}
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -2971,8 +3093,12 @@ function App() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '13px', color: textMuted, marginBottom: '4px' }}>User • <span style={{ color: '#a78bfa' }}>🌙 Burning the midnight oil</span></div>
                       <div style={{ background: bgCard, padding: '12px', borderRadius: '0 12px 12px 12px', color: textStrong, fontSize: '14px' }}>
-                        {msg.text}
-                        {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                        {msg.type === 'poll' ? <RoomPoll msg={msg} /> : (
+                          <>
+                            {msg.text}
+                            {msg.image && (msg.image.match(/\.(mp4|mov|webm)$/i) ? <video src={`${API_URL || ''}/uploads/${msg.image}`} controls style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} /> : <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />)}
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2993,8 +3119,12 @@ function App() {
               {roomMessages.map((msg, i) => (
                 <div key={msg.id || i} style={{ background: bgCard, borderRadius: '16px', padding: '16px', border: `1px solid ${borderColor}` }}>
                   <div style={{ fontSize: '14px', fontWeight: '700', color: textStrong, marginBottom: '8px' }}>📍 Somewhere, Earth</div>
-                  <p style={{ margin: 0, fontSize: '14px', color: textMuted }}>{msg.text}</p>
-                  {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                  {msg.type === 'poll' ? <RoomPoll msg={msg} /> : (
+                    <>
+                      <p style={{ margin: 0, fontSize: '14px', color: textMuted }}>{msg.text}</p>
+                      {msg.image && (msg.image.match(/\.(mp4|mov|webm)$/i) ? <video src={`${API_URL || ''}/uploads/${msg.image}`} controls style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} /> : <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />)}
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -3010,8 +3140,12 @@ function App() {
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>👋</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ background: bgCard, padding: '12px', borderRadius: '0 12px 12px 12px', color: textStrong, fontSize: '14px', border: `1px solid ${borderColor}` }}>
-                      {msg.text}
-                      {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                      {msg.type === 'poll' ? <RoomPoll msg={msg} /> : (
+                        <>
+                          {msg.text}
+                          {msg.image && (msg.image.match(/\.(mp4|mov|webm)$/i) ? <video src={`${API_URL || ''}/uploads/${msg.image}`} controls style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} /> : <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />)}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -3023,8 +3157,10 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {roomMessages.map((msg, i) => (
                 <div key={msg.id || i} style={{ background: bgCard, borderRadius: '16px', border: `1px solid ${borderColor}`, overflow: 'hidden' }}>
-                  {msg.image ? (
-                    <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', display: 'block', backgroundColor: '#e2e8f0', minHeight: '200px', objectFit: 'cover' }} />
+                  {msg.type === 'poll' ? (
+                    <div style={{ padding: '20px' }}><RoomPoll msg={msg} /></div>
+                  ) : msg.image ? (
+                    (msg.image.match(/\.(mp4|mov|webm)$/i) ? <video src={`${API_URL || ''}/uploads/${msg.image}`} controls style={{ width: '100%', display: 'block', backgroundColor: '#e2e8f0', minHeight: '200px', objectFit: 'cover' }} /> : <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', display: 'block', backgroundColor: '#e2e8f0', minHeight: '200px', objectFit: 'cover' }} />)
                   ) : (
                     <div style={{ padding: '20px', textAlign: 'center', color: textStrong }}>{msg.text}</div>
                   )}
@@ -3066,8 +3202,12 @@ function App() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '13px', color: textMuted, marginBottom: '4px' }}>{msg.sender_name || 'VIP Member'}</div>
                       <div style={{ background: bgCard, padding: '12px', borderRadius: '0 12px 12px 12px', color: textStrong, fontSize: '14px', border: `1px solid ${borderColor}` }}>
-                        {msg.text}
-                        {msg.image && <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />}
+                        {msg.type === 'poll' ? <RoomPoll msg={msg} /> : (
+                          <>
+                            {msg.text}
+                            {msg.image && (msg.image.match(/\.(mp4|mov|webm)$/i) ? <video src={`${API_URL || ''}/uploads/${msg.image}`} controls style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} /> : <img src={`${API_URL || ''}/uploads/${msg.image}`} style={{ width: '100%', borderRadius: '8px', marginTop: '8px' }} />)}
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -3117,7 +3257,7 @@ function App() {
               </button>
             ) : (
               <form onSubmit={(e) => handleSendMessage(roomId, e)} style={{ display: 'flex', gap: '12px' }}>
-                <button type="button" style={{ background: bgPrimary, border: `1px solid ${borderColor}`, borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, color: textStrong }}>＋</button>
+                <button type="button" onClick={(e) => handleDumpMeme(roomId, e)} style={{ background: bgPrimary, border: `1px solid ${borderColor}`, borderRadius: '12px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, color: textStrong }}>＋</button>
                 {roomId === 'memes' ? (
                   <button type="button" onClick={(e) => handleDumpMeme(roomId, e)} style={{ flex: 1, background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '800', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>🗑️ Dump Meme</button>
                 ) : (
@@ -3631,7 +3771,7 @@ function App() {
     <div className="app-wrapper">
       <SplashScreen />
 
-      <div style={{ backgroundColor: '#ffffff', position: 'relative', zIndex: 1, paddingBottom: '80px' }}>
+      <div style={{ backgroundColor: 'transparent', position: 'relative', zIndex: 1 }}>
         {/* ─── NAVBAR ─── */}
         <nav className="navbar" style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid #e2e8f0' }}>
           <div className="navbar-left" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -3744,12 +3884,12 @@ function App() {
         </div>
 
         {/* ─── HERO TITLE ─── */}
-        <div style={{ width: '100%', padding: '0', backgroundColor: 'transparent' }}>
+        <div style={{ width: '100%', padding: '0', backgroundColor: '#0178fd', flex: 1 }}>
           <img src="/hero-image-v3.png" alt="Caseily Hero" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
         </div>
       </div>
 
-      <section id="track" style={{ position: 'relative', zIndex: 10, marginTop: '-64px', padding: '0 20px 40px' }}>
+      <section id="track" style={{ position: 'relative', zIndex: 10, marginTop: '-40px', padding: '0 20px 40px' }}>
         
         {/* ─── AUTO-MOVING PROMO CAROUSEL ─── */}
         <div className="container" style={{ maxWidth: '800px', margin: '0 auto 24px auto' }}>
