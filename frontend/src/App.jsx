@@ -1659,8 +1659,11 @@ function App() {
   const [hasUnread, setHasUnread] = useState(false)
   const [publicNews, setPublicNews] = useState([])
   const [selectedNews, setSelectedNews] = useState(null)
+  const [selectedEvent, setSelectedEvent] = useState(null)
   const [roomMessages, setRoomMessages] = useState([])
   const [liveEvents, setLiveEvents] = useState([])
+  const [stageMessages, setStageMessages] = useState([])
+  const [stageMessageInput, setStageMessageInput] = useState('')
   const [messageInput, setMessageInput] = useState('')
   const [roomMemberships, setRoomMemberships] = useState(() => {
     try {
@@ -2137,8 +2140,26 @@ function App() {
     stars: r.stars || 5
   }));
 
+  const handleSendStageMessage = async (e) => {
+    e.preventDefault()
+    if (!currentUser) return setShowAuthModal(true)
+    if (!stageMessageInput.trim()) return
+    try {
+      const res = await fetch(`${API_URL || ''}/api/events/${selectedEvent.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ author: currentUser.name, content: stageMessageInput })
+      })
+      if (res.ok) {
+        setStageMessageInput('')
+        const newMsg = await res.json()
+        setStageMessages(prev => [...prev, newMsg])
+      }
+    } catch (err) { console.error(err) }
+  }
+
   const renderReviewForm = () => (
-    <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
+    <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto' }}>
       <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
       <div style={{ backgroundColor: 'var(--bg-elevated)', borderRadius: '32px', padding: '28px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
         {reviewSuccess ? (
@@ -3540,6 +3561,79 @@ function App() {
     )
   }
 
+  if (currentPath === '/stage-detail' && selectedEvent) {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-default)' }}>
+        <header style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', background: 'var(--bg-card)', position: 'sticky', top: 0, zIndex: 10 }}>
+          <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/'); window.scrollTo(0, 0); }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+          <div style={{ fontWeight: '700', fontSize: '16px', color: 'var(--ink-strong)' }}>Stage</div>
+        </header>
+        <main style={{ flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%', padding: '24px 20px' }}>
+          <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '32px', boxShadow: '0 8px 30px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'linear-gradient(135deg, #ef4444, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '28px' }}>🎙️</div>
+              <div>
+                <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>{selectedEvent.title}</h1>
+                <div style={{ fontSize: '16px', color: '#64748b', fontWeight: '600', marginTop: '4px' }}>{selectedEvent.date} at {selectedEvent.time}</div>
+              </div>
+            </div>
+            
+            <p style={{ fontSize: '18px', color: 'var(--ink-muted)', lineHeight: '1.6', marginBottom: '32px' }}>{selectedEvent.description}</p>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: '700', color: '#1e3fd1', marginBottom: '40px', background: '#eff6ff', padding: '12px 16px', borderRadius: '12px', width: 'fit-content' }}>
+              <span>📍</span> {selectedEvent.location}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {selectedEvent.video_url ? (
+                <a href={selectedEvent.video_url} target="_blank" rel="noreferrer" style={{ width: '100%', padding: '20px', background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', color: '#fff', borderRadius: '16px', textDecoration: 'none', fontWeight: '800', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 10px 25px rgba(59, 130, 246, 0.4)', transition: 'transform 0.2s' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', background: '#ef4444', borderRadius: '50%', border: '2px solid #fff' }}></span> 
+                  Join Live Stage
+                </a>
+              ) : (
+                <div style={{ width: '100%', padding: '20px', background: '#f1f5f9', color: '#64748b', borderRadius: '16px', fontWeight: '800', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                  <span>⏳</span> Link not available yet
+                </div>
+              )}
+              
+              <button 
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: selectedEvent.title, text: `Join me at ${selectedEvent.title}!`, url: window.location.href })
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert('Link copied to clipboard!');
+                  }
+                }}
+                style={{ width: '100%', padding: '16px', background: 'transparent', border: '2px solid #3b82f6', color: '#3b82f6', borderRadius: '16px', fontWeight: '700', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                Share Link
+              </button>
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '32px', boxShadow: '0 8px 30px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0', marginTop: '24px', display: 'flex', flexDirection: 'column', height: '500px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Live Stage Chat</h2>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '12px', marginBottom: '16px' }}>
+              {stageMessages.length === 0 && <div style={{ textAlign: 'center', color: '#94a3b8', margin: 'auto' }}>No messages yet. Say hi!</div>}
+              {stageMessages.map(msg => (
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', background: msg.author === currentUser?.name ? '#e0e7ff' : '#f1f5f9', alignSelf: msg.author === currentUser?.name ? 'flex-end' : 'flex-start', padding: '12px 16px', borderRadius: '16px', borderBottomRightRadius: msg.author === currentUser?.name ? 0 : '16px', borderBottomLeftRadius: msg.author === currentUser?.name ? '16px' : 0, maxWidth: '80%' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '4px' }}>{msg.author}</span>
+                  <span style={{ fontSize: '14px', color: 'var(--ink-strong)' }}>{msg.content}</span>
+                </div>
+              ))}
+            </div>
+            <form onSubmit={handleSendStageMessage} style={{ display: 'flex', gap: '8px' }}>
+              <input type="text" value={stageMessageInput} onChange={e => setStageMessageInput(e.target.value)} placeholder={currentUser ? "Chat here..." : "Log in to chat"} disabled={!currentUser} style={{ flex: 1, padding: '14px', borderRadius: '16px', border: '1px solid #cbd5e1', background: 'var(--bg-default)', color: 'var(--ink-strong)' }} />
+              <button type="submit" disabled={!currentUser || !stageMessageInput.trim()} style={{ background: '#1e3fd1', color: '#fff', border: 'none', borderRadius: '16px', padding: '0 24px', fontWeight: '700', cursor: currentUser && stageMessageInput.trim() ? 'pointer' : 'not-allowed', opacity: currentUser && stageMessageInput.trim() ? 1 : 0.6 }}>Send</button>
+            </form>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   if (currentPath === '/news-detail' && selectedNews) {
     return (
       <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-default)' }}>
@@ -4066,12 +4160,16 @@ function App() {
       {/* ═══════════════════════════════════════════════════════════════
          STAGE (LIVE EVENTS)
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="stage" style={{ padding: '40px 20px', maxWidth: '800px', margin: '0 auto' }}>
+      <section id="stage" style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
         <h2 style={{ fontSize: '24px', fontWeight: '900', color: 'var(--ink-strong)', marginBottom: '20px' }}>Stage</h2>
         {liveEvents.length > 0 ? (
           <div style={{ display: 'grid', gap: '20px' }}>
             {liveEvents.map(ev => (
-              <div key={ev.id} style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div 
+                key={ev.id} 
+                onClick={() => { setSelectedEvent(ev); window.history.pushState({}, '', '/stage-detail'); setCurrentPath('/stage-detail'); window.scrollTo(0, 0); }}
+                style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px', cursor: 'pointer' }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #ef4444, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '900', fontSize: '20px' }}>🎙️</div>
                   <div>
@@ -4084,16 +4182,19 @@ function App() {
                   <span>📍</span> {ev.location}
                 </div>
                 {ev.video_url && (
-                  <a href={ev.video_url} target="_blank" rel="noreferrer" style={{ marginTop: '8px', padding: '10px 16px', background: '#1e3fd1', color: '#fff', borderRadius: '10px', textDecoration: 'none', fontWeight: '700', display: 'inline-block', textAlign: 'center' }}>Join Event</a>
+                  <div style={{ marginTop: '12px', padding: '16px', background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', color: '#fff', borderRadius: '12px', textAlign: 'center', fontWeight: '800', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '12px', height: '12px', background: '#ef4444', borderRadius: '50%' }}></span> 
+                    Open Stage - Click to Join
+                  </div>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <div style={{ padding: '40px 20px', background: 'var(--bg-card)', borderRadius: '20px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎭</div>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#64748b' }}>No events for now</h3>
-            <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px', marginBottom: 0 }}>Check back later for live sessions!</p>
+          <div onClick={() => { setSelectedEvent({ id: 'general_stage', title: 'Open Stage', description: 'Hang out and chat!', location: 'Virtual', date: 'Always Open', time: '24/7' }); window.history.pushState({}, '', '/stage-detail'); setCurrentPath('/stage-detail'); window.scrollTo(0, 0); }} style={{ padding: '60px 20px', background: 'linear-gradient(135deg, #1e3fd1, #3b82f6)', color: '#fff', borderRadius: '24px', textAlign: 'center', cursor: 'pointer', boxShadow: '0 12px 40px rgba(59, 130, 246, 0.4)', border: '2px solid rgba(255,255,255,0.2)' }}>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎭</div>
+            <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '900' }}>No events for now</h3>
+            <p style={{ fontSize: '16px', opacity: 0.9, marginTop: '8px', marginBottom: 0 }}>The stage is always open. Click to chat!</p>
           </div>
         )}
       </section>
@@ -4113,7 +4214,7 @@ function App() {
       </section>
 
       {/* ─── DEAL OF THE DAY ─── */}
-      <section id="deal-of-the-day" className="section" style={{ padding: '40px 0 40px', maxWidth: '800px', margin: '0 auto' }}>
+      <section id="deal-of-the-day" className="section" style={{ padding: '20px 0 20px', maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', margin: 0}}><span style={{fontSize: '20px'}}>🛍️</span><h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, background: 'linear-gradient(90deg, #10b981, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Deal of the Day</h2></div>
           <a href="http://wa.me/c/919167788773" target="_blank" rel="noreferrer" style={{ fontSize: '13px', fontWeight: '600', color: '#1e3fd1', textDecoration: 'none' }}>View all</a>
@@ -4159,7 +4260,7 @@ function App() {
       {/* ═══════════════════════════════════════════════════════════════
          SHOP BANNER
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="shop-banner" style={{ padding: '0 20px', maxWidth: '800px', margin: '60px auto 40px auto' }}>
+      <section id="shop-banner" style={{ padding: '0 20px', maxWidth: '800px', margin: '30px auto 20px auto' }}>
         <div onClick={() => { window.history.pushState({}, '', '/shop'); setCurrentPath('/shop'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '28px'}}>🛒</span><h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', background: 'linear-gradient(90deg, #8b5cf6, #d946ef)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>CaseilyPlus+ shop</h2></div>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -4197,7 +4298,7 @@ function App() {
       {/* ═══════════════════════════════════════════════════════════════
          BLOG
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="blog" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
+      <section id="blog" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto' }}>
         <div onClick={() => { window.history.pushState({}, '', '/news'); setCurrentPath('/news'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '28px'}}>📰</span><h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', background: 'linear-gradient(90deg, #14b8a6, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>News and tips</h2></div>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -4231,7 +4332,7 @@ function App() {
       {/* ═══════════════════════════════════════════════════════════════
          CASEILY INSIDERS
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="insiders-promo" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto' }}>
+      <section id="insiders-promo" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto' }}>
         <div onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px', cursor: 'pointer' }}>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}><span style={{fontSize: '28px'}}>🤝</span><h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', background: 'linear-gradient(90deg, #f59e0b, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>Caseily Insiders</h2></div>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-strong)' }}><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -4251,7 +4352,7 @@ function App() {
       {/* ═══════════════════════════════════════════════════════════════
          SUPPORT & LINKS
          ═══════════════════════════════════════════════════════════════ */}
-      <section id="support-links" style={{ padding: '0 20px', maxWidth: '800px', margin: '40px auto', textAlign: 'left' }}>
+      <section id="support-links" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto', textAlign: 'left' }}>
         <div style={{display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 16px 8px'}}><span style={{fontSize: '28px'}}>🎧</span><h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', background: 'linear-gradient(90deg, #64748b, #475569)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>Support & Links</h2></div>
         <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '12px 28px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
           <div className="support-list">
