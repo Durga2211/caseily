@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from .routers import tracking, reviews, insiders, reels, chat, notifications, news
+from .routers import tracking, reviews, insiders, reels, chat, notifications, news, auth, drops, events
 from .db import fs
 import gridfs
 
@@ -21,6 +21,9 @@ app.include_router(reels.router)
 app.include_router(chat.router)
 app.include_router(notifications.router)
 app.include_router(news.router)
+app.include_router(drops.router)
+app.include_router(auth.router, prefix="/api/auth")
+app.include_router(events.router, prefix="/api")
 
 @app.get("/uploads/{filename}")
 async def get_upload(filename: str):

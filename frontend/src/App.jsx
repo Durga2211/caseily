@@ -484,7 +484,7 @@ function AdminDashboard() {
     try {
       const res = await fetch(`${API_URL}/api/events`)
       const data = await res.json()
-      setAdminEvents(data || [])
+      setAdminEvents(Array.isArray(data) ? data : [])
     } catch (err) { console.error(err) }
     setLoadingEvents(false)
   }
@@ -520,7 +520,7 @@ function AdminDashboard() {
     try {
       const res = await fetch(`${API_URL}/api/auth/users`)
       const data = await res.json()
-      setRegisteredUsers(data || [])
+      setRegisteredUsers(Array.isArray(data) ? data : [])
     } catch (err) { console.error(err) }
     setLoadingUsers(false)
   }
@@ -551,7 +551,7 @@ function AdminDashboard() {
     try {
       const res = await fetch(`${API_URL}/api/admin/drops`)
       const data = await res.json()
-      setAdminDrops(data || [])
+      setAdminDrops(Array.isArray(data) ? data : [])
     } catch (err) { console.error(err) }
     setLoadingDrops(false)
   }
@@ -1088,8 +1088,8 @@ function AdminDashboard() {
             <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>Registered Users ({registeredUsers.length})</h2>
             {loadingUsers ? <p>Loading...</p> : (
               <div style={{ display: 'grid', gap: '16px' }}>
-                {registeredUsers.map(user => (
-                  <div key={user.id} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
+                {registeredUsers.map((user, i) => (
+                  <div key={user.id || i} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontWeight: '800', fontSize: '18px', color: 'var(--ink-strong)' }}>{user.name}</div>
                     <div style={{ fontSize: '14px', color: 'var(--ink-muted)', marginTop: '4px' }}>Phone: {user.phone}</div>
                     <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>Joined: {new Date(user.created_at).toLocaleString()}</div>
@@ -1724,7 +1724,7 @@ function App() {
 
     fetch(`${API_URL || ''}/api/events`)
       .then(res => res.json())
-      .then(data => setLiveEvents(data || []))
+      .then(data => setLiveEvents(Array.isArray(data) ? data : []))
       .catch(console.error)
   }, [currentPath])
 

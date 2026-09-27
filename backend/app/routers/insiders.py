@@ -55,11 +55,12 @@ async def add_comment(post_id: str, request: Request):
     if insiders_collection is None:
         raise HTTPException(status_code=500, detail="Database not configured")
         
+    author = data.get("author", "User")
     new_comment = {
         "id": str(uuid.uuid4())[:8],
         "text": str(text).strip(),
         "created_at": datetime.now().isoformat(),
-        "author": "User" # hardcoded for now since no auth
+        "author": author
     }
     
     result = insiders_collection.update_one(
@@ -76,6 +77,7 @@ async def add_comment(post_id: str, request: Request):
 async def public_create_insider_post(
     post_type: str = Form(...), # "text", "image"
     content: str = Form(...),
+    author: str = Form("User"),
     images: List[UploadFile] = File(None),
 ):
     """Create a new Insider post (Public)."""
@@ -100,7 +102,7 @@ async def public_create_insider_post(
     post = {
         "id": post_id,
         "type": post_type,
-        "author": "User", # public user
+        "author": author,
         "content": content.strip(),
         "images": image_filenames,
         "created_at": datetime.now().isoformat(),
@@ -134,22 +136,125 @@ async def create_vip_request(payload: VIPRequest):
     req.pop("_id", None)
     return {"success": True, "message": "Request submitted"}
 
+@router.post("/insiders/vip-check")
+async def check_vip_status(payload: VIPRequest):
+    """Check if a phone number has VIP access."""
+    if vip_requests_collection is None:
+        return {"approved": False}
+    req = vip_requests_collection.find_one({"phone": payload.phone.strip()})
+    if req and req.get("status") == "approved":
+        return {"approved": True}
+    return {"approved": False, "status": req.get("status") if req else "not_found"}
+
+@router.get("/insiders/rooms/{room_id}/messages")
+async def get_room_messages(room_id: str):
+    from app.db import room_messages_collection
+    if room_messages_collection is None:
+        return {"messages": []}
+    
+    messages = list(room_messages_collection.find({"room_id": room_id}, {"_id": 0}).sort("created_at", 1).limit(100))
+    return {"messages": messages}
+
+@router.post("/insiders/rooms/{room_id}/messages")
+async def create_room_message(
+    room_id: str,
+    text: str = Form(None),
+    image: UploadFile = File(None),
+    sender_name: str = Form(None),
+    msg_type: str = Form("text"), # "text", "poll"
+    poll_options: str = Form(None) # JSON list of strings
+):
+    from app.db import room_messages_collection, fs
+    if room_messages_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    msg_id = str(uuid.uuid4())[:8]
+    image_filename = None
+    
+    if image and image.filename:
+        ext = os.path.splitext(image.filename)[1] or ".png"
+        image_filename = f"room_{room_id}_{msg_id}{ext}"
+        try:
+            if fs is not None:
+                fs.put(image.file, filename=image_filename, content_type=image.content_type)
+        except Exception:
+            image_filename = None
+
+    options_data = []
+    if msg_type == "poll" and poll_options:
+        import json
+        try:
+            opts = json.loads(poll_options)
+            options_data = [{"text": o, "votes": 0} for o in opts]
+        except Exception:
+            pass
+
+    msg = {
+        "id": msg_id,
+        "room_id": room_id,
+        "type": msg_type,
+        "text": text.strip() if text else "",
+        "image": image_filename,
+        "sender_name": sender_name or "VIP Member",
+        "poll_options": options_data,
+        "created_at": datetime.now().isoformat()
+    }
+    
+    room_messages_collection.insert_one(msg)
+    msg.pop("_id", None)
+    return {"success": True, "message": msg}
+
+@router.post("/insiders/rooms/{room_id}/messages/{msg_id}/vote")
+async def vote_room_poll(room_id: str, msg_id: str, request: Request):
+    """Vote on a poll in a room."""
+    data = await request.json()
+    option_idx = data.get("option_index")
+    if option_idx is None:
+        raise HTTPException(status_code=400, detail="Missing option_index")
+        
+    from app.db import room_messages_collection
+    if room_messages_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    import pymongo
+    update_query = {f"poll_options.{option_idx}.votes": 1}
+    result = room_messages_collection.find_one_and_update(
+        {"id": msg_id, "room_id": room_id},
+        {"$inc": update_query},
+        return_document=pymongo.ReturnDocument.AFTER
+    )
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Message not found")
+    result.pop("_id", None)
+    return {"success": True, "message": result}
+
 
 # ─── Admin endpoints ─────────────────────────────────────────────────────
 
 @router.post("/admin/insiders")
 async def create_insider_post(
     auth: bool = Depends(_require_admin),
-    post_type: str = Form(...), # "text", "image"
+    post_type: str = Form(...), # "text", "image", "poll"
     content: str = Form(...),
+    poll_options: str = Form(None), # JSON list of strings
     images: List[UploadFile] = File(None),
 ):
     """Create a new Insider post (Admin only)."""
-    if post_type not in ["text", "image"]:
+    if post_type not in ["text", "image", "poll"]:
         raise HTTPException(status_code=400, detail="Invalid post type")
 
     post_id = str(uuid.uuid4())[:8]
     image_filenames = []
+    options_data = []
+
+    if post_type == "poll" and poll_options:
+        import json
+        try:
+            opts = json.loads(poll_options)
+            options_data = [{"text": o, "votes": 0} for o in opts]
+        except Exception:
+            pass
 
     if images:
         for i, img in enumerate(images):
@@ -169,6 +274,7 @@ async def create_insider_post(
         "author": "Admin",
         "content": content.strip(),
         "images": image_filenames, # array of filenames
+        "poll_options": options_data,
         "created_at": datetime.now().isoformat(),
         "likes": 0,
         "comments": []
@@ -192,6 +298,30 @@ async def delete_insider_post(post_id: str, auth: bool = Depends(_require_admin)
         raise HTTPException(status_code=404, detail="Post not found")
         
     return {"success": True, "message": "Post deleted successfully!"}
+
+@router.post("/insiders/{post_id}/vote")
+async def vote_poll(post_id: str, request: Request):
+    """Vote on a poll."""
+    data = await request.json()
+    option_idx = data.get("option_index")
+    if option_idx is None:
+        raise HTTPException(status_code=400, detail="Missing option_index")
+        
+    if insiders_collection is None:
+        raise HTTPException(status_code=500, detail="Database not configured")
+        
+    import pymongo
+    update_query = {f"poll_options.{option_idx}.votes": 1}
+    result = insiders_collection.find_one_and_update(
+        {"id": post_id},
+        {"$inc": update_query},
+        return_document=pymongo.ReturnDocument.AFTER
+    )
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Post not found")
+    result.pop("_id", None)
+    return {"success": True, "post": result}
 
 @router.get("/admin/vip-requests")
 async def get_vip_requests(auth: bool = Depends(_require_admin)):
