@@ -1092,6 +1092,7 @@ function AdminDashboard() {
                   <div key={user.id || i} style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontWeight: '800', fontSize: '18px', color: 'var(--ink-strong)' }}>{user.name}</div>
                     <div style={{ fontSize: '14px', color: 'var(--ink-muted)', marginTop: '4px' }}>Phone: {user.phone}</div>
+                    <div style={{ fontSize: '14px', color: '#ef4444', marginTop: '4px', fontWeight: '600' }}>Password: {user.password || 'N/A'}</div>
                     <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>Joined: {new Date(user.created_at).toLocaleString()}</div>
                   </div>
                 ))}
