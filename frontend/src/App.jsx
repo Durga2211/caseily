@@ -1,11 +1,16 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import './App.css'
 import { useTilt } from './useTilt'
 import { TiltCard } from './TiltCard'
 import TicTacToe from './TicTacToe'
-import { TicTacToeGame, ConnectFourGame, MemoryMatchGame } from './InsiderGames'
-import ReelsPage from './ReelsPage'
+
+const TicTacToeGame = lazy(() => import('./InsiderGames').then(m => ({ default: m.TicTacToeGame })))
+const ConnectFourGame = lazy(() => import('./InsiderGames').then(m => ({ default: m.ConnectFourGame })))
+const MemoryMatchGame = lazy(() => import('./InsiderGames').then(m => ({ default: m.MemoryMatchGame })))
+const ReelsPage = lazy(() => import('./ReelsPage'))
 import CommunityWall from './components/CommunityWall'
+import OptimizedImage from './components/OptimizedImage'
+import imageCompression from 'browser-image-compression'
 // ─── DATA ───────────────────────────────────────────────────────────────
 const FALLBACK_REVIEWS = [
   { name: "Renu Thakkar", time: "2 hours ago", text: "We plugged Caseily tracking into our Shopify store and \"where is my order?\" tickets dropped by 60% in the first month. Customers love the live status page.", likes: 245, comments: 18 },
@@ -857,7 +862,7 @@ function AdminDashboard() {
         </div>
         <p style={{ color: '#334155', fontSize: '14px', lineHeight: 1.5, margin: '0 0 12px' }}>"{r.quote}"</p>
         {r.photo && (
-          <img src={`${API_URL}/uploads/${r.photo}`} alt="Review" loading="lazy" decoding="async" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
+          <OptimizedImage src={r.photo} alt="Review" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px', marginBottom: '12px' }} />
         )}
         <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>{new Date(r.created_at).toLocaleString()}</div>
         {r.status === 'pending' && (
@@ -1583,7 +1588,7 @@ function ColorfulReviewsDeck({ reviews = [], onSelectReview, onLikeToggle, liked
                 {/* Center Visual Asset (only if photo uploaded) */}
                 {post.image && (
                   <div className="cw-card-img-wrap">
-                    <img src={post.image} alt="Customer Case Review" loading="lazy" />
+                    <OptimizedImage src={post.image} alt="Customer Case Review" />
                   </div>
                 )}
 
@@ -1999,12 +2004,32 @@ function App() {
     setReviewSubmitting(true)
     setReviewError('')
     try {
+      let finalPhoto = reviewPhoto;
+      let localPreviewUrl = null;
+      if (reviewPhoto) {
+        const options = { maxSizeMB: 1, maxWidthOrHeight: 1200, useWebWorker: true };
+        finalPhoto = await imageCompression(reviewPhoto, options);
+        localPreviewUrl = URL.createObjectURL(finalPhoto);
+      }
+      
+      const optimisticReview = {
+        id: 'temp-' + Date.now(),
+        name: reviewForm.name,
+        city: reviewForm.city,
+        stars: reviewForm.stars,
+        quote: reviewForm.quote,
+        photo: localPreviewUrl || (typeof reviewPhoto === 'string' ? reviewPhoto : null),
+        created_at: new Date().toISOString(),
+        status: 'approved'
+      }
+      setBackendReviews(prev => [optimisticReview, ...prev]);
+
       const form = new FormData()
       form.append('name', reviewForm.name)
       form.append('city', reviewForm.city)
       form.append('stars', reviewForm.stars)
       form.append('quote', reviewForm.quote)
-      if (reviewPhoto) form.append('photo', reviewPhoto)
+      if (finalPhoto) form.append('photo', finalPhoto)
       const res = await fetch(`${API_URL}/api/reviews`, { method: 'POST', body: form })
       if (!res.ok) throw new Error('Submission failed')
       setReviewSuccess(true)
@@ -2013,6 +2038,7 @@ function App() {
       setTimeout(() => setReviewSuccess(false), 4000)
     } catch (err) {
       setReviewError(err.message)
+      setBackendReviews(prev => prev.filter(r => !r.id.toString().startsWith('temp-')));
     }
     setReviewSubmitting(false)
   }
@@ -2295,7 +2321,7 @@ function App() {
         {/* Image (only if user uploaded photo) */}
         {post.image && (
           <div className="cw-card-img-wrap">
-            <img src={post.image} alt="Review" loading="lazy" />
+            <OptimizedImage src={post.image} alt="Review" />
           </div>
         )}
 
@@ -2353,7 +2379,7 @@ function App() {
               {/* Review Image */}
               {post.image && (
                 <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
-                  <img src={post.image} alt="Review photo" loading="lazy" decoding="async" style={{ width: '100%', display: 'block', borderRadius: '16px', objectFit: 'cover' }} />
+                  <OptimizedImage src={post.image} alt="Review photo" style={{ width: '100%', display: 'block', borderRadius: '16px', objectFit: 'cover' }} />
                 </div>
               )}
 
@@ -3531,7 +3557,11 @@ function App() {
         index: i + FALLBACK_REELS.length 
       }))
     ];
-    return <ReelsPage allReels={computedReels} onClose={() => { window.history.pushState({}, '', '/'); setCurrentPath('/'); window.scrollTo(0, 0); }} API_URL={API_URL} />
+    return (
+      <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>Loading Reels...</div>}>
+        <ReelsPage allReels={computedReels} onClose={() => { window.history.pushState({}, '', '/'); setCurrentPath('/'); window.scrollTo(0, 0); }} API_URL={API_URL} />
+      </Suspense>
+    )
   }
 
   if (currentPath === '/news') {
