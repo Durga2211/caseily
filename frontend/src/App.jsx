@@ -2894,10 +2894,10 @@ function App() {
                 <article key={post.id} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', marginBottom: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
                   <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center' }}>
                     <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
-                      <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 'bold' }}>{(post.author || 'U').charAt(0)}</span>
+                      <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: 'bold' }}>{((post.author === 'Admin' ? 'CASEILYplus+' : post.author) || 'U').charAt(0)}</span>
                     </div>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--ink-strong)' }}>{post.author}</div>
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--ink-strong)' }}>{post.author === 'Admin' ? 'CASEILYplus+' : post.author}</div>
                       <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>{new Date(post.created_at).toLocaleDateString()}</div>
                     </div>
                   </div>
@@ -2958,7 +2958,7 @@ function App() {
 
                     {post.type !== 'text' && (
                       <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--ink-strong)', lineHeight: '1.5', wordBreak: 'break-word' }}>
-                        <span style={{ fontWeight: '700', marginRight: '6px' }}>{post.author}</span>
+                        <span style={{ fontWeight: '700', marginRight: '6px' }}>{post.author === 'Admin' ? 'CASEILYplus+' : post.author}</span>
                         {post.content}
                       </p>
                     )}
@@ -2967,7 +2967,7 @@ function App() {
                       <div style={{ marginBottom: '12px', maxHeight: '120px', overflowY: 'auto' }}>
                         {post.comments.map(c => (
                           <div key={c.id} style={{ fontSize: '13px', marginBottom: '4px', color: 'var(--ink-strong)' }}>
-                            <span style={{ fontWeight: '700', marginRight: '6px' }}>{c.author}</span>
+                            <span style={{ fontWeight: '700', marginRight: '6px' }}>{c.author === 'Admin' ? 'CASEILYplus+' : c.author}</span>
                             {c.text}
                           </div>
                         ))}
@@ -3650,7 +3650,7 @@ function App() {
               {stageMessages.length === 0 && <div style={{ textAlign: 'center', color: '#94a3b8', margin: 'auto' }}>No messages yet. Say hi!</div>}
               {stageMessages.map(msg => (
                 <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', background: msg.author === currentUser?.name ? '#e0e7ff' : '#f1f5f9', alignSelf: msg.author === currentUser?.name ? 'flex-end' : 'flex-start', padding: '12px 16px', borderRadius: '16px', borderBottomRightRadius: msg.author === currentUser?.name ? 0 : '16px', borderBottomLeftRadius: msg.author === currentUser?.name ? '16px' : 0, maxWidth: '80%' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '4px' }}>{msg.author}</span>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', marginBottom: '4px' }}>{msg.author === 'Admin' ? 'CASEILYplus+' : msg.author}</span>
                   <span style={{ fontSize: '14px', color: 'var(--ink-strong)' }}>{msg.content}</span>
                 </div>
               ))}
@@ -4013,7 +4013,7 @@ function App() {
                 {hasUnread && <div style={{ position: 'absolute', top: 0, right: 0, width: '10px', height: '10px', backgroundColor: '#ef4444', borderRadius: '50%', border: '2px solid var(--bg-default)' }} />}
               </button>
               {showNotifDropdown && (
-                <div style={{ position: 'absolute', top: '40px', left: '0', width: '280px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', padding: '16px', zIndex: 999999, border: '1px solid var(--nav-border)', animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                <div style={{ position: 'absolute', top: '40px', left: '0', width: '280px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', padding: '16px', zIndex: 999999, border: '1px solid var(--nav-border)', animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)', isolation: 'isolate' }}>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '800', color: 'var(--ink-strong)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notifications</h4>
                   {notifications.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -4056,7 +4056,7 @@ function App() {
         </nav>
 
         {/* ─── MOBILE HEADER ─── */}
-        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: 'var(--bg-card)', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
+        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: 'var(--bg-card)', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', zIndex: 50, borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
           <div ref={notifRef} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
             <button onClick={() => { setShowNotifDropdown(!showNotifDropdown); setHasUnread(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '4px' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-strong)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: hasUnread ? 'swing 2s ease-in-out infinite' : 'none' }}>
@@ -4066,7 +4066,7 @@ function App() {
               {hasUnread && <div style={{ position: 'absolute', top: 0, right: 0, width: '10px', height: '10px', backgroundColor: '#ef4444', borderRadius: '50%', border: '2px solid var(--bg-default)' }} />}
             </button>
             {showNotifDropdown && (
-              <div style={{ position: 'absolute', top: '40px', left: '0', width: '280px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', padding: '16px', zIndex: 999999, border: '1px solid var(--nav-border)', animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+              <div style={{ position: 'absolute', top: '40px', left: '0', width: '280px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', padding: '16px', zIndex: 999999, border: '1px solid var(--nav-border)', animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)', isolation: 'isolate' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '800', color: 'var(--ink-strong)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notifications</h4>
                 {notifications.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
