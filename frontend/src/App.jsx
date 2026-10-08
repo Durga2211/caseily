@@ -2022,7 +2022,7 @@ function App() {
         created_at: new Date().toISOString(),
         status: 'approved'
       }
-      setBackendReviews(prev => [optimisticReview, ...prev]);
+      setApprovedReviews(prev => [optimisticReview, ...prev]);
 
       const form = new FormData()
       form.append('name', reviewForm.name)
@@ -2038,7 +2038,7 @@ function App() {
       setTimeout(() => setReviewSuccess(false), 4000)
     } catch (err) {
       setReviewError(err.message)
-      setBackendReviews(prev => prev.filter(r => !r.id.toString().startsWith('temp-')));
+      setApprovedReviews(prev => prev.filter(r => !r.id.toString().startsWith('temp-')));
     }
     setReviewSubmitting(false)
   }
