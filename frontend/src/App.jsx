@@ -4056,8 +4056,8 @@ function App() {
         </nav>
 
         {/* ─── MOBILE HEADER ─── */}
-        <div className="mobile-app-header" style={{ justifyContent: 'center', backgroundColor: 'var(--bg-card)', padding: '16px 20px', width: '100%', boxSizing: 'border-box', position: 'relative', zIndex: 50, borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
-          <div ref={notifRef} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+        <div className="mobile-app-header" style={{ justifyContent: 'space-between', backgroundColor: 'var(--bg-card)', padding: '12px 16px', width: '100%', boxSizing: 'border-box', position: 'relative', zIndex: 50, borderBottom: '1px solid #e2e8f0', marginBottom: 0 }}>
+          <div ref={notifRef} style={{ display: 'flex', alignItems: 'center', flex: 1, position: 'relative' }}>
             <button onClick={() => { setShowNotifDropdown(!showNotifDropdown); setHasUnread(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', padding: '4px' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-strong)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: hasUnread ? 'swing 2s ease-in-out infinite' : 'none' }}>
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -4082,16 +4082,19 @@ function App() {
               </div>
             )}
           </div>
-          <div className="desktop-logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>
-            <span style={{ color: '#1e3fd1', fontWeight: 900, fontSize: 'clamp(20px, 4vw, 24px)', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase' }}>CASEILY</span>
-            <span style={{ color: 'var(--ink-strong)', fontWeight: 700, fontSize: 'clamp(16px, 3vw, 20px)', fontFamily: '"Poppins", sans-serif', marginLeft: '2px' }}>insider</span>
+          <div className="desktop-logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }} onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }}>
+            <span style={{ color: '#1e3fd1', fontWeight: 900, fontSize: 'clamp(16px, 4vw, 22px)', fontFamily: '"Poppins", sans-serif', textTransform: 'uppercase' }}>CASEILY</span>
+            <span style={{ color: 'var(--ink-strong)', fontWeight: 700, fontSize: 'clamp(14px, 3vw, 18px)', fontFamily: '"Poppins", sans-serif', marginLeft: '2px' }}>insider</span>
           </div>
           
-          <div style={{ position: 'absolute', right: '20px', display: 'flex', alignItems: 'center', gap: '12px' }} ref={shortcutRef}>
-            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ backgroundColor: 'transparent', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--ink-strong)', fontSize: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, justifyContent: 'flex-end', position: 'relative' }} ref={shortcutRef}>
+            <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontSize: '20px', display: 'flex', alignItems: 'center' }}>
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
-            <button className="theme-toggle" onClick={() => setShortcutMenuOpen(o => !o)} aria-label="Menu" style={{ backgroundColor: 'transparent', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: '#1e3fd1' }}>
+            <button onClick={() => setShowAuthModal(true)} aria-label="Profile" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </button>
+            <button onClick={() => setShortcutMenuOpen(o => !o)} aria-label="Menu" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
             </button>
             {shortcutMenuOpen && (
@@ -4454,10 +4457,6 @@ function App() {
 
         <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '50%' }} onClick={() => { window.history.pushState({}, '', '/insiders'); setCurrentPath('/insiders'); window.scrollTo(0, 0); }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        </div>
-
-        <div style={{ color: 'var(--accent)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '50%' }} onClick={() => setShowAuthModal(true)} title="Profile">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         </div>
       </div>
       )}
