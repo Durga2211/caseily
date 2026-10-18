@@ -1686,6 +1686,7 @@ function App() {
     catch { return null; }
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showResaleModal, setShowResaleModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [authForm, setAuthForm] = useState({ name: '', phone: '', password: '' });
   const [authError, setAuthError] = useState('');
@@ -4247,6 +4248,73 @@ function App() {
         />
       </section>
 
+      {/* ─── RESALE VALUE ESTIMATOR PROMO SECTION (MINIMAL) ─── */}
+      <section id="resell-estimator-section" style={{ padding: '8px 20px', maxWidth: '800px', margin: '0 auto' }}>
+        <div 
+          onClick={() => setShowResaleModal(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setShowResaleModal(true); } }}
+          style={{
+            background: 'linear-gradient(135deg, #1e3fd1 0%, #2563eb 100%)',
+            borderRadius: '16px',
+            padding: '14px 18px',
+            color: '#ffffff',
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(30, 63, 209, 0.16)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(30, 63, 209, 0.22)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(30, 63, 209, 0.16)'; }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+              <span style={{ fontSize: '15px' }}>📱</span>
+              <h3 style={{
+                fontSize: '14.5px',
+                fontWeight: '800',
+                margin: 0,
+                lineHeight: 1.25,
+                color: '#ffffff',
+                letterSpacing: '-0.2px'
+              }}>
+                Want to know the resell value price of your phone?
+              </h3>
+            </div>
+            <p style={{
+              fontSize: '12px',
+              margin: 0,
+              opacity: 0.9,
+              color: '#eff6ff',
+              lineHeight: 1.3
+            }}>
+              Instant valuation for any phone in INR.
+            </p>
+          </div>
+
+          <div style={{
+            flexShrink: 0,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: '#ffffff',
+            color: '#1e3fd1',
+            padding: '8px 14px',
+            borderRadius: '10px',
+            fontWeight: '700',
+            fontSize: '12px',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+          }}>
+            Check Value →
+          </div>
+        </div>
+      </section>
+
       {/* ─── DEAL OF THE DAY ─── */}
       <section id="deal-of-the-day" className="section" style={{ padding: '20px 0 20px', maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -4539,6 +4607,104 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Resale Estimator Modal */}
+      {showResaleModal && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            backgroundColor: 'rgba(0,0,0,0.65)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            zIndex: 1000000, 
+            backdropFilter: 'blur(6px)',
+            padding: '12px'
+          }} 
+          onClick={() => setShowResaleModal(false)}
+        >
+          <div 
+            style={{ 
+              background: '#ffffff', 
+              borderRadius: '16px', 
+              width: '100%', 
+              maxWidth: '460px', 
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.22)',
+              border: '1px solid #e2e8f0'
+            }} 
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              padding: '10px 14px', 
+              borderBottom: '1px solid #f1f5f9',
+              background: '#ffffff'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '16px' }}>📱</span>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
+                  Resale Estimator
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <a 
+                  href="/resale-estimator.html" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  title="Open full page"
+                  style={{ 
+                    fontSize: '11px', 
+                    fontWeight: '700', 
+                    color: '#1e3fd1', 
+                    textDecoration: 'none',
+                    padding: '3px 7px',
+                    borderRadius: '5px',
+                    background: '#eff4ff'
+                  }}
+                >
+                  Full Page ↗
+                </a>
+                <button 
+                  onClick={() => setShowResaleModal(false)} 
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '18px', 
+                    cursor: 'pointer', 
+                    color: '#64748b',
+                    padding: '2px 6px',
+                    lineHeight: 1
+                  }}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <iframe 
+                src="/resale-estimator.html" 
+                title="Phone Resale Value Estimator" 
+                style={{ 
+                  width: '100%', 
+                  height: '76vh', 
+                  border: 'none', 
+                  display: 'block',
+                  background: '#ffffff'
+                }} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAuthModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000000, backdropFilter: 'blur(4px)' }} onClick={() => setShowAuthModal(false)}>

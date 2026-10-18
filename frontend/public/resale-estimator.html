@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phone Resale Value Estimator</title>
+  <style>
+    :root {
+      --accent: #1e3fd1;
+      --accent-hover: #162eb0;
+      --accent-light: #eff4ff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --bg-surface: #ffffff;
+      --bg-alt: #f8fafc;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      padding: 10px 12px 24px;
+      line-height: 1.4;
+    }
+
+    .estimator-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-surface);
+    }
+
+    /* Steps & Sections */
+    .form-step {
+      margin-bottom: 14px;
+    }
+
+    .step-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      border-radius: 50%;
+    }
+
+    .field-group {
+      margin-bottom: 10px;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Inputs */
+    .input-text, .input-select {
+      width: 100%;
+      padding: 7px 10px;
+      font-size: 13px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      color: var(--text-main);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .input-text:focus, .input-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(30, 63, 209, 0.12);
+    }
+
+    /* Searchable type-ahead */
+    .typeahead-wrapper {
+      position: relative;
+    }
+
+    .suggestions-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      z-index: 50;
+      display: none;
+    }
+
+    .suggestion-item {
+      padding: 8px 10px;
+      font-size: 12.5px;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+
+    .suggestion-item:hover, .suggestion-item.active {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .suggestion-unlisted {
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--bg-alt);
+    }
+
+    /* Fallback unlisted container */
+    .unlisted-container {
+      background: var(--bg-alt);
+      border: 1px dashed var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* Segmented Radio Buttons */
+    .segmented-group {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .segmented-option {
+      flex: 1 1 calc(50% - 4px);
+      position: relative;
+    }
+
+    .segmented-option.three-cols {
+      flex: 1 1 calc(33.333% - 4px);
+    }
+
+    .segmented-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .segmented-label {
+      display: block;
+      padding: 6px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      background: var(--bg-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .segmented-option input[type="radio"]:checked + .segmented-label {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* Accordion Checklist */
+    details.issues-accordion {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      margin-top: 10px;
+    }
+
+    details.issues-accordion summary {
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-alt);
+      border-radius: 6px;
+    }
+
+    details[open].issues-accordion summary {
+      border-bottom: 1px solid var(--border-color);
+      border-radius: 6px 6px 0 0;
+    }
+
+    .issues-body {
+      padding: 8px 10px;
+    }
+
+    .issue-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      font-size: 12px;
+      color: var(--text-main);
+      cursor: pointer;
+      border-bottom: 1px solid #f8fafc;
+    }
+
+    .issue-item:last-child {
+      border-bottom: none;
+    }
+
+    .issue-item input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    /* Blockers alert section */
+    .blockers-box {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: var(--danger-light);
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+    }
+
+    .blockers-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--danger);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      padding: 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+      background: var(--accent);
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-submit:active {
+      transform: scale(0.99);
+    }
+
+    /* Result Card */
+    .result-card {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .result-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-verified {
+      background: var(--success-light);
+      color: var(--success);
+    }
+
+    .badge-estimate {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .badge-ineligible {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+
+    .result-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .price-range-display {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text-main);
+      margin: 4px 0;
+      letter-spacing: -0.5px;
+    }
+
+    .ineligible-message {
+      padding: 12px;
+      background: var(--danger-light);
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      color: var(--danger);
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+
+    /* Breakdown Table */
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 11.5px;
+    }
+
+    .breakdown-table tr {
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .breakdown-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-table td {
+      padding: 6px 0;
+    }
+
+    .breakdown-table td.amount {
+      text-align: right;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .breakdown-table td.deduction {
+      color: var(--danger);
+    }
+
+    .breakdown-table tr.total-row td {
+      font-weight: 800;
+      font-size: 12px;
+      border-top: 2px solid var(--border-color);
+      padding-top: 8px;
+    }
+
+    .result-meta {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border-color);
+      font-size: 10.5px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .disclaimer-text {
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .btn-reset {
+      margin-top: 10px;
+      width: 100%;
+      padding: 8px;
+      background: var(--bg-alt);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="estimator-container">
+    <form id="resaleForm" onsubmit="handleFormSubmit(event)">
+      <!-- STEP 1: Phone Details -->
+      <div class="form-step">
+        <div class="step-title">
+          <span class="step-num">1</span>
+          <span>Select Device</span>
+        </div>
+
+        <!-- Searchable Model -->
+        <div class="field-group">
+          <label class="field-label" for="modelInput">Brand & Model</label>
+          <div class="typeahead-wrapper">
+            <input 
+              type="text" 
+              id="modelInput" 
+              class="input-text" 
+              placeholder="e.g. iPhone 15, Galaxy S24, OnePlus 12..."
+              autocomplete="off"
+            >
+            <div id="suggestionsList" class="suggestions-list"></div>
+          </div>
+        </div>
+
+        <!-- Unlisted Model Fallback Fields -->
+        <div id="unlistedSection" class="unlisted-container">
+          <div class="field-group">
+            <label class="field-label" for="unlistedBrandTier">Brand Category</label>
+            <select id="unlistedBrandTier" class="input-select">
+              <option value="apple">Apple (Retains highest value)</option>
+              <option value="medium" selected>Samsung / OnePlus / Google</option>
+              <option value="budget">Redmi / Realme / Vivo / Oppo / Others</option>
+            </select>
+          </div>
+
+          <div class="grid-2">
+            <div class="field-group">
+              <label class="field-label" for="customModelName">Model Name</label>
+              <input type="text" id="customModelName" class="input-text" placeholder="e.g. Moto Edge 40">
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="launchPriceInput">Original Price (₹)</label>
+              <input type="number" id="launchPriceInput" class="input-text" placeholder="e.g. 29999" min="1000" step="500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Storage & Age -->
+        <div class="grid-2">
+          <div class="field-group">
+            <label class="field-label" for="storageSelect">Storage</label>
+            <select id="storageSelect" class="input-select">
+              <option value="64GB">64 GB</option>
+              <option value="128GB" selected>128 GB</option>
+              <option value="256GB">256 GB</option>
+              <option value="512GB">512 GB</option>
+              <option value="1TB">1 TB</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="phoneAgeSelect">Phone Age</label>
+            <select id="phoneAgeSelect" class="input-select">
+              <option value="0">&lt; 1 year</option>
+              <option value="1" selected>1 year</option>
+              <option value="2">2 years</option>
+              <option value="3">3 years</option>
+              <option value="4">4 years</option>
+              <option value="5">5+ years</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Physical & Functional Condition -->
+      <div class="form-step">
+        <div class="step-title">
+          <span class="step-num">2</span>
+          <span>Condition</span>
+        </div>
+
+        <!-- Screen Condition -->
+        <div class="field-group">
+          <label class="field-label">Screen</label>
+          <div class="segmented-group">
+            <div class="segmented-option">
+              <input type="radio" name="screen" id="sc_flawless" value="flawless" checked>
+              <label class="segmented-label" for="sc_flawless">Flawless</label>
+            </div>
+            <div class="segmented-option">
+              <input type="radio" name="screen" id="sc_minor" value="minor_scratches">
+              <label class="segmented-label" for="sc_minor">Scratches</label>
+            </div>
+            <div class="segmented-option">
+              <input type="radio" name="screen" id="sc_heavy" value="heavy_scratches">
+              <label class="segmented-label" for="sc_heavy">Heavy</label>
+            </div>
+            <div class="segmented-option">
+              <input type="radio" name="screen" id="sc_cracked" value="cracked">
+              <label class="segmented-label" for="sc_cracked">Cracked</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body / Frame Condition -->
+        <div class="field-group">
+          <label class="field-label">Body / Frame</label>
+          <div class="segmented-group">
+            <div class="segmented-option three-cols">
+              <input type="radio" name="body" id="bd_like_new" value="like_new" checked>
+              <label class="segmented-label" for="bd_like_new">Like New</label>
+            </div>
+            <div class="segmented-option three-cols">
+              <input type="radio" name="body" id="bd_minor" value="minor_dents">
+              <label class="segmented-label" for="bd_minor">Minor Dents</label>
+            </div>
+            <div class="segmented-option three-cols">
+              <input type="radio" name="body" id="bd_major" value="major_dents">
+              <label class="segmented-label" for="bd_major">Major / Bent</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back Panel Condition -->
+        <div class="field-group">
+          <label class="field-label">Back Panel</label>
+          <div class="segmented-group">
+            <div class="segmented-option three-cols">
+              <input type="radio" name="back" id="bk_intact" value="intact" checked>
+              <label class="segmented-label" for="bk_intact">Intact</label>
+            </div>
+            <div class="segmented-option three-cols">
+              <input type="radio" name="back" id="bk_scratched" value="scratched">
+              <label class="segmented-label" for="bk_scratched">Scratched</label>
+            </div>
+            <div class="segmented-option three-cols">
+              <input type="radio" name="back" id="bk_cracked" value="cracked">
+              <label class="segmented-label" for="bk_cracked">Cracked</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Box, Bill & Warranty -->
+        <div class="grid-2">
+          <div class="field-group">
+            <label class="field-label">Box & Bill</label>
+            <div class="segmented-group">
+              <div class="segmented-option">
+                <input type="radio" name="boxBill" id="bb_yes" value="yes" checked>
+                <label class="segmented-label" for="bb_yes">Yes</label>
+              </div>
+              <div class="segmented-option">
+                <input type="radio" name="boxBill" id="bb_no" value="no">
+                <label class="segmented-label" for="bb_no">Missing</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Warranty</label>
+            <div class="segmented-group">
+              <div class="segmented-option">
+                <input type="radio" name="warranty" id="w_valid" value="valid">
+                <label class="segmented-label" for="w_valid">Valid</label>
+              </div>
+              <div class="segmented-option">
+                <input type="radio" name="warranty" id="w_out" value="out" checked>
+                <label class="segmented-label" for="w_out">Expired</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsible Functional Issues Checklist -->
+        <details class="issues-accordion" id="issuesAccordion">
+          <summary>
+            <span>Any issues?</span>
+            <span id="issuesCountBadge" style="font-size: 11px; font-weight: 600; color: var(--text-muted);">None</span>
+          </summary>
+          <div class="issues-body">
+            <label class="issue-item">
+              <input type="checkbox" id="fn_battery">
+              <span>Battery health &lt; 80%</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_front_camera">
+              <span>Front camera faulty</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_rear_camera">
+              <span>Rear camera faulty</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_speaker">
+              <span>Speaker faulty</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_microphone">
+              <span>Microphone faulty</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_biometrics">
+              <span>Fingerprint / Face ID issue</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_charging_port">
+              <span>Charging port loose</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_connectivity">
+              <span>Wi-Fi / Bluetooth issue</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_buttons">
+              <span>Buttons faulty</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_touch_issues">
+              <span>Touch screen issue</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_display_lines">
+              <span>Display lines / dead pixels</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_water_damage">
+              <span>Water damage (-35%)</span>
+            </label>
+            <label class="issue-item">
+              <input type="checkbox" id="fn_non_genuine_parts">
+              <span>Non-genuine parts used (-10%)</span>
+            </label>
+
+            <!-- Blocker Flags -->
+            <div class="blockers-box">
+              <div class="blockers-title">Resale Eligibility Locks</div>
+              <label class="issue-item" style="color: var(--danger); font-weight: 600;">
+                <input type="checkbox" id="bl_account_locked">
+                <span>iCloud / Google locked</span>
+              </label>
+              <label class="issue-item" style="color: var(--danger); font-weight: 600;">
+                <input type="checkbox" id="bl_imei_blacklisted">
+                <span>IMEI blacklisted</span>
+              </label>
+              <label class="issue-item" style="color: var(--danger); font-weight: 600;">
+                <input type="checkbox" id="bl_carrier_locked">
+                <span>Carrier / SIM locked</span>
+              </label>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- STEP 3: Submit -->
+      <div class="form-step" style="margin-bottom: 0;">
+        <button type="submit" class="btn-submit" id="getValueBtn">Get Resale Value</button>
+      </div>
+    </form>
+
+    <!-- Result Card -->
+    <div id="resultCard" class="result-card">
+      <div id="eligibleView">
+        <div class="result-header">
+          <div>
+            <div class="result-title">Estimated Quote</div>
+            <div class="price-range-display" id="resaleRangeText">₹0 – ₹0</div>
+          </div>
+          <span id="confidenceBadge" class="result-badge badge-verified">Verified</span>
+        </div>
+
+        <div style="font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 4px;" id="phoneSummaryLabel">Apple iPhone 15 128GB</div>
+
+        <table class="breakdown-table">
+          <tbody id="breakdownTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+
+        <div class="result-meta">
+          <div>Last Updated: <strong id="lastUpdatedDate">October 2026</strong></div>
+          <div class="disclaimer-text">Estimate only. Final offer depends on physical inspection.</div>
+        </div>
+      </div>
+
+      <div id="ineligibleView" style="display: none;">
+        <div class="result-header">
+          <span class="result-badge badge-ineligible">Ineligible for Resale</span>
+        </div>
+        <div class="ineligible-message" id="ineligibleReasonText">
+          This device is locked or blacklisted and cannot be accepted for resale.
+        </div>
+        <div class="result-meta">
+          <div class="disclaimer-text">Due to security policies and legal regulations, devices with active account locks, carrier restrictions, or blacklisted IMEIs are not eligible.</div>
+        </div>
+      </div>
+
+      <button type="button" class="btn-reset" onclick="resetForm()">Check Another Phone</button>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. CONFIGURATION OBJECT
+       All multipliers, deductions, depreciation curves, and pricing constants.
+       ========================================================================== */
+    const CONFIG = {
+      depreciationCurves: {
+        apple: {
+          0: 0.90, // < 1 year
+          1: 0.83,
+          2: 0.68,
+          3: 0.56,
+          4: 0.46,
+          5: 0.36
+        },
+        medium: { // Samsung, OnePlus, Google Pixel
+          0: 0.82,
+          1: 0.75,
+          2: 0.60,
+          3: 0.48,
+          4: 0.38,
+          5: 0.28
+        },
+        budget: { // Redmi, Realme, Vivo, Oppo, other brands
+          0: 0.74,
+          1: 0.67,
+          2: 0.52,
+          3: 0.40,
+          4: 0.30,
+          5: 0.20
+        }
+      },
+
+      storageScalingStep: 0.12,
+
+      conditionMultipliers: {
+        screen: {
+          flawless: 1.0,
+          minor_scratches: 0.95,
+          heavy_scratches: 0.85,
+          cracked: 0.60
+        },
+        body: {
+          like_new: 1.0,
+          minor_dents: 0.95,
+          major_dents: 0.85
+        },
+        back: {
+          intact: 1.0,
+          scratched: 0.97,
+          cracked: 0.90
+        },
+        missingBoxAndBill: 0.97,
+        outOfWarranty: 0.97
+      },
+
+      tierThresholds: {
+        budgetMax: 15000,
+        midMax: 40000
+      },
+
+      functionalDeductions: {
+        battery_sub80: { label: 'Battery Health <80%', budget: 1200, mid: 2200, premium: 3800 },
+        front_camera:  { label: 'Front Camera',        budget: 800,  mid: 1600, premium: 3000 },
+        rear_camera:   { label: 'Rear Camera',         budget: 1200, mid: 2500, premium: 4500 },
+        speaker:       { label: 'Speaker',             budget: 500,  mid: 1000, premium: 1800 },
+        microphone:    { label: 'Microphone',          budget: 500,  mid: 1000, premium: 1800 },
+        biometrics:    { label: 'Biometrics / Face ID',budget: 800,  mid: 1600, premium: 3000 },
+        charging_port: { label: 'Charging Port',       budget: 600,  mid: 1200, premium: 2000 },
+        connectivity:  { label: 'Wi-Fi / Bluetooth',   budget: 700,  mid: 1500, premium: 2500 },
+        buttons:       { label: 'Buttons',             budget: 400,  mid: 800,  premium: 1500 },
+        touch_issues:  { label: 'Touch Screen',        budget: 1500, mid: 3000, premium: 5500 },
+        display_lines: { label: 'Display Lines / Dots',budget: 2000, mid: 4500, premium: 8000 }
+      },
+
+      percentageDeductions: {
+        water_damage:      { label: 'Water Damage (-35%)', rate: 0.35 },
+        non_genuine_parts: { label: 'Non-genuine Parts (-10%)', rate: 0.10 }
+      },
+
+      guardrails: {
+        minFloorFactor: 0.15,
+        rangeMinus: 0.08,
+        rangePlus: 0.08,
+        roundNearest: 50
+      }
+    };
+
+    /* ==========================================================================
+       2. EMBEDDED SAMPLE DATA & API INTEGRATION POINT
+       Fallback data if prices.json cannot be fetched (e.g. file:// protocol).
+       ========================================================================== */
+    const FALLBACK_PRICES = {
+      "last_updated": "2026-10-15",
+      "prices": {
+        "Apple|iPhone 15 Pro Max|256GB": 78000,
+        "Apple|iPhone 15 Pro Max|512GB": 86000,
+        "Apple|iPhone 15 Pro|128GB": 65000,
+        "Apple|iPhone 15 Pro|256GB": 72000,
+        "Apple|iPhone 15|128GB": 44000,
+        "Apple|iPhone 15|256GB": 50000,
+        "Apple|iPhone 15|512GB": 60000,
+        "Apple|iPhone 14|128GB": 35000,
+        "Apple|iPhone 14|256GB": 40000,
+        "Apple|iPhone 13|128GB": 28000,
+        "Apple|iPhone 13|256GB": 32000,
+        "Apple|iPhone 12|64GB": 18000,
+        "Apple|iPhone 12|128GB": 21000,
+        "Samsung|Galaxy S24 Ultra|256GB": 72000,
+        "Samsung|Galaxy S24 Ultra|512GB": 80000,
+        "Samsung|Galaxy S24|128GB": 45000,
+        "Samsung|Galaxy S24|256GB": 51000,
+        "Samsung|Galaxy S23|128GB": 34000,
+        "Samsung|Galaxy S23|256GB": 38000,
+        "Samsung|Galaxy S21 FE 5G|128GB": 15000,
+        "Samsung|Galaxy S21 FE 5G|256GB": 17000,
+        "Samsung|Galaxy A54 5G|128GB": 16000,
+        "Samsung|Galaxy A54 5G|256GB": 18000,
+        "OnePlus|OnePlus 12|256GB": 42000,
+        "OnePlus|OnePlus 12|512GB": 48000,
+        "OnePlus|OnePlus 11R|128GB": 21000,
+        "OnePlus|OnePlus 11R|256GB": 24000,
+        "OnePlus|OnePlus Nord CE 3|128GB": 12000,
+        "OnePlus|OnePlus Nord CE 3|256GB": 14000,
+        "Google|Pixel 8 Pro|128GB": 50000,
+        "Google|Pixel 8|128GB": 38000,
+        "Google|Pixel 8|256GB": 43000,
+        "Google|Pixel 7a|128GB": 20000,
+        "Redmi|Redmi Note 13 Pro+|256GB": 18500,
+        "Redmi|Redmi Note 13 Pro|128GB": 14000,
+        "Redmi|Redmi Note 13 Pro|256GB": 16000,
+        "Redmi|Redmi Note 12|64GB": 7500,
+        "Redmi|Redmi Note 12|128GB": 8800,
+        "Realme|Realme 12 Pro+|128GB": 17000,
+        "Realme|Realme 12 Pro+|256GB": 19000,
+        "Realme|Realme Narzo 60|128GB": 9500,
+        "Vivo|Vivo X100|256GB": 42000,
+        "Vivo|Vivo V29|128GB": 18000,
+        "Vivo|Vivo V29|256GB": 20500,
+        "Vivo|Vivo T2x 5G|128GB": 7500,
+        "Oppo|Oppo Reno 11 Pro|256GB": 24000,
+        "Oppo|Oppo Reno 11|128GB": 18500,
+        "Oppo|Oppo Reno 11|256GB": 21000,
+        "Oppo|Oppo F25 Pro|128GB": 15500,
+        "Oppo|Oppo F25 Pro|256GB": 17500
+      }
+    };
+
+    let dataset = FALLBACK_PRICES;
+
+    // Load prices.json dynamically
+    async function loadPricesDataset() {
+      try {
+        const response = await fetch('prices.json');
+        if (response.ok) {
+          dataset = await response.json();
+        }
+      } catch (err) {
+        console.warn('Using embedded price dataset fallback:', err.message);
+      }
+    }
+
+    /*
+     * NOTE FOR PARTNER / CASHIFY API INTEGRATION:
+     * To plug in a live partner API (such as Cashify B2B Quote API):
+     * Replace `estimate()` or lookup logic with an async fetch call to partner endpoint.
+     */
+
+    /* ==========================================================================
+       3. PURE PRICING ENGINE (ESTIMATE FUNCTION)
+       ========================================================================== */
+    function parseStorageGB(storageStr) {
+      if (!storageStr) return 128;
+      const str = String(storageStr).toUpperCase();
+      if (str.includes('TB')) {
+        return parseFloat(str) * 1024;
+      }
+      return parseFloat(str) || 128;
+    }
+
+    function determineTier(basePrice) {
+      if (basePrice < CONFIG.tierThresholds.budgetMax) return 'budget';
+      if (basePrice <= CONFIG.tierThresholds.midMax) return 'mid';
+      return 'premium';
+    }
+
+    function estimate(inputs, pricesData = dataset) {
+      // 1. Check Blockers
+      if (inputs.isLocked || inputs.isBlacklisted || inputs.isCarrierLocked) {
+        return {
+          eligible: false,
+          blockerReason: 'This device is not eligible for resale due to security locks (iCloud/Google account locked, IMEI blacklisted, or carrier locked).',
+          base: 0,
+          low: 0,
+          high: 0,
+          finalValue: 0,
+          breakdown: [],
+          confidence: 'Ineligible'
+        };
+      }
+
+      let basePrice = 0;
+      let confidence = 'Verified';
+      const breakdown = [];
+
+      // 2. Base Price Determination
+      if (inputs.isUnlisted) {
+        const launchPrice = Math.max(1000, Number(inputs.launchPrice) || 20000);
+        const ageYears = Math.min(5, Math.max(0, Number(inputs.phoneAge) || 1));
+        const tier = inputs.brandTier || 'medium';
+        const curve = CONFIG.depreciationCurves[tier] || CONFIG.depreciationCurves.medium;
+        const depFactor = curve[ageYears] !== undefined ? curve[ageYears] : 0.28;
+
+        basePrice = Math.round(launchPrice * depFactor);
+        confidence = 'Rough estimate';
+
+        breakdown.push({
+          item: `Base (Launch ₹${launchPrice.toLocaleString('en-IN')}, ${ageYears}y @ ${(depFactor * 100).toFixed(0)}%)`,
+          amount: basePrice,
+          isDeduction: false
+        });
+      } else {
+        const brand = inputs.brand || '';
+        const model = inputs.model || '';
+        const storage = inputs.storage || '128GB';
+        const exactKey = `${brand}|${model}|${storage}`;
+
+        const prices = (pricesData && pricesData.prices) ? pricesData.prices : FALLBACK_PRICES.prices;
+
+        if (prices[exactKey]) {
+          basePrice = prices[exactKey];
+          confidence = 'Verified';
+          breakdown.push({
+            item: `Base Price (${model} ${storage})`,
+            amount: basePrice,
+            isDeduction: false
+          });
+        } else {
+          const modelVariants = [];
+          const prefix = `${brand}|${model}|`;
+
+          for (const key of Object.keys(prices)) {
+            if (key.startsWith(prefix)) {
+              const varStorage = key.split('|')[2];
+              modelVariants.push({
+                storage: varStorage,
+                gb: parseStorageGB(varStorage),
+                price: prices[key]
+              });
+            }
+          }
+
+          if (modelVariants.length > 0) {
+            const targetGB = parseStorageGB(storage);
+            modelVariants.sort((a, b) => Math.abs(Math.log2(a.gb / targetGB)) - Math.abs(Math.log2(b.gb / targetGB)));
+            const nearest = modelVariants[0];
+
+            const steps = Math.log2(targetGB / nearest.gb);
+            const scaleFactor = 1 + (CONFIG.storageScalingStep * steps);
+            basePrice = Math.round(nearest.price * Math.max(0.70, scaleFactor));
+            confidence = 'Verified (Scaled)';
+
+            breakdown.push({
+              item: `Base Price (Scaled from ${nearest.storage} @ ₹${nearest.price.toLocaleString('en-IN')})`,
+              amount: basePrice,
+              isDeduction: false
+            });
+          } else {
+            const defaultLaunch = 30000;
+            const ageYears = Math.min(5, Math.max(0, Number(inputs.phoneAge) || 1));
+            const depFactor = CONFIG.depreciationCurves.medium[ageYears] || 0.60;
+            basePrice = Math.round(defaultLaunch * depFactor);
+            confidence = 'Rough estimate';
+
+            breakdown.push({
+              item: `Base Price (Standard Tier, ${ageYears}y old)`,
+              amount: basePrice,
+              isDeduction: false
+            });
+          }
+        }
+      }
+
+      if (basePrice < 1000) basePrice = 1000;
+
+      // 3. Condition Multipliers
+      const condCfg = CONFIG.conditionMultipliers;
+      const screenKey = inputs.screen || 'flawless';
+      const bodyKey = inputs.body || 'like_new';
+      const backKey = inputs.back || 'intact';
+
+      const screenMult = condCfg.screen[screenKey] !== undefined ? condCfg.screen[screenKey] : 1.0;
+      const bodyMult = condCfg.body[bodyKey] !== undefined ? condCfg.body[bodyKey] : 1.0;
+      const backMult = condCfg.back[backKey] !== undefined ? condCfg.back[backKey] : 1.0;
+      const boxBillMult = inputs.hasBoxAndBill === false ? condCfg.missingBoxAndBill : 1.0;
+      const warrantyMult = inputs.isOutOfWarranty === true ? condCfg.outOfWarranty : 1.0;
+
+      const conditionFactor = screenMult * bodyMult * backMult * boxBillMult * warrantyMult;
+      const conditionValue = basePrice * conditionFactor;
+
+      if (screenMult < 1.0) {
+        const ded = Math.round(basePrice * (1 - screenMult));
+        breakdown.push({
+          item: `Screen (${screenKey.replace('_', ' ')})`,
+          amount: -ded,
+          isDeduction: true
+        });
+      }
+      if (bodyMult < 1.0) {
+        const ded = Math.round(basePrice * (1 - bodyMult));
+        breakdown.push({
+          item: `Body (${bodyKey.replace('_', ' ')})`,
+          amount: -ded,
+          isDeduction: true
+        });
+      }
+      if (backMult < 1.0) {
+        const ded = Math.round(basePrice * (1 - backMult));
+        breakdown.push({
+          item: `Back Panel (${backKey.replace('_', ' ')})`,
+          amount: -ded,
+          isDeduction: true
+        });
+      }
+      if (boxBillMult < 1.0) {
+        const ded = Math.round(basePrice * (1 - boxBillMult));
+        breakdown.push({
+          item: `Missing Box & Bill (-3%)`,
+          amount: -ded,
+          isDeduction: true
+        });
+      }
+      if (warrantyMult < 1.0) {
+        const ded = Math.round(basePrice * (1 - warrantyMult));
+        breakdown.push({
+          item: `Out of Warranty (-3%)`,
+          amount: -ded,
+          isDeduction: true
+        });
+      }
+
+      // 4. Functional Deductions
+      const tier = determineTier(basePrice);
+      let totalFunctionalDeductions = 0;
+
+      const activeIssues = inputs.functionalIssues || [];
+      activeIssues.forEach(issueKey => {
+        if (CONFIG.functionalDeductions[issueKey]) {
+          const issueInfo = CONFIG.functionalDeductions[issueKey];
+          const dedAmount = issueInfo[tier] || issueInfo.mid;
+          totalFunctionalDeductions += dedAmount;
+          breakdown.push({
+            item: `${issueInfo.label}`,
+            amount: -dedAmount,
+            isDeduction: true
+          });
+        }
+      });
+
+      if (inputs.hasWaterDamage) {
+        const waterDed = Math.round(basePrice * CONFIG.percentageDeductions.water_damage.rate);
+        totalFunctionalDeductions += waterDed;
+        breakdown.push({
+          item: CONFIG.percentageDeductions.water_damage.label,
+          amount: -waterDed,
+          isDeduction: true
+        });
+      }
+
+      if (inputs.hasNonGenuineParts) {
+        const nonGenDed = Math.round(basePrice * CONFIG.percentageDeductions.non_genuine_parts.rate);
+        totalFunctionalDeductions += nonGenDed;
+        breakdown.push({
+          item: CONFIG.percentageDeductions.non_genuine_parts.label,
+          amount: -nonGenDed,
+          isDeduction: true
+        });
+      }
+
+      // 5. Final Value & Guardrails
+      const rawValue = conditionValue - totalFunctionalDeductions;
+      const minFloor = basePrice * CONFIG.guardrails.minFloorFactor;
+      const maxCeiling = basePrice;
+
+      let clampedValue = rawValue;
+      if (clampedValue < minFloor) {
+        clampedValue = minFloor;
+        breakdown.push({
+          item: `Minimum Resale Floor (15%)`,
+          amount: Math.round(minFloor),
+          isDeduction: false
+        });
+      } else if (clampedValue > maxCeiling) {
+        clampedValue = maxCeiling;
+      }
+
+      // 6. Range Calculation (-8% to +8%), rounded to nearest 50
+      const roundUnit = CONFIG.guardrails.roundNearest;
+      let rawLow = Math.max(minFloor, clampedValue * (1 - CONFIG.guardrails.rangeMinus));
+      let rawHigh = Math.min(maxCeiling, clampedValue * (1 + CONFIG.guardrails.rangePlus));
+
+      let low = Math.round(rawLow / roundUnit) * roundUnit;
+      let high = Math.round(rawHigh / roundUnit) * roundUnit;
+
+      if (high < low) high = low;
+
+      return {
+        eligible: true,
+        blockerReason: null,
+        base: Math.round(basePrice),
+        finalValue: Math.round(clampedValue),
+        low: Math.round(low),
+        high: Math.round(high),
+        breakdown,
+        confidence
+      };
+    }
+
+    /* ==========================================================================
+       4. CONSOLE ASSERT TESTS
+       ========================================================================== */
+    function runTests() {
+      // Test 1: Locked phone returns ineligible
+      const res1 = estimate({
+        isLocked: true,
+        brand: 'Apple',
+        model: 'iPhone 15',
+        storage: '128GB'
+      });
+      console.assert(res1.eligible === false && res1.low === 0, 'Test 1 Failed: Locked phone must be ineligible');
+
+      // Test 2: Cracked screen lowers price
+      const flawless = estimate({
+        brand: 'Apple',
+        model: 'iPhone 15',
+        storage: '128GB',
+        screen: 'flawless',
+        body: 'like_new',
+        back: 'intact',
+        hasBoxAndBill: true,
+        isOutOfWarranty: false
+      });
+      const cracked = estimate({
+        brand: 'Apple',
+        model: 'iPhone 15',
+        storage: '128GB',
+        screen: 'cracked',
+        body: 'like_new',
+        back: 'intact',
+        hasBoxAndBill: true,
+        isOutOfWarranty: false
+      });
+      console.assert(cracked.finalValue < flawless.finalValue, 'Test 2 Failed: Cracked screen must lower final value');
+
+      // Test 3: Floor is respected (15% of base) even with extreme deductions
+      const severe = estimate({
+        brand: 'Apple',
+        model: 'iPhone 15',
+        storage: '128GB',
+        screen: 'cracked',
+        body: 'major_dents',
+        back: 'cracked',
+        hasBoxAndBill: false,
+        isOutOfWarranty: true,
+        hasWaterDamage: true,
+        hasNonGenuineParts: true,
+        functionalIssues: [
+          'battery_sub80', 'front_camera', 'rear_camera', 'speaker',
+          'microphone', 'biometrics', 'charging_port', 'connectivity',
+          'buttons', 'touch_issues', 'display_lines'
+        ]
+      });
+      const expectedFloor = Math.round(severe.base * 0.15);
+      console.assert(severe.finalValue >= expectedFloor, 'Test 3 Failed: Floor of 15% must be respected');
+
+      // Test 4: Unlisted phone fallback correctly calculates depreciation and marks 'Rough estimate'
+      const unlisted = estimate({
+        isUnlisted: true,
+        brandTier: 'apple',
+        launchPrice: 80000,
+        phoneAge: 2
+      });
+      console.assert(unlisted.confidence === 'Rough estimate', 'Test 4 Failed: Unlisted phone must be marked Rough estimate');
+      console.assert(unlisted.base === 54400, 'Test 4 Failed: Apple 2y depreciation curve incorrect');
+
+      // Test 5: Storage adjustment scales up price when unlisted higher storage is chosen
+      const base128 = estimate({
+        brand: 'Apple',
+        model: 'iPhone 13',
+        storage: '128GB',
+        screen: 'flawless'
+      });
+      const scaled1TB = estimate({
+        brand: 'Apple',
+        model: 'iPhone 13',
+        storage: '1TB',
+        screen: 'flawless'
+      });
+      console.assert(scaled1TB.base > base128.base, 'Test 5 Failed: Higher storage variant must scale base price upwards');
+
+      console.log('✅ Resale Estimator: All 5 automated unit tests passed successfully!');
+    }
+
+    /* ==========================================================================
+       5. DOM & UI LOGIC
+       ========================================================================== */
+    let selectedPhone = null;
+    let availableModels = [];
+
+    function initTypeahead() {
+      const input = document.getElementById('modelInput');
+      const list = document.getElementById('suggestionsList');
+      const unlistedSection = document.getElementById('unlistedSection');
+
+      const modelSet = new Set();
+      const prices = dataset.prices || FALLBACK_PRICES.prices;
+      for (const key of Object.keys(prices)) {
+        const [brand, model] = key.split('|');
+        if (brand && model) {
+          modelSet.add(JSON.stringify({ brand, model, display: `${brand} ${model}` }));
+        }
+      }
+      availableModels = Array.from(modelSet).map(s => JSON.parse(s));
+
+      function renderSuggestions(query) {
+        list.innerHTML = '';
+        const q = (query || '').toLowerCase().trim();
+
+        const filtered = availableModels.filter(m => m.display.toLowerCase().includes(q));
+
+        filtered.slice(0, 8).forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'suggestion-item';
+          div.textContent = item.display;
+          div.onclick = () => selectModel(item);
+          list.appendChild(div);
+        });
+
+        const unlistedDiv = document.createElement('div');
+        unlistedDiv.className = 'suggestion-item suggestion-unlisted';
+        unlistedDiv.textContent = '+ My phone isn\'t listed (Custom)';
+        unlistedDiv.onclick = () => selectUnlisted();
+        list.appendChild(unlistedDiv);
+
+        list.style.display = 'block';
+      }
+
+      input.addEventListener('focus', () => renderSuggestions(input.value));
+      input.addEventListener('input', () => renderSuggestions(input.value));
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.typeahead-wrapper')) {
+          list.style.display = 'none';
+        }
+      });
+    }
+
+    function selectModel(item) {
+      selectedPhone = item;
+      document.getElementById('modelInput').value = item.display;
+      document.getElementById('suggestionsList').style.display = 'none';
+      document.getElementById('unlistedSection').style.display = 'none';
+
+      updateStorageOptionsForModel(item.brand, item.model);
+    }
+
+    function selectUnlisted() {
+      selectedPhone = { isUnlisted: true };
+      document.getElementById('modelInput').value = "My phone isn't listed";
+      document.getElementById('suggestionsList').style.display = 'none';
+      document.getElementById('unlistedSection').style.display = 'block';
+    }
+
+    function updateStorageOptionsForModel(brand, model) {
+      const storageSelect = document.getElementById('storageSelect');
+      const prefix = `${brand}|${model}|`;
+      const prices = dataset.prices || FALLBACK_PRICES.prices;
+      const modelStorages = [];
+
+      for (const key of Object.keys(prices)) {
+        if (key.startsWith(prefix)) {
+          modelStorages.push(key.split('|')[2]);
+        }
+      }
+
+      if (modelStorages.length > 0) {
+        const firstMatch = modelStorages[0];
+        for (let i = 0; i < storageSelect.options.length; i++) {
+          if (storageSelect.options[i].value === firstMatch) {
+            storageSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
+    function initIssuesBadge() {
+      const accordion = document.getElementById('issuesAccordion');
+      const badge = document.getElementById('issuesCountBadge');
+      const checkboxes = accordion.querySelectorAll('input[type="checkbox"]');
+
+      function updateCount() {
+        let count = 0;
+        checkboxes.forEach(cb => { if (cb.checked) count++; });
+        if (count === 0) {
+          badge.textContent = 'None';
+          badge.style.color = 'var(--text-muted)';
+        } else {
+          badge.textContent = `${count} issue${count > 1 ? 's' : ''}`;
+          badge.style.color = 'var(--danger)';
+        }
+      }
+
+      checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const isUnlisted = selectedPhone?.isUnlisted || (document.getElementById('modelInput').value.includes("isn't listed"));
+      const brand = isUnlisted ? '' : (selectedPhone?.brand || 'Apple');
+      const model = isUnlisted ? (document.getElementById('customModelName').value || 'Custom Phone') : (selectedPhone?.model || 'iPhone 15');
+      const storage = document.getElementById('storageSelect').value;
+      const phoneAge = parseInt(document.getElementById('phoneAgeSelect').value, 10);
+
+      const screen = document.querySelector('input[name="screen"]:checked')?.value || 'flawless';
+      const body = document.querySelector('input[name="body"]:checked')?.value || 'like_new';
+      const back = document.querySelector('input[name="back"]:checked')?.value || 'intact';
+      const hasBoxAndBill = document.querySelector('input[name="boxBill"]:checked')?.value === 'yes';
+      const isOutOfWarranty = document.querySelector('input[name="warranty"]:checked')?.value === 'out';
+
+      const issueKeys = [
+        'battery_sub80', 'front_camera', 'rear_camera', 'speaker',
+        'microphone', 'biometrics', 'charging_port', 'connectivity',
+        'buttons', 'touch_issues', 'display_lines'
+      ];
+      const functionalIssues = issueKeys.filter(key => document.getElementById(`fn_${key}`)?.checked);
+      const hasWaterDamage = document.getElementById('fn_water_damage')?.checked || false;
+      const hasNonGenuineParts = document.getElementById('fn_non_genuine_parts')?.checked || false;
+
+      const isLocked = document.getElementById('bl_account_locked')?.checked || false;
+      const isBlacklisted = document.getElementById('bl_imei_blacklisted')?.checked || false;
+      const isCarrierLocked = document.getElementById('bl_carrier_locked')?.checked || false;
+
+      const inputs = {
+        isUnlisted,
+        brand,
+        model,
+        storage,
+        phoneAge,
+        brandTier: document.getElementById('unlistedBrandTier').value,
+        launchPrice: parseFloat(document.getElementById('launchPriceInput').value) || 25000,
+        screen,
+        body,
+        back,
+        hasBoxAndBill,
+        isOutOfWarranty,
+        functionalIssues,
+        hasWaterDamage,
+        hasNonGenuineParts,
+        isLocked,
+        isBlacklisted,
+        isCarrierLocked
+      };
+
+      const result = estimate(inputs, dataset);
+      displayResult(result, inputs);
+    }
+
+    function displayResult(result, inputs) {
+      const card = document.getElementById('resultCard');
+      const eligibleView = document.getElementById('eligibleView');
+      const ineligibleView = document.getElementById('ineligibleView');
+
+      card.style.display = 'block';
+
+      if (!result.eligible) {
+        eligibleView.style.display = 'none';
+        ineligibleView.style.display = 'block';
+        document.getElementById('ineligibleReasonText').textContent = result.blockerReason;
+      } else {
+        eligibleView.style.display = 'block';
+        ineligibleView.style.display = 'none';
+
+        const formattedLow = `₹${result.low.toLocaleString('en-IN')}`;
+        const formattedHigh = `₹${result.high.toLocaleString('en-IN')}`;
+        document.getElementById('resaleRangeText').textContent = `${formattedLow} – ${formattedHigh}`;
+
+        const phoneTitle = inputs.isUnlisted 
+          ? `${inputs.model} (${inputs.storage})` 
+          : `${inputs.brand} ${inputs.model} ${inputs.storage}`;
+        document.getElementById('phoneSummaryLabel').textContent = phoneTitle;
+
+        const badge = document.getElementById('confidenceBadge');
+        if (result.confidence === 'Rough estimate') {
+          badge.textContent = 'Rough estimate';
+          badge.className = 'result-badge badge-estimate';
+        } else {
+          badge.textContent = result.confidence;
+          badge.className = 'result-badge badge-verified';
+        }
+
+        const tbody = document.getElementById('breakdownTableBody');
+        tbody.innerHTML = '';
+
+        result.breakdown.forEach(row => {
+          const tr = document.createElement('tr');
+          const tdLabel = document.createElement('td');
+          tdLabel.textContent = row.item;
+
+          const tdAmount = document.createElement('td');
+          tdAmount.className = 'amount' + (row.isDeduction ? ' deduction' : '');
+          const sign = row.isDeduction ? '-' : '';
+          tdAmount.textContent = `${sign}₹${Math.abs(row.amount).toLocaleString('en-IN')}`;
+
+          tr.appendChild(tdLabel);
+          tr.appendChild(tdAmount);
+          tbody.appendChild(tr);
+        });
+
+        const trTotal = document.createElement('tr');
+        trTotal.className = 'total-row';
+        trTotal.innerHTML = `
+          <td>Estimated Base Value</td>
+          <td class="amount">₹${result.finalValue.toLocaleString('en-IN')}</td>
+        `;
+        tbody.appendChild(trTotal);
+
+        document.getElementById('lastUpdatedDate').textContent = dataset.last_updated || 'October 2026';
+      }
+
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function resetForm() {
+      document.getElementById('resaleForm').reset();
+      selectedPhone = null;
+      document.getElementById('modelInput').value = '';
+      document.getElementById('unlistedSection').style.display = 'none';
+      document.getElementById('resultCard').style.display = 'none';
+      document.getElementById('issuesCountBadge').textContent = 'None';
+      document.getElementById('issuesCountBadge').style.color = 'var(--text-muted)';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadPricesDataset();
+      initTypeahead();
+      initIssuesBadge();
+      runTests();
+    });
+  </script>
+</body>
+</html>
