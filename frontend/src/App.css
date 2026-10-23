@@ -1967,63 +1967,84 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
 
 /* ═══════════════════════════════════════════════════════════════
    QUICK LINKS BAR
-   ═══════════════════════════════════════════════════════════════ */
+/* ─── QUICK LINKS BAR (3D Illustrated Icons Grid) ─── */
 .quick-links-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  flex-wrap: wrap; justify-content: center;
-  padding: 8px 4px 16px;
-  margin-top: 16px;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  max-width: 390px;
+  margin: 24px auto 0;
+  padding: 8px 12px 16px;
+  box-sizing: border-box;
 }
-.quick-links-bar::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
-}
+
 .quick-link-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  min-width: 90px;
-  width: 90px;
-  height: 90px;
-  padding: 8px;
+  background-color: #F3F4F6;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 18px;
+  width: 100%;
+  min-height: 116px;
+  padding: 14px 8px 12px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
-  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
+
 .quick-link-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  background-color: #ECEEF2;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
+
+.quick-link-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
 .quick-link-btn.active {
-  background-color: var(--accent);
-  color: #ffffff;
-  border-color: var(--accent);
+  background-color: #F3F4F6;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
 }
-.quick-link-btn.active svg {
-  color: #ffffff;
+
+.quick-link-btn.active:hover {
+  background-color: #ECEEF2;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
-.quick-link-btn svg {
-  color: var(--accent);
-  width: 28px;
-  height: 28px;
+
+.quick-link-icon {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
   margin-bottom: 8px;
-  stroke-width: 1.5;
+  display: block;
+  flex-shrink: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.08));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+.quick-link-btn:hover .quick-link-icon {
+  transform: scale(1.08);
+}
+
 .quick-link-btn span {
-  font-size: 11px;
+  font-size: 13.5px;
   font-weight: 700;
   text-align: center;
-  line-height: 1.2;
-}
-.quick-link-btn:not(.active) span {
-  color: var(--ink-strong);
+  line-height: 1.25;
+  color: #111111;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  word-wrap: normal;
+  hyphens: none;
 }
 
 @keyframes slide-left {

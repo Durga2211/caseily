@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <!-- Shadows -->
+    <filter id="ev-shadow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-color="#0f172a" flood-opacity="0.22" />
+    </filter>
+    <filter id="ev-popper-shadow" x="-30%" y="-30%" width="160%" height="160%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="-2" dy="4" stdDeviation="2.5" flood-color="#4c0519" flood-opacity="0.35" />
+    </filter>
+
+    <!-- Calendar Gradients -->
+    <linearGradient id="ev-cal-back" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9" />
+      <stop offset="100%" stop-color="#CBD5E1" />
+    </linearGradient>
+    <linearGradient id="ev-cal-body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+    <linearGradient id="ev-cal-header" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B6B" />
+      <stop offset="35%" stop-color="#EE5253" />
+      <stop offset="100%" stop-color="#C0392B" />
+    </linearGradient>
+    <linearGradient id="ev-cal-header-shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.75" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Metallic Rings -->
+    <linearGradient id="ev-ring-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E2E8F0" />
+      <stop offset="30%" stop-color="#FFFFFF" />
+      <stop offset="70%" stop-color="#94A3B8" />
+      <stop offset="100%" stop-color="#64748B" />
+    </linearGradient>
+
+    <!-- Popper Cone Gradients -->
+    <linearGradient id="ev-popper-cone" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="40%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <linearGradient id="ev-popper-stripe" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EC4899" />
+      <stop offset="100%" stop-color="#BE185D" />
+    </linearGradient>
+    <linearGradient id="ev-ribbon-teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#0D9488" />
+    </linearGradient>
+    <linearGradient id="ev-ribbon-purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C084FC" />
+      <stop offset="100%" stop-color="#7E22CE" />
+    </linearGradient>
+    <linearGradient id="ev-sparkle-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+
+  <!-- 3D Calendar Shadow and Base -->
+  <g filter="url(#ev-shadow)">
+    <!-- Back page layer for 3D thickness -->
+    <rect x="8" y="14" width="44" height="42" rx="7" fill="url(#ev-cal-back)" />
+    
+    <!-- Main Calendar Page -->
+    <rect x="8" y="12" width="44" height="42" rx="7" fill="url(#ev-cal-body)" />
+
+    <!-- Calendar Red Header -->
+    <path d="M8 19C8 15.134 11.134 12 15 12H45C48.866 12 52 15.134 52 19V25H8V19Z" fill="url(#ev-cal-header)" />
+    <!-- Header top edge reflection -->
+    <path d="M9 19C9 15.686 11.686 13 15 13H45C48.314 13 51 15.686 51 19V21H9V19Z" fill="url(#ev-cal-header-shine)" />
+
+    <!-- Punch holes on header -->
+    <circle cx="16" cy="18" r="2.2" fill="#7F1D1D" />
+    <circle cx="30" cy="18" r="2.2" fill="#7F1D1D" />
+    <circle cx="44" cy="18" r="2.2" fill="#7F1D1D" />
+
+    <!-- Calendar Date: Bold '24' -->
+    <g fill="#1E293B">
+      <!-- '2' -->
+      <path d="M18 34.5C18 31.5 20.2 29.5 23.5 29.5C26.5 29.5 28.5 31.2 28.5 33.8C28.5 36.4 26.6 38.6 24.5 40.4L21.4 43.1H29V46H18.2V43.6L23.2 39.4C25 37.8 26 36.2 26 34.2C26 32.8 25 31.8 23.4 31.8C21.8 31.8 20.6 32.8 20.4 34.5H18Z" />
+      <!-- '4' -->
+      <path d="M36.2 29.8V39.2H40.2V41.7H36.2V46H33.5V41.7H27.5V39.4L33.3 29.8H36.2ZM33.5 33.2L29.6 39.2H33.5V33.2Z" />
+    </g>
+
+    <!-- Calendar Bottom Shelf Subtle Highlight -->
+    <path d="M12 53H48" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" />
+  </g>
+
+  <!-- 3D Spiral Rings -->
+  <g>
+    <!-- Ring 1 -->
+    <rect x="14.5" y="8" width="3" height="10" rx="1.5" fill="url(#ev-ring-grad)" stroke="#475569" stroke-width="0.4" />
+    <!-- Ring 2 -->
+    <rect x="28.5" y="8" width="3" height="10" rx="1.5" fill="url(#ev-ring-grad)" stroke="#475569" stroke-width="0.4" />
+    <!-- Ring 3 -->
+    <rect x="42.5" y="8" width="3" height="10" rx="1.5" fill="url(#ev-ring-grad)" stroke="#475569" stroke-width="0.4" />
+  </g>
+
+  <!-- Festive Confetti Streamers & Stars in Background -->
+  <!-- Teal Curling Streamer -->
+  <path d="M14 26C12 23 15 19 12 16" stroke="url(#ev-ribbon-teal)" stroke-width="2" stroke-linecap="round" fill="none" />
+  <!-- Purple Streamer -->
+  <path d="M47 18C50 14 46 11 49 7" stroke="url(#ev-ribbon-purple)" stroke-width="2.2" stroke-linecap="round" fill="none" />
+
+  <!-- Confetti Dots & Stars -->
+  <circle cx="11" cy="22" r="1.8" fill="#F43F5E" />
+  <circle cx="15" cy="12" r="1.5" fill="#38BDF8" />
+  <circle cx="38" cy="8" r="1.6" fill="#F59E0B" />
+  <circle cx="56" cy="22" r="1.6" fill="#10B981" />
+  <circle cx="58" cy="34" r="2.2" fill="#8B5CF6" />
+  <circle cx="48" cy="28" r="1.5" fill="#EC4899" />
+
+  <!-- Sparkle Star (top right) -->
+  <path d="M52 14L53.2 16.8L56 18L53.2 19.2L52 22L50.8 19.2L48 18L50.8 16.8Z" fill="url(#ev-sparkle-gold)" />
+
+  <!-- 3D Party Popper Cone in Bottom Right Foreground -->
+  <g filter="url(#ev-popper-shadow)" transform="translate(4, 2)">
+    <!-- Popper Cone Body (Angled 45 deg) -->
+    <g transform="rotate(-38 43 45)">
+      <!-- Main Cone -->
+      <path d="M38 34L49 34L43.5 54Z" fill="url(#ev-popper-cone)" />
+      
+      <!-- Cone Stripes -->
+      <path d="M39.6 39L47.4 39L46.2 43L40.8 43Z" fill="url(#ev-popper-stripe)" />
+      <path d="M41.8 47L45.2 47L44.4 50L42.6 50Z" fill="url(#ev-popper-stripe)" />
+      
+      <!-- Cone Top Oval Opening -->
+      <ellipse cx="43.5" cy="34" rx="5.5" ry="2.2" fill="#BE185D" />
+      <ellipse cx="43.5" cy="33.6" rx="5.1" ry="1.7" fill="#F43F5E" />
+
+      <!-- Glossy Cone Highlight -->
+      <path d="M40 36L42.8 51" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity="0.6" />
+    </g>
+
+    <!-- Explosion Burst Ribbons from Popper -->
+    <path d="M38 36C35 31 38 27 34 23" stroke="#EC4899" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <path d="M41 33C42 27 47 25 45 19" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round" fill="none" />
+    <path d="M35 38C30 38 28 34 25 35" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" fill="none" />
+
+    <!-- Big Shiny Star bursting out -->
+    <path d="M37 28L38.2 30.5L41 31.5L38.2 32.5L37 35L35.8 32.5L33 31.5L35.8 30.5Z" fill="url(#ev-sparkle-gold)" />
+  </g>
+</svg>

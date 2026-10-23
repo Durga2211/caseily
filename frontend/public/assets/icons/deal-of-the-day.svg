@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <!-- Shadows -->
+    <filter id="dd-shadow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.2" />
+    </filter>
+    <filter id="dd-front-shadow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="-2" dy="4" stdDeviation="2.5" flood-color="#881337" flood-opacity="0.3" />
+    </filter>
+
+    <!-- Blue Tag Gradients -->
+    <linearGradient id="dd-blue-tag" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#BAE6FD" />
+      <stop offset="30%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <linearGradient id="dd-blue-edge" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.1" />
+    </linearGradient>
+
+    <!-- Pink Tag Gradients -->
+    <linearGradient id="dd-pink-tag" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FECDD3" />
+      <stop offset="25%" stop-color="#FB7185" />
+      <stop offset="70%" stop-color="#F43F5E" />
+      <stop offset="100%" stop-color="#BE123C" />
+    </linearGradient>
+    <linearGradient id="dd-pink-edge" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.1" />
+    </linearGradient>
+
+    <!-- String / Loop -->
+    <linearGradient id="dd-string" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+  </defs>
+
+  <!-- Tag Hanging Strings -->
+  <path d="M26 14C26 6 36 6 36 14" stroke="url(#dd-string)" stroke-width="2" stroke-linecap="round" />
+  <path d="M28 15C28 9 39 8 40 16" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+
+  <!-- Back Blue Tag (Angled Left) -->
+  <g filter="url(#dd-shadow)" transform="rotate(-15 28 32)">
+    <rect x="18" y="15" width="22" height="34" rx="5" fill="url(#dd-blue-tag)" />
+    <!-- Tag Punch Hole -->
+    <circle cx="29" cy="20.5" r="2.6" fill="#0369A1" />
+    <circle cx="29" cy="20.5" r="1.8" fill="#F8FAFC" />
+    <!-- Glossy Highlight Along Left Edge -->
+    <path d="M19.5 22V44" stroke="url(#dd-blue-edge)" stroke-width="1.5" stroke-linecap="round" />
+    
+    <!-- Big Bold White % Symbol -->
+    <g transform="translate(21, 26)">
+      <!-- Top circle -->
+      <circle cx="4.5" cy="4.5" r="2.2" stroke="#FFFFFF" stroke-width="1.8" />
+      <!-- Slash -->
+      <line x1="12" y1="3" x2="3" y2="15" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" />
+      <!-- Bottom circle -->
+      <circle cx="10.5" cy="13.5" r="2.2" stroke="#FFFFFF" stroke-width="1.8" />
+    </g>
+  </g>
+
+  <!-- Front Pink Tag (Angled Right, Overlapping) -->
+  <g filter="url(#dd-front-shadow)" transform="rotate(12 36 34)">
+    <rect x="25" y="16" width="23" height="35" rx="5.5" fill="url(#dd-pink-tag)" />
+    <!-- Tag Punch Hole with metal grommet -->
+    <circle cx="36.5" cy="22" r="3" fill="#9F1239" />
+    <circle cx="36.5" cy="22" r="2" fill="#FFFFFF" />
+    <circle cx="36.5" cy="22" r="1.2" fill="#F8FAFC" />
+
+    <!-- Glossy Top/Left Edge Sheen -->
+    <path d="M26.5 24V46" stroke="url(#dd-pink-edge)" stroke-width="1.8" stroke-linecap="round" />
+    <path d="M28 17.5H43" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity="0.7" />
+
+    <!-- 3D White % Symbol with drop depth -->
+    <g transform="translate(28.5, 27.5)">
+      <!-- Symbol shadow -->
+      <g opacity="0.25" transform="translate(0.6, 1)">
+        <circle cx="5" cy="5" r="2.4" stroke="#881337" stroke-width="2" />
+        <line x1="13" y1="3.5" x2="3.5" y2="16.5" stroke="#881337" stroke-width="2.5" stroke-linecap="round" />
+        <circle cx="11.5" cy="15" r="2.4" stroke="#881337" stroke-width="2" />
+      </g>
+      <!-- Foreground White % -->
+      <circle cx="5" cy="5" r="2.4" stroke="#FFFFFF" stroke-width="2" />
+      <line x1="13" y1="3.5" x2="3.5" y2="16.5" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" />
+      <circle cx="11.5" cy="15" r="2.4" stroke="#FFFFFF" stroke-width="2" />
+    </g>
+  </g>
+
+  <!-- Sparkle Stars -->
+  <path d="M12 20C12 22 13 23 15 23C13 23 12 24 12 26C12 24 11 23 9 23C11 23 12 22 12 20Z" fill="#FDE047" />
+  <path d="M52 46C52 48 53 49 55 49C53 49 52 50 52 52C52 50 51 49 49 49C51 49 52 48 52 46Z" fill="#38BDF8" />
+</svg>

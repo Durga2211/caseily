@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <!-- Shadow filter -->
+    <filter id="pr-shadow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="3.5" flood-color="#78350f" flood-opacity="0.25" />
+    </filter>
+    <filter id="pr-bubble-shadow" x="-25%" y="-25%" width="150%" height="150%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#1e1b4b" flood-opacity="0.25" />
+    </filter>
+
+    <!-- Star Facet Gradients -->
+    <linearGradient id="pr-gold-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB" />
+      <stop offset="40%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="pr-gold-mid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="60%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <linearGradient id="pr-gold-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="60%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#92400E" />
+    </linearGradient>
+
+    <!-- Bubble Gradient -->
+    <linearGradient id="pr-bubble-grad" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="40%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="pr-bubble-hl" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ground glow -->
+  <ellipse cx="28" cy="54" rx="18" ry="4" fill="#F59E0B" opacity="0.18" />
+
+  <!-- 3D Beveled Golden Star -->
+  <g filter="url(#pr-shadow)">
+    <!-- Star Center is at cx=28, cy=30 -->
+    <!-- Facet 1: Top tip, left side (Bright) -->
+    <polygon points="28,30 28,10 22,23" fill="url(#pr-gold-light)" />
+    <!-- Facet 2: Top tip, right side (Mid) -->
+    <polygon points="28,30 28,10 34,23" fill="url(#pr-gold-mid)" />
+
+    <!-- Facet 3: Upper-right tip, top side (Mid) -->
+    <polygon points="28,30 34,23 48,22" fill="url(#pr-gold-light)" />
+    <!-- Facet 4: Upper-right tip, bottom side (Dark) -->
+    <polygon points="28,30 48,22 38,32" fill="url(#pr-gold-dark)" />
+
+    <!-- Facet 5: Lower-right tip, top side (Mid) -->
+    <polygon points="28,30 38,32 42,47" fill="url(#pr-gold-mid)" />
+    <!-- Facet 6: Lower-right tip, bottom side (Dark) -->
+    <polygon points="28,30 42,47 28,39" fill="url(#pr-gold-dark)" />
+
+    <!-- Facet 7: Lower-left tip, right side (Dark) -->
+    <polygon points="28,30 28,39 14,47" fill="url(#pr-gold-dark)" />
+    <!-- Facet 8: Lower-left tip, left side (Mid) -->
+    <polygon points="28,30 14,47 18,32" fill="url(#pr-gold-mid)" />
+
+    <!-- Facet 9: Upper-left tip, bottom side (Mid) -->
+    <polygon points="28,30 18,32 8,22" fill="url(#pr-gold-mid)" />
+    <!-- Facet 10: Upper-left tip, top side (Lightest) -->
+    <polygon points="28,30 8,22 22,23" fill="url(#pr-gold-light)" />
+
+    <!-- Central Glint -->
+    <circle cx="28" cy="30" r="2.2" fill="#FFFFFF" opacity="0.9" />
+  </g>
+
+  <!-- 3D Speech Bubble Overlay (Top-Right) -->
+  <g filter="url(#pr-bubble-shadow)">
+    <!-- Bubble Body -->
+    <path d="M34 16C34 11.5 38 8 44 8H48C54 8 58 11.5 58 16C58 20.5 54 24 48 24H45L40 28V23.5C36 23.5 34 20 34 16Z" fill="url(#pr-bubble-grad)" />
+    <!-- Glossy Highlight curve -->
+    <path d="M36 15C36 12 39 9.5 44 9.5H48C52 9.5 55 11 56 13" stroke="url(#pr-bubble-hl)" stroke-width="1.2" stroke-linecap="round" />
+    
+    <!-- Quotation Marks Inside Bubble -->
+    <path d="M42 16.5C42 14.5 43.5 13.5 44.5 13.5M44.5 16.5C44.5 18 43 19 42 19.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" />
+    <path d="M48 16.5C48 14.5 49.5 13.5 50.5 13.5M50.5 16.5C50.5 18 49 19 48 19.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" />
+  </g>
+
+  <!-- Golden 4-point Sparkle (Bottom Right) -->
+  <path d="M52 38C52 41 54 43 57 43C54 43 52 45 52 48C52 45 50 43 47 43C50 43 52 41 52 38Z" fill="#FDE047" opacity="0.95" />
+  <circle cx="52" cy="43" r="1.2" fill="#FFFFFF" />
+
+  <!-- Mini Sparkle (Top Left) -->
+  <circle cx="12" cy="12" r="1.8" fill="#FDE047" />
+  <path d="M12 9V15M9 12H15" stroke="#FEF08A" stroke-width="1.2" stroke-linecap="round" />
+</svg>

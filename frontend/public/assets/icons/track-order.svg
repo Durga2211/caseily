@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <!-- Drop Shadow -->
+    <filter id="to-shadow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-color="#0f172a" flood-opacity="0.2" />
+    </filter>
+    <filter id="to-pin-shadow" x="-30%" y="-30%" width="160%" height="160%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="1" dy="3" stdDeviation="2" flood-color="#78350f" flood-opacity="0.35" />
+    </filter>
+
+    <!-- Box Faces -->
+    <linearGradient id="to-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#FCD34D" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="to-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <linearGradient id="to-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+
+    <!-- Tape -->
+    <linearGradient id="to-tape" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Pin -->
+    <linearGradient id="to-pin" x1="20%" y1="10%" x2="80%" y2="90%">
+      <stop offset="0%" stop-color="#F87171" />
+      <stop offset="35%" stop-color="#EF4444" />
+      <stop offset="100%" stop-color="#991B1B" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ground Shadow under Box -->
+  <ellipse cx="32" cy="56" rx="20" ry="5" fill="#0f172a" opacity="0.16" />
+
+  <!-- 3D Cardboard Delivery Box -->
+  <g filter="url(#to-shadow)">
+    <!-- Left Face -->
+    <path d="M12 28L32 38V54L12 44V28Z" fill="url(#to-left)" />
+    <!-- Right Face -->
+    <path d="M32 38L52 28V44L32 54V38Z" fill="url(#to-right)" />
+    <!-- Top Face -->
+    <path d="M32 16L52 28L32 38L12 28L32 16Z" fill="url(#to-top)" />
+
+    <!-- Glossy Box Tape on Top Face -->
+    <path d="M28 18.5L48 29.5L44 32L24 21L28 18.5Z" fill="url(#to-tape)" />
+    <!-- Tape hanging over front left edge -->
+    <path d="M24 21L24 34L28 36L28 23L24 21Z" fill="url(#to-tape)" opacity="0.9" />
+
+    <!-- Shipping Label on Left Face -->
+    <path d="M16 32L24 36V42L16 38V32Z" fill="#FFFFFF" opacity="0.95" />
+    <!-- Barcode lines on shipping label -->
+    <line x1="18" y1="34" x2="22" y2="36" stroke="#1E293B" stroke-width="0.8" stroke-dasharray="1 0.8" />
+    <line x1="18" y1="36" x2="22" y2="38" stroke="#1E293B" stroke-width="0.8" stroke-dasharray="1.2 0.6" />
+    <circle cx="21" cy="40" r="1.2" fill="#10B981" />
+
+    <!-- Up Arrows stamp on right face -->
+    <path d="M39 38L41 36L43 38M41 36V41" stroke="#92400E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.75" />
+    <path d="M44 35.5L46 33.5L48 35.5M46 33.5V38.5" stroke="#92400E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.75" />
+  </g>
+
+  <!-- 3D Glossy Location Pin (Hovering over Box) -->
+  <g filter="url(#to-pin-shadow)">
+    <!-- Pin Cast Shadow on Box Top -->
+    <ellipse cx="37" cy="27" rx="3.5" ry="1.6" fill="#78350F" opacity="0.5" />
+    
+    <!-- Pin Body (tilted 3D pin pointing to box) -->
+    <path d="M36 7C31.5 7 28 10.5 28 15C28 20.8 36 27 36 27C36 27 44 20.8 44 15C44 10.5 40.5 7 36 7Z" fill="url(#to-pin)" />
+    
+    <!-- Specular highlight arc (top-left of pin) -->
+    <path d="M30 14C30 11.5 32 9.5 35 9" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity="0.85" />
+    
+    <!-- Inner White Circle -->
+    <circle cx="36" cy="14.5" r="3.2" fill="#FFFFFF" />
+    <!-- Inner Dot with blue tint -->
+    <circle cx="36" cy="14.5" r="1.6" fill="#1D4ED8" />
+  </g>
+
+  <!-- Delivery Sparkles / Speed accents -->
+  <path d="M10 24L7 25" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+  <path d="M8 29L5 30" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+</svg>

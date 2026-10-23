@@ -1815,14 +1815,16 @@ function App() {
 
   async function handleSendMessage(roomId, e) {
     if (e) e.preventDefault()
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
     
     if (!messageInput.trim()) return
     
     const formData = new FormData()
     formData.append('text', messageInput)
-    if (currentUser) {
-      formData.append('sender_name', currentUser.name);
-    }
+    formData.append('sender_name', currentUser.name);
     
     setMessageInput('') // Optimistic clear
     try {
@@ -1838,6 +1840,10 @@ function App() {
   }
 
   async function handleDumpMeme(roomId, e) {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
@@ -1846,6 +1852,9 @@ function App() {
       if (!file) return;
       const formData = new FormData();
       formData.append('image', file);
+      if (currentUser) {
+        formData.append('sender_name', currentUser.name);
+      }
       
       try {
         const res = await fetch(`${API_URL || ''}/api/insiders/rooms/${roomId}/messages`, {
@@ -1998,6 +2007,11 @@ function App() {
 
   async function handleReviewSubmit(e) {
     e.preventDefault()
+    if (!currentUser) {
+      setReviewError('Only registered or signed-up members can write reviews.')
+      setShowAuthModal(true)
+      return
+    }
     if (reviewForm.stars === 0) {
       setReviewError('Please select a star rating before submitting.')
       return
@@ -2186,62 +2200,92 @@ function App() {
     } catch (err) { console.error(err) }
   }
 
-  const renderReviewForm = () => (
-    <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto' }}>
-      <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
-      <div style={{ backgroundColor: 'var(--bg-elevated)', borderRadius: '32px', padding: '28px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
-        {reviewSuccess ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎉</div>
-            <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#22c55e', marginBottom: '8px' }}>Review submitted successfully!</h3>
-            <p style={{ color: 'var(--ink-muted)', fontSize: '15px' }}>Thank you for your feedback. It will appear once approved.</p>
+  const renderReviewForm = () => {
+    if (!currentUser) {
+      return (
+        <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto' }}>
+          <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
+          <div style={{ backgroundColor: 'var(--bg-elevated)', borderRadius: '32px', padding: '36px 24px', textAlign: 'center', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', margin: '0 auto 16px auto' }}>
+              🔒
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '8px' }}>Registered Members Only</h3>
+            <p style={{ color: 'var(--ink-muted)', fontSize: '15px', maxWidth: '440px', margin: '0 auto 20px auto', lineHeight: 1.5 }}>
+              Only registered or signed-up members have access to write reviews and post feedback. Please log in or sign up to continue.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} style={{ padding: '12px 24px', borderRadius: '14px', background: '#1e3fd1', color: '#fff', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(30,63,209,0.25)' }}>
+                Log In
+              </button>
+              <button onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }} style={{ padding: '12px 24px', borderRadius: '14px', background: '#f1f5f9', color: '#334155', fontSize: '15px', fontWeight: '700', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
+                Sign Up
+              </button>
+            </div>
           </div>
-        ) : (
-          <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="review-form-grid">
-              <input
-                type="text" placeholder="Your name *" required
-                value={reviewForm.name} onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
-                style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }}
-              />
-              <input
-                type="text" placeholder="City (optional)"
-                value={reviewForm.city} onChange={e => setReviewForm(f => ({ ...f, city: e.target.value }))}
-                style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }}
-              />
+        </section>
+      )
+    }
+
+    return (
+      <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto' }}>
+        <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
+        <div style={{ backgroundColor: 'var(--bg-elevated)', borderRadius: '32px', padding: '28px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
+          {reviewSuccess ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎉</div>
+              <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#22c55e', marginBottom: '8px' }}>Review submitted successfully!</h3>
+              <p style={{ color: 'var(--ink-muted)', fontSize: '15px' }}>Thank you for your feedback. It will appear once approved.</p>
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: 'var(--ink)', marginBottom: '8px' }}>Rating</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {[1,2,3,4,5].map(s => (
-                  <span key={s} onClick={() => setReviewForm(f => ({ ...f, stars: s }))} style={{ cursor: 'pointer', fontSize: '28px', color: s <= reviewForm.stars ? '#f59e0b' : 'var(--border)', transition: 'transform 0.15s' }}>
-                    {s <= reviewForm.stars ? '★' : '☆'}
-                  </span>
-                ))}
+          ) : (
+            <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ fontSize: '13px', color: 'var(--ink-muted)', fontWeight: '600' }}>
+                Reviewing as <span style={{ color: 'var(--accent)', fontWeight: '700' }}>{currentUser.name}</span> ({currentUser.phone})
               </div>
-            </div>
-            <textarea
-              placeholder="Write your review... *" required
-              value={reviewForm.quote} onChange={e => setReviewForm(f => ({ ...f, quote: e.target.value }))}
-              rows={4}
-              style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', resize: 'vertical', background: 'var(--bg-default)', color: 'var(--ink-strong)', fontFamily: 'inherit' }}
-            />
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderRadius: '16px', border: '1px dashed var(--ink-muted)', cursor: 'pointer', background: 'var(--bg-default)', color: 'var(--ink-muted)', fontSize: '15px' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                {reviewPhoto ? reviewPhoto.name : 'Upload product photo (optional)'}
-                <input type="file" accept="image/*" hidden onChange={e => setReviewPhoto(e.target.files[0] || null)} />
-              </label>
-            </div>
-            {reviewError && <p style={{ color: '#ef4444', fontSize: '14px', margin: 0 }}>{reviewError}</p>}
-            <button type="submit" disabled={reviewSubmitting} style={{ padding: '16px', borderRadius: '16px', background: '#1e3fd1', color: '#fff', fontSize: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', opacity: reviewSubmitting ? 0.6 : 1 }}>
-              {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
-            </button>
-          </form>
-        )}
-      </div>
-    </section>
-  )
+              <div className="review-form-grid">
+                <input
+                  type="text" placeholder="Your name *" required
+                  value={reviewForm.name || currentUser.name || ''} onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
+                  style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }}
+                />
+                <input
+                  type="text" placeholder="City (optional)"
+                  value={reviewForm.city} onChange={e => setReviewForm(f => ({ ...f, city: e.target.value }))}
+                  style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: 'var(--ink)', marginBottom: '8px' }}>Rating</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[1,2,3,4,5].map(s => (
+                    <span key={s} onClick={() => setReviewForm(f => ({ ...f, stars: s }))} style={{ cursor: 'pointer', fontSize: '28px', color: s <= reviewForm.stars ? '#f59e0b' : 'var(--border)', transition: 'transform 0.15s' }}>
+                      {s <= reviewForm.stars ? '★' : '☆'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <textarea
+                placeholder="Write your review... *" required
+                value={reviewForm.quote} onChange={e => setReviewForm(f => ({ ...f, quote: e.target.value }))}
+                rows={4}
+                style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', resize: 'vertical', background: 'var(--bg-default)', color: 'var(--ink-strong)', fontFamily: 'inherit' }}
+              />
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderRadius: '16px', border: '1px dashed var(--ink-muted)', cursor: 'pointer', background: 'var(--bg-default)', color: 'var(--ink-muted)', fontSize: '15px' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  {reviewPhoto ? reviewPhoto.name : 'Upload product photo (optional)'}
+                  <input type="file" accept="image/*" hidden onChange={e => setReviewPhoto(e.target.files[0] || null)} />
+                </label>
+              </div>
+              {reviewError && <p style={{ color: '#ef4444', fontSize: '14px', margin: 0 }}>{reviewError}</p>}
+              <button type="submit" disabled={reviewSubmitting} style={{ padding: '16px', borderRadius: '16px', background: '#1e3fd1', color: '#fff', fontSize: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', opacity: reviewSubmitting ? 0.6 : 1 }}>
+                {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </form>
+          )}
+        </div>
+      </section>
+    )
+  }
 
   const renderCommunityWallCard = (post, i) => {
     const theme = REVIEW_THEMES[i % REVIEW_THEMES.length];
@@ -2653,8 +2697,12 @@ function App() {
   if (currentPath === '/insiders') {
     const handleUserCreatePost = async (e) => {
       e.preventDefault()
+      if (!currentUser) {
+        setShowAuthModal(true);
+        return;
+      }
       const form = new FormData()
-      if (currentUser) form.append('author', currentUser.name)
+      form.append('author', currentUser.name)
       form.append('post_type', userPostForm.type)
       form.append('content', userPostForm.content)
       if (userPostPhotos && userPostPhotos.length > 0) {
@@ -2686,13 +2734,17 @@ function App() {
     }
 
     const handleComment = async (postId) => {
+      if (!currentUser) {
+        setShowAuthModal(true);
+        return;
+      }
       const text = commentInput[postId]
       if (!text || !text.trim()) return;
       try {
         const res = await fetch(`${API_URL}/api/insiders/${postId}/comment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, author: currentUser ? currentUser.name : 'User' })
+          body: JSON.stringify({ text, author: currentUser.name })
         })
         if (res.ok) {
           setCommentInput({ ...commentInput, [postId]: '' })
@@ -2761,26 +2813,38 @@ function App() {
           </div>
 
           {/* ─── QUICK POST ─── */}
-          <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '20px', marginBottom: '20px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--ink-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Quick Post</div>
-            <form onSubmit={handleUserCreatePost} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <label style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', border: '1px dashed var(--border)' }}>
-                    ＋
-                    <input type="file" accept="image/*" multiple onChange={e => setUserPostPhotos(e.target.files)} style={{ display: 'none' }} />
-                  </label>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', border: '1px dashed var(--border)' }}>📷</div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '2px' }}>CREATE AN INSIDER POST</div>
-                  <div style={{ fontSize: '13px', color: 'var(--ink-muted)' }}>Share images, videos, and questions with the fam.</div>
-                </div>
+          {!currentUser ? (
+            <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '24px 20px', marginBottom: '20px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', textAlign: 'center' }}>
+              <div style={{ fontSize: '26px', marginBottom: '8px' }}>🔒</div>
+              <div style={{ fontSize: '17px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '4px' }}>Sign in to create Insider Posts</div>
+              <div style={{ fontSize: '13px', color: 'var(--ink-muted)', marginBottom: '16px' }}>Only registered or signed-up members can write and post in the community.</div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} style={{ padding: '10px 20px', borderRadius: '12px', background: 'var(--accent)', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '14px' }}>Log In</button>
+                <button onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }} style={{ padding: '10px 20px', borderRadius: '12px', background: 'var(--bg-secondary)', color: 'var(--ink-strong)', fontWeight: '700', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}>Sign Up</button>
               </div>
-              <textarea placeholder="What's on your mind?" value={userPostForm.content} onChange={e => setUserPostForm({...userPostForm, content: e.target.value})} rows={2} style={{ padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-secondary)', outline: 'none', resize: 'vertical', fontSize: '14px', fontFamily: 'inherit', color: 'var(--ink-strong)' }} required />
-              <button type="submit" style={{ padding: '12px', borderRadius: '12px', background: 'var(--accent)', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '15px', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)' }}>Post to Insider</button>
-            </form>
-          </div>
+            </div>
+          ) : (
+            <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '20px', marginBottom: '20px', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--ink-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Quick Post</div>
+              <form onSubmit={handleUserCreatePost} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <label style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', border: '1px dashed var(--border)' }}>
+                      ＋
+                      <input type="file" accept="image/*" multiple onChange={e => setUserPostPhotos(e.target.files)} style={{ display: 'none' }} />
+                    </label>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', border: '1px dashed var(--border)' }}>📷</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '2px' }}>CREATE AN INSIDER POST</div>
+                    <div style={{ fontSize: '13px', color: 'var(--ink-muted)' }}>Share images, videos, and questions with the fam.</div>
+                  </div>
+                </div>
+                <textarea placeholder="What's on your mind?" value={userPostForm.content} onChange={e => setUserPostForm({...userPostForm, content: e.target.value})} rows={2} style={{ padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--bg-secondary)', outline: 'none', resize: 'vertical', fontSize: '14px', fontFamily: 'inherit', color: 'var(--ink-strong)' }} required />
+                <button type="submit" style={{ padding: '12px', borderRadius: '12px', background: 'var(--accent)', color: '#ffffff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '15px', letterSpacing: '0.5px', boxShadow: 'var(--shadow-btn)' }}>Post to Insider</button>
+              </form>
+            </div>
+          )}
 
           {/* ─── INSTAGRAM HIGHLIGHTS (Spotlight) ─── */}
           <section id="highlights" className="highlights-section" style={{ marginBottom: '20px' }}>
@@ -2978,14 +3042,19 @@ function App() {
                     <div style={{ display: 'flex', borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '8px' }}>
                       <input 
                         type="text" 
-                        placeholder="Add a comment..." 
+                        placeholder={currentUser ? "Add a comment..." : "🔒 Sign in to comment..."} 
                         value={commentInput[post.id] || ''}
+                        readOnly={!currentUser}
+                        onClick={() => { if (!currentUser) setShowAuthModal(true); }}
                         onChange={e => setCommentInput({...commentInput, [post.id]: e.target.value})}
-                        style={{ border: 'none', flex: 1, outline: 'none', fontSize: '14px', background: 'transparent', color: 'var(--ink-strong)' }}
+                        style={{ border: 'none', flex: 1, outline: 'none', fontSize: '14px', background: 'transparent', color: 'var(--ink-strong)', cursor: !currentUser ? 'pointer' : 'text' }}
                       />
                       <button 
-                        onClick={() => handleComment(post.id)}
-                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: '700', cursor: 'pointer', opacity: commentInput[post.id]?.trim() ? 1 : 0.5 }}
+                        onClick={() => {
+                          if (!currentUser) { setShowAuthModal(true); return; }
+                          handleComment(post.id);
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: '700', cursor: 'pointer', opacity: currentUser && commentInput[post.id]?.trim() ? 1 : 0.5 }}
                       >
                         Post
                       </button>
@@ -3116,6 +3185,10 @@ function App() {
     const isMuted = roomMemberships[roomId]?.muted || false;
     
     const handleJoin = () => {
+      if (!currentUser) {
+        setShowAuthModal(true);
+        return;
+      }
       setRoomMemberships(prev => ({...prev, [roomId]: {...(prev[roomId] || {}), joined: true}}));
       setNotifications(prev => [{ id: Date.now(), text: `You joined ${room.name}` }, ...prev]);
       setHasUnread(true);
@@ -3712,26 +3785,45 @@ function App() {
                 ))}
               </div>
 
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                const form = new FormData(e.target);
-                const text = form.get('text');
-                const username = form.get('username') || 'Anonymous User';
-                const res = await fetch(`${API_URL}/api/news/${selectedNews.id}/comment`, {
-                  method: 'POST',
-                  headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ text, username })
-                });
-                const data = await res.json();
-                if (data.success) {
-                  setSelectedNews(prev => ({...prev, comments: [...(prev.comments||[]), data.comment]}));
-                  e.target.reset();
-                }
-              }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <input name="username" placeholder="Your name (optional)" style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '14px' }} />
-                <textarea name="text" placeholder="Add a comment..." required rows="3" style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', resize: 'vertical', fontSize: '14px' }}></textarea>
-                <button type="submit" style={{ padding: '14px', borderRadius: '12px', background: 'var(--ink-strong)', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '15px' }}>Post Comment</button>
-              </form>
+              {!currentUser ? (
+                <div style={{ background: 'var(--bg-card)', padding: '28px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                  <div style={{ fontSize: '26px', marginBottom: '8px' }}>🔒</div>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '17px', fontWeight: '800', color: 'var(--ink-strong)' }}>Sign In to Comment</h4>
+                  <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#64748b' }}>Only registered or signed-up members have access to post comments on articles.</p>
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} style={{ padding: '10px 20px', borderRadius: '12px', background: 'var(--accent)', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '14px' }}>
+                      Log In
+                    </button>
+                    <button onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }} style={{ padding: '10px 20px', borderRadius: '12px', background: '#f1f5f9', color: '#334155', fontWeight: '700', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px' }}>
+                      Sign Up
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!currentUser) { setShowAuthModal(true); return; }
+                  const form = new FormData(e.target);
+                  const text = form.get('text');
+                  const username = currentUser.name || 'Caseily Member';
+                  const res = await fetch(`${API_URL}/api/news/${selectedNews.id}/comment`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ text, username })
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setSelectedNews(prev => ({...prev, comments: [...(prev.comments||[]), data.comment]}));
+                    e.target.reset();
+                  }
+                }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ fontSize: '13px', color: 'var(--ink-muted)', fontWeight: '600' }}>
+                    Commenting as <span style={{ color: 'var(--accent)', fontWeight: '700' }}>{currentUser.name}</span>
+                  </div>
+                  <textarea name="text" placeholder="Add a comment..." required rows="3" style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', resize: 'vertical', fontSize: '14px' }}></textarea>
+                  <button type="submit" style={{ padding: '14px', borderRadius: '12px', background: 'var(--ink-strong)', color: '#fff', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '15px' }}>Post Comment</button>
+                </form>
+              )}
             </div>
           </div>
         </main>
@@ -3992,6 +4084,126 @@ function App() {
     )
   }
 
+  if (currentPath === '/social-welfare') {
+    return (
+      <div className="layout" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <main className="main" style={{ paddingTop: '20px', flex: 1, backgroundColor: 'var(--bg-default)' }}>
+           <div className="container" style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                 <button onClick={() => { window.history.pushState({}, '', '/'); setCurrentPath('/') }} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginRight: '16px', color: 'var(--ink-strong)' }}>&larr;</button>
+                 <div>
+                   <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)' }}>Social Welfare</h2>
+                   <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: 'var(--ink-muted)' }}>Caseily Cares • Community, Sustainability & Youth Empowerment</p>
+                 </div>
+              </div>
+
+              {/* Hero Impact Banner */}
+              <div style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)', borderRadius: '28px', padding: '36px 28px', color: '#ffffff', marginBottom: '28px', boxShadow: '0 12px 36px rgba(16, 185, 129, 0.25)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'relative', zIndex: 2, maxWidth: '650px' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '800', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    🌱 Caseily Cares Foundation
+                  </div>
+                  <h1 style={{ fontSize: '32px', fontWeight: '900', margin: '0 0 12px 0', lineHeight: 1.2 }}>Small Cases, Big Heart. Powering Social Impact Across India.</h1>
+                  <p style={{ fontSize: '16px', opacity: 0.95, margin: 0, lineHeight: 1.6 }}>
+                    Every phone case you buy and every review you post fuels our community welfare initiatives — from zero-waste phone case recycling to funding digital education kits for government school students.
+                  </p>
+                </div>
+                <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '130px', opacity: 0.18, pointerEvents: 'none', userSelect: 'none' }}>
+                  💚
+                </div>
+              </div>
+
+              {/* Stats Counters */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+                {[
+                  { value: '14,800+', label: 'Cases Recycled', icon: '♻️', sub: 'Zero plastic to landfills' },
+                  { value: '₹5.6 Lakh+', label: 'Education Grants', icon: '🎓', sub: 'Digital kits for students' },
+                  { value: '28,500+', label: 'Trees Planted', icon: '🌳', sub: 'Across Western Ghats' },
+                  { value: '100% Eco', label: 'Biodegradable Packs', icon: '📦', sub: 'Soy-ink recycled craft' }
+                ].map((stat, i) => (
+                  <div key={i} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '22px', padding: '22px 18px', textAlign: 'center', boxShadow: '0 4px 18px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '30px', marginBottom: '8px' }}>{stat.icon}</div>
+                    <div style={{ fontSize: '26px', fontWeight: '900', color: 'var(--ink-strong)', marginBottom: '4px' }}>{stat.value}</div>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#059669', marginBottom: '4px' }}>{stat.label}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>{stat.sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Initiatives List */}
+              <h3 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--ink-strong)', marginBottom: '18px' }}>Our Core Welfare Programs</h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+                <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '26px', boxShadow: '0 4px 18px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #10B981, #047857)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', color: '#fff', flexShrink: 0 }}>
+                    ♻️
+                  </div>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>Case Rebirth: Nationwide Trade-In & Recycling Program</h4>
+                    <p style={{ margin: '0 0 14px 0', fontSize: '15px', color: '#475569', lineHeight: 1.6 }}>
+                      Send us any old or broken phone case (regardless of brand) when upgrading your phone. We partner with ISO-certified recycling facilities in Pune & Bangalore to repurpose silicone and TPU into durable acoustic panels and urban pavement tiles.
+                    </p>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: '#ecfdf5', color: '#047857', fontSize: '13px', fontWeight: '700' }}>
+                      ✨ Get ₹150 store credit for every recycled case
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '26px', boxShadow: '0 4px 18px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', color: '#fff', flexShrink: 0 }}>
+                    🎓
+                  </div>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>1% for Student Tech Literacy</h4>
+                    <p style={{ margin: '0 0 14px 0', fontSize: '15px', color: '#475569', lineHeight: 1.6 }}>
+                      1% of total top-line proceeds from Caseilyplus+ subscriptions and bulk orders goes directly into our Student Digital Kit fund. We equip rural and municipal high schools with STEM coding kits, tablets, and protective equipment.
+                    </p>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: '#eff6ff', color: '#1d4ed8', fontSize: '13px', fontWeight: '700' }}>
+                      📚 Over 42 schools supported in 2025–2026
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '24px', padding: '26px', boxShadow: '0 4px 18px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #F59E0B, #B45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', color: '#fff', flexShrink: 0 }}>
+                    🤝
+                  </div>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)' }}>Community Volunteer Circle</h4>
+                    <p style={{ margin: '0 0 14px 0', fontSize: '15px', color: '#475569', lineHeight: 1.6 }}>
+                      Registered Caseily community members earn bonus loyalty points for participating in local beach cleanups, electronics donation drives, and eco-awareness campaigns.
+                    </p>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: '#fffbeb', color: '#b45309', fontSize: '13px', fontWeight: '700' }}>
+                      🏅 Earn 500 Caseily Loyalty Points per volunteering drive
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Community Pledge Action */}
+              <div style={{ backgroundColor: '#1E293B', borderRadius: '28px', padding: '32px 24px', textAlign: 'center', color: '#ffffff', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', marginBottom: '40px' }}>
+                <h3 style={{ fontSize: '24px', fontWeight: '900', margin: '0 0 8px 0' }}>Join the Caseily Social Welfare Network</h3>
+                <p style={{ fontSize: '15px', color: '#94A3B8', maxWidth: '520px', margin: '0 auto 20px auto', lineHeight: 1.5 }}>
+                  Be part of a community that cares. Sign in with your verified Caseily account to pledge an old case or receive community updates.
+                </p>
+                {currentUser ? (
+                  <div style={{ background: 'rgba(255,255,255,0.1)', padding: '16px 24px', borderRadius: '16px', display: 'inline-block' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '800', color: '#34D399', marginBottom: '4px' }}>✓ Welcome to the Impact Circle, {currentUser.name}!</div>
+                    <div style={{ fontSize: '13px', color: '#CBD5E1' }}>Your profile ({currentUser.phone}) is enrolled for Caseily Community Welfare updates.</div>
+                  </div>
+                ) : (
+                  <button onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }} style={{ backgroundColor: '#10B981', color: '#ffffff', border: 'none', padding: '14px 32px', borderRadius: '32px', fontSize: '16px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 16px rgba(16,185,129,0.4)', transition: 'transform 0.15s ease' }}>
+                    Sign Up to Join the Cause
+                  </button>
+                )}
+              </div>
+
+           </div>
+        </main>
+      </div>
+    )
+  }
+
   // ═════════════════════════════════════════════════════════════════════
   // RENDER
   // ═════════════════════════════════════════════════════════════════════
@@ -4147,41 +4359,47 @@ function App() {
 
 
           {/* ─── QUICK LINKS BAR ─── */}
-          <div className="quick-links-bar" style={{ marginTop: '24px', justifyContent: 'center' }}>
-            <button className="quick-link-btn active" onClick={() => scrollTo('highlights')}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-              <span>The Community Wall</span>
+          <div className="quick-links-bar">
+            <button className="quick-link-btn" onClick={() => scrollTo('highlights')}>
+              <img src="/assets/icons/community-wall.svg" alt="Community Wall" className="quick-link-icon" />
+              <span>Community Wall</span>
             </button>
             <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/track-order'); setCurrentPath('/track-order'); window.scrollTo(0, 0); }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              <img src="/assets/icons/track-order.svg" alt="Track Your Order" className="quick-link-icon" />
               <span>Track Your Order</span>
             </button>
-            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <button className="quick-link-btn" onClick={() => { 
+              if (!currentUser) {
+                setShowAuthModal(true);
+                return;
+              }
+              window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); 
+            }}>
+              <img src="/assets/icons/post-review.svg" alt="Post a Review" className="quick-link-icon" />
               <span>Post a Review</span>
             </button>
             <button className="quick-link-btn" onClick={() => scrollTo('blog')}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              <img src="/assets/icons/techblogs-news.svg" alt="Techblogs & News" className="quick-link-icon" />
               <span>Techblogs & News</span>
             </button>
-            <button className="quick-link-btn" onClick={() => scrollTo('deal-of-the-day')}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-              <span>Deal of the Day</span>
+            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/social-welfare'); setCurrentPath('/social-welfare'); window.scrollTo(0, 0); }}>
+              <img src="/assets/icons/social-welfare.svg" alt="Social Welfare" className="quick-link-icon" />
+              <span>Social Welfare</span>
             </button>
             <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/creators-club'); setCurrentPath('/creators-club'); window.scrollTo(0, 0); }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+              <img src="/assets/icons/creators-club.svg" alt="Creators Club" className="quick-link-icon" />
               <span>Creators Club</span>
             </button>
             <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+              <img src="/assets/icons/loyalty-points.svg" alt="Loyalty Points" className="quick-link-icon" />
               <span>Loyalty Points</span>
             </button>
             <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/bulk-order'); setCurrentPath('/bulk-order'); window.scrollTo(0, 0); }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              <img src="/assets/icons/bulk-order.svg" alt="Bulk Order" className="quick-link-icon" />
               <span>Bulk Order</span>
             </button>
             <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/events'); setCurrentPath('/events'); window.scrollTo(0, 0); }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <img src="/assets/icons/events.svg" alt="Events" className="quick-link-icon" />
               <span>Events</span>
             </button>
           </div>
@@ -4709,12 +4927,17 @@ function App() {
       {showAuthModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000000, backdropFilter: 'blur(4px)' }} onClick={() => setShowAuthModal(false)}>
           <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)' }}>
                 {currentUser ? 'Profile' : (authMode === 'login' ? 'Log In' : 'Sign Up')}
               </h3>
               <button onClick={() => setShowAuthModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--ink-muted)' }}>✕</button>
             </div>
+            {!currentUser && (
+              <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--ink-muted)', lineHeight: 1.4 }}>
+                Only registered or signed-up members have access to write reviews, post comments, and chat.
+              </p>
+            )}
             
             {currentUser ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
