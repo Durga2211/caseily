@@ -28,22 +28,41 @@ app.include_router(auth.router, prefix="/api/auth")
 app.include_router(events.router, prefix="/api")
 app.include_router(games.router)
 
-@app.get("/uploads/{filename}")
+import os
+import mimetypes
+from fastapi.responses import FileResponse
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOCAL_UPLOADS = os.path.join(BASE_DIR, "uploads")
+os.makedirs(os.path.join(LOCAL_UPLOADS, "reels"), exist_ok=True)
+
+@app.api_route("/uploads/{filename:path}", methods=["GET", "HEAD"])
 async def get_upload(filename: str):
-    if fs is None:
-        raise HTTPException(status_code=500, detail="GridFS not configured")
-    try:
-        # get the latest version if multiple exist
-        grid_out = fs.get_last_version(filename=filename)
-        return StreamingResponse(
-            grid_out, 
-            media_type=grid_out.content_type,
-            headers={
-                "Cache-Control": "public, max-age=31536000, immutable"
-            }
+    # 1. Check local uploads folder (e.g. reels/abc.mp4)
+    local_path = os.path.join(LOCAL_UPLOADS, filename)
+    if os.path.exists(local_path) and os.path.isfile(local_path):
+        media_type, _ = mimetypes.guess_type(local_path)
+        return FileResponse(
+            local_path,
+            media_type=media_type or "application/octet-stream",
+            headers={"Accept-Ranges": "bytes", "Cache-Control": "public, max-age=31536000"}
         )
-    except gridfs.errors.NoFile:
-        raise HTTPException(status_code=404, detail="File not found")
+
+    # 2. Check GridFS
+    if fs is not None:
+        try:
+            grid_out = fs.get_last_version(filename=filename)
+            return StreamingResponse(
+                grid_out, 
+                media_type=grid_out.content_type,
+                headers={
+                    "Cache-Control": "public, max-age=31536000, immutable"
+                }
+            )
+        except Exception:
+            pass
+
+    raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/")
 def read_root():

@@ -453,7 +453,7 @@ const WS_URL = API_URL ? API_URL.replace(/^http/, 'ws') + '/api/chat/ws' : `${pr
 // ═════════════════════════════════════════════════════════════════════════
 // ADMIN DASHBOARD
 // ═════════════════════════════════════════════════════════════════════════
-function AdminDashboard() {
+function AdminDashboard({ onReelsUpdated }) {
   const [token, setToken] = useState(localStorage.getItem('caseily-admin-token') || '')
   const [password, setPassword] = useState('')
   const [reviews, setReviews] = useState([])
@@ -483,7 +483,74 @@ function AdminDashboard() {
   const [adminEvents, setAdminEvents] = useState([])
   const [loadingEvents, setLoadingEvents] = useState(false)
   const [eventForm, setEventForm] = useState({ title: '', description: '', date: '', time: '', location: '', video_url: '', banner_url: '' })
+  const [adminReels, setAdminReels] = useState([])
+  const [loadingReels, setLoadingReels] = useState(false)
+  const [reelCaption, setReelCaption] = useState('')
+  const [reelVideoFile, setReelVideoFile] = useState(null)
+  const [uploadingReel, setUploadingReel] = useState(false)
+  const [reelError, setReelError] = useState('')
+  const [reelSuccess, setReelSuccess] = useState('')
   const isLoggedIn = !!token
+
+  async function fetchAdminReels() {
+    setLoadingReels(true)
+    try {
+      const res = await fetch(`${API_URL}/api/reels`)
+      const data = await res.json()
+      setAdminReels(data.reels || [])
+    } catch (err) { console.error(err) }
+    setLoadingReels(false)
+  }
+
+  async function handleCreateReel(e) {
+    e.preventDefault()
+    if (!reelVideoFile) {
+      setReelError('Please select a video file')
+      return
+    }
+    setUploadingReel(true)
+    setReelError('')
+    setReelSuccess('')
+    try {
+      const form = new FormData()
+      form.append('caption', reelCaption)
+      form.append('video', reelVideoFile)
+      const res = await fetch(`${API_URL}/api/admin/reels`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || 'Upload failed')
+      setReelCaption('')
+      setReelVideoFile(null)
+      const fileInput = document.getElementById('reel-video-input')
+      if (fileInput) fileInput.value = ''
+      setReelSuccess('Reel uploaded successfully! It is now live on the main page and reels section.')
+      fetchAdminReels()
+      window.dispatchEvent(new Event('caseily_reels_updated'))
+      if (onReelsUpdated) onReelsUpdated()
+    } catch (err) {
+      setReelError(err.message)
+    } finally {
+      setUploadingReel(false)
+    }
+  }
+
+  async function handleDeleteReel(id) {
+    if (!window.confirm('Delete this reel?')) return
+    try {
+      const res = await fetch(`${API_URL}/api/admin/reels/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        fetchAdminReels()
+        window.dispatchEvent(new Event('caseily_reels_updated'))
+        if (onReelsUpdated) onReelsUpdated()
+      }
+    } catch (err) { console.error(err) }
+  }
 
   async function fetchAdminEvents() {
     setLoadingEvents(true)
@@ -646,6 +713,7 @@ function AdminDashboard() {
       if (adminTab === 'users') fetchUsers()
       if (adminTab === 'drops') fetchAdminDrops()
       if (adminTab === 'events') fetchAdminEvents()
+      if (adminTab === 'reels') fetchAdminReels()
     }
   }, [isLoggedIn, adminTab])
 
@@ -900,8 +968,9 @@ function AdminDashboard() {
           <button onClick={() => setAdminTab('users')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'users' ? '#1e3fd1' : 'transparent', color: adminTab === 'users' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Users</button>
           <button onClick={() => setAdminTab('drops')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'drops' ? '#1e3fd1' : 'transparent', color: adminTab === 'drops' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Drops</button>
           <button onClick={() => setAdminTab('events')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'events' ? '#1e3fd1' : 'transparent', color: adminTab === 'events' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Events</button>
+          <button onClick={() => setAdminTab('reels')} style={{ padding: '8px 12px', borderRadius: '10px', background: adminTab === 'reels' ? '#1e3fd1' : 'transparent', color: adminTab === 'reels' ? '#fff' : '#64748b', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>🎬 Reels</button>
           <div style={{ width: '1px', height: '24px', background: '#e2e8f0', margin: '0 4px' }}></div>
-          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : adminTab === 'news' ? fetchNews : adminTab === 'vip' ? fetchVipRequests : adminTab === 'drops' ? fetchAdminDrops : adminTab === 'events' ? fetchAdminEvents : fetchUsers} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
+          <button onClick={adminTab === 'reviews' ? fetchReviews : adminTab === 'insiders' ? fetchInsiders : adminTab === 'news' ? fetchNews : adminTab === 'vip' ? fetchVipRequests : adminTab === 'drops' ? fetchAdminDrops : adminTab === 'events' ? fetchAdminEvents : adminTab === 'reels' ? fetchAdminReels : fetchUsers} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>↻ Refresh</button>
           <button onClick={() => { window.location.href = '/' }} style={{ padding: '8px 12px', borderRadius: '10px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#334155' }}>← Site</button>
           <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '10px', background: '#fee2e2', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Logout</button>
         </div>
@@ -1176,6 +1245,153 @@ function AdminDashboard() {
                   </div>
                 ))}
                 {adminEvents.length === 0 && <p style={{ color: '#64748b' }}>No live events.</p>}
+              </div>
+            )}
+          </>
+        ) : adminTab === 'reels' ? (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>Short-Form Video & Reels</h2>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Upload short vertical videos. They will immediately appear on the main page and in the full-screen Reels viewer.</p>
+              </div>
+            </div>
+
+            {/* Upload Form Card */}
+            <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '32px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📤</span> Upload New Reel Video
+              </h3>
+
+              {reelSuccess && (
+                <div style={{ padding: '12px 16px', borderRadius: '10px', background: '#dcfce7', color: '#16a34a', fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>
+                  ✓ {reelSuccess}
+                </div>
+              )}
+              {reelError && (
+                <div style={{ padding: '12px 16px', borderRadius: '10px', background: '#fee2e2', color: '#dc2626', fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>
+                  ✕ {reelError}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateReel} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>
+                    Select Video File (.mp4, .mov, .webm) *
+                  </label>
+                  <input
+                    id="reel-video-input"
+                    type="file"
+                    accept="video/*"
+                    required
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      setReelVideoFile(file || null)
+                      setReelError('')
+                    }}
+                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }}
+                  />
+                  {reelVideoFile && (
+                    <div style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px', fontWeight: '600' }}>
+                      ✓ Selected: {reelVideoFile.name} ({(reelVideoFile.size / (1024 * 1024)).toFixed(2)} MB)
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>
+                    Caption / Description *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Unboxing our new Frosted Titanium case 🔥"
+                    required
+                    value={reelCaption}
+                    onChange={e => setReelCaption(e.target.value)}
+                    style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={uploadingReel}
+                  style={{
+                    padding: '12px 20px',
+                    borderRadius: '10px',
+                    background: uploadingReel ? '#94a3b8' : '#1e3fd1',
+                    color: '#fff',
+                    fontWeight: '700',
+                    fontSize: '15px',
+                    border: 'none',
+                    cursor: uploadingReel ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {uploadingReel ? '⏳ Uploading Video (Please wait)...' : '🚀 Publish Reel to Main Page'}
+                </button>
+              </form>
+            </div>
+
+            {/* Reels List */}
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>
+              Published Reels ({adminReels.length})
+            </h3>
+
+            {loadingReels ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '30px' }}>Loading reels...</p>
+            ) : adminReels.length === 0 ? (
+              <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', textAlign: 'center', color: '#64748b' }}>
+                No reels published yet. Upload your first short video above!
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+                {adminReels.map(reel => {
+                  const videoUrl = reel.is_local_promo ? `/${reel.video}` : `${API_URL}/uploads/${reel.video}`
+                  return (
+                    <div key={reel.id} style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                      <div style={{ position: 'relative', width: '100%', height: '280px', background: '#0b1120' }}>
+                        <video
+                          src={videoUrl}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                      <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--ink-strong)', marginBottom: '6px' }}>
+                            {reel.caption}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                            {reel.created_at ? new Date(reel.created_at).toLocaleDateString() : 'Active'} • {reel.likes || 0} likes
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+                          <a
+                            href="/reels"
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ flex: 1, padding: '8px', textAlign: 'center', borderRadius: '8px', background: '#f1f5f9', color: '#1e3fd1', fontWeight: '600', fontSize: '13px', textDecoration: 'none' }}
+                          >
+                            View in Player ↗
+                          </a>
+                          {!reel.is_local_promo && (
+                            <button
+                              onClick={() => handleDeleteReel(reel.id)}
+                              style={{ padding: '8px 14px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', fontWeight: '600', fontSize: '13px', border: 'none', cursor: 'pointer' }}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </>
@@ -2006,12 +2222,33 @@ function App() {
       .catch(() => {})
   }, [])
 
-  useEffect(() => {
+  const fetchBackendReels = () => {
     fetch(`${API_URL}/api/reels`)
       .then(r => r.json())
       .then(data => setBackendReels(data.reels || []))
       .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchBackendReels()
+    const onUpdated = () => fetchBackendReels()
+    window.addEventListener('caseily_reels_updated', onUpdated)
+    return () => window.removeEventListener('caseily_reels_updated', onUpdated)
   }, [])
+
+  const computedAllReels = [
+    ...backendReels.map((r, i) => ({ 
+      id: r.id, 
+      videoSrc: r.is_local_promo ? `/${r.video}` : `${API_URL}/uploads/${r.video}`, 
+      text: r.caption, 
+      likes: r.likes || 180 + i * 15,
+      index: i 
+    })),
+    ...FALLBACK_REELS.map((r, i) => ({ 
+      ...r, 
+      index: i + backendReels.length 
+    }))
+  ];
 
   async function handleReviewSubmit(e) {
     e.preventDefault()
@@ -3599,18 +3836,9 @@ function App() {
   }
 
   if (currentPath === '/reels') {
-    const computedReels = [
-      ...FALLBACK_REELS.map((r, i) => ({ ...r, index: i })),
-      ...backendReels.map((r, i) => ({ 
-        id: r.id, 
-        videoSrc: r.is_local_promo ? `/${r.video}` : `${API_URL}/uploads/${r.video}`, 
-        text: r.caption, 
-        index: i + FALLBACK_REELS.length 
-      }))
-    ];
     return (
       <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#fff' }}>Loading Reels...</div>}>
-        <ReelsPage allReels={computedReels} onClose={() => { window.history.pushState({}, '', '/'); setCurrentPath('/'); window.scrollTo(0, 0); }} API_URL={API_URL} />
+        <ReelsPage allReels={computedAllReels} onClose={() => { window.history.pushState({}, '', '/'); setCurrentPath('/'); window.scrollTo(0, 0); }} API_URL={API_URL} />
       </Suspense>
     )
   }
@@ -4427,6 +4655,88 @@ function App() {
             <p style={{ fontSize: '16px', opacity: 0.9, marginTop: '8px', marginBottom: 0 }}>The stage is always open. Click to chat!</p>
           </div>
         )}
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+         TRENDING REELS / SHORTS (MAIN PAGE)
+         ═══════════════════════════════════════════════════════════════ */}
+      <section id="trending-reels" style={{ padding: '0 20px 24px', maxWidth: '800px', margin: '0 auto', boxSizing: 'border-box', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '14px' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '20px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontSize: '11px', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '4px' }}>
+              <span>🔥</span> CASEILY REELS
+            </div>
+            <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--ink-strong)', margin: 0, letterSpacing: '-0.5px' }}>
+              Shorts & Drops
+            </h2>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--ink-light)' }}>
+              Real durability tests, color showcases, and community videos.
+            </p>
+          </div>
+          <button 
+            onClick={() => { window.history.pushState({}, '', '/reels'); setCurrentPath('/reels'); window.scrollTo(0, 0); }}
+            style={{ background: 'none', border: 'none', color: '#1e3fd1', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 0' }}
+          >
+            Watch all <span>&rarr;</span>
+          </button>
+        </div>
+
+        {/* Reels Horizontal Scroll Container */}
+        <div style={{ display: 'grid', gridAutoFlow: 'column', gridAutoColumns: 'minmax(140px, 160px)', gap: '14px', overflowX: 'auto', paddingBottom: '10px', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+          {computedAllReels.slice(0, 8).map((reel, idx) => (
+            <div
+              key={reel.id || idx}
+              onClick={() => {
+                window.history.pushState({}, '', '/reels');
+                setCurrentPath('/reels');
+                window.scrollTo(0, 0);
+              }}
+              style={{
+                position: 'relative',
+                aspectRatio: '9/16',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                background: '#0b1120',
+                cursor: 'pointer',
+                scrollSnapAlign: 'start',
+                boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-3px)'
+                const v = e.currentTarget.querySelector('video')
+                if (v) v.play().catch(() => {})
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                const v = e.currentTarget.querySelector('video')
+                if (v) { v.pause(); v.currentTime = 0; }
+              }}
+            >
+              <video
+                src={reel.videoSrc}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              {/* Play Badge */}
+              <div style={{ position: 'absolute', top: '8px', right: '8px', width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              </div>
+              {/* Overlay Gradient & Caption */}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '10px', pointerEvents: 'none' }}>
+                <div style={{ color: '#fff', fontSize: '12px', fontWeight: '700', lineHeight: 1.3, textShadow: '0 1px 3px rgba(0,0,0,0.7)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {reel.text}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', color: 'rgba(255,255,255,0.85)', fontSize: '11px', fontWeight: '600' }}>
+                  <span>❤️</span> {reel.likes || 180 + idx * 25}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
