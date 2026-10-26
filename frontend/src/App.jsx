@@ -2236,19 +2236,28 @@ function App() {
     return () => window.removeEventListener('caseily_reels_updated', onUpdated)
   }, [])
 
-  const computedAllReels = [
-    ...backendReels.map((r, i) => ({ 
-      id: r.id, 
-      videoSrc: r.is_local_promo ? `/${r.video}` : `${API_URL}/uploads/${r.video}`, 
-      text: r.caption, 
-      likes: r.likes || 180 + i * 15,
-      index: i 
-    })),
-    ...FALLBACK_REELS.map((r, i) => ({ 
-      ...r, 
-      index: i + backendReels.length 
-    }))
-  ];
+  const resolveVideoUrl = (video, isLocalPromo) => {
+    if (!video) return '/promo1.mp4';
+    if (isLocalPromo) return `/${video.replace(/^\//, '')}`;
+    if (video.startsWith('http://') || video.startsWith('https://')) return video;
+    const clean = video.replace(/^\/?(uploads\/)?/, '');
+    const base = API_URL || '';
+    return `${base}/uploads/${clean}`;
+  };
+
+  const sortedBackendReels = [...backendReels].sort((a, b) => {
+    if (!a.is_local_promo && b.is_local_promo) return -1;
+    if (a.is_local_promo && !b.is_local_promo) return 1;
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+  });
+
+  const computedAllReels = (sortedBackendReels.length > 0 ? sortedBackendReels : FALLBACK_REELS).map((r, i) => ({ 
+    id: r.id, 
+    videoSrc: resolveVideoUrl(r.video || r.videoSrc, r.is_local_promo), 
+    text: r.caption || r.text || 'Caseily Reels', 
+    likes: r.likes || 180 + i * 15,
+    index: i 
+  }));
 
   async function handleReviewSubmit(e) {
     e.preventDefault()
