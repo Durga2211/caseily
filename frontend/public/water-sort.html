@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Water Color Sort - Puzzle Game</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0b1120 0%, #172554 50%, #0f172a 100%);
+      --tube-width: min(58px, 14vw);
+      --tube-height: min(186px, 45vw);
+      --layer-height: calc(var(--tube-height) / 4.4);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.45);
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.16);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      min-height: 100dvh;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: hidden;
+      padding: 16px 12px;
+      position: relative;
+    }
+
+    /* Ambient background glow orbs */
+    .ambient-glow {
+      position: fixed;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(90px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+      transition: background 0.8s ease;
+    }
+    .glow-1 { top: -60px; left: -60px; background: #3b82f6; }
+    .glow-2 { bottom: -60px; right: -60px; background: #8b5cf6; }
+
+    /* Header Bar */
+    header {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 4px 8px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #60a5fa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand span.emoji {
+      -webkit-text-fill-color: initial;
+      font-size: 22px;
+    }
+
+    .stats-badges {
+      display: flex;
+      gap: 8px;
+    }
+
+    .badge {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .badge-label {
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-val {
+      color: #38bdf8;
+      font-size: 15px;
+    }
+
+    /* Action Controls */
+    .controls-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn-action {
+      flex: 1;
+      max-width: 120px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 9px 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-action:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.16);
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-action:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-action.highlight {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3));
+      border-color: rgba(96, 165, 250, 0.4);
+      color: #93c5fd;
+    }
+
+    /* Game Board & Tubes Container */
+    main#game-board {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      max-width: 600px;
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      align-content: center;
+      gap: 28px 16px;
+      padding: 30px 10px;
+    }
+
+    /* Glass Tube Wrapper */
+    .tube-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
+      outline: none;
+    }
+
+    .tube-wrapper.selected {
+      transform: translateY(-26px);
+    }
+
+    .tube-wrapper.selected .tube-glass {
+      box-shadow: 0 0 25px var(--accent-glow), inset 0 0 14px rgba(255, 255, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.7);
+    }
+
+    .tube-wrapper.invalid-shake {
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px) rotate(-3deg); }
+      40%, 80% { transform: translateX(8px) rotate(3deg); }
+    }
+
+    /* Pour Animation Classes */
+    .tube-wrapper.pouring-right {
+      transform: translateY(-34px) translateX(12px) rotate(42deg) !important;
+      z-index: 50;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tube-wrapper.pouring-left {
+      transform: translateY(-34px) translateX(-12px) rotate(-42deg) !important;
+      z-index: 50;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Glass Tube Elements */
+    .tube-rim {
+      width: calc(var(--tube-width) + 10px);
+      height: 9px;
+      border-radius: 5px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.3) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 2px #fff;
+      z-index: 3;
+      margin-bottom: -2px;
+    }
+
+    .tube-glass {
+      position: relative;
+      width: var(--tube-width);
+      height: var(--tube-height);
+      border-radius: 0 0 calc(var(--tube-width) / 2) calc(var(--tube-width) / 2);
+      border: 3px solid rgba(255, 255, 255, 0.38);
+      border-top: none;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 50%, rgba(255, 255, 255, 0.1) 100%);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column-reverse;
+      padding: 0 2px 2px 2px;
+      transition: box-shadow 0.25s, border-color 0.25s;
+    }
+
+    /* Glossy vertical specular reflections */
+    .tube-glass::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 3px;
+      width: 5px;
+      height: 92%;
+      border-radius: 3px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.2) 75%, transparent 100%);
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .tube-glass::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 3px;
+      width: 2.5px;
+      height: 85%;
+      border-radius: 2px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.05) 80%, transparent 100%);
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    /* Water Layer Inside Tube */
+    .water-layer {
+      width: 100%;
+      height: var(--layer-height);
+      position: relative;
+      transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+      box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3), inset 0 -3px 6px rgba(0, 0, 0, 0.2);
+      flex-shrink: 0;
+    }
+
+    .water-layer:first-child {
+      border-radius: 0 0 calc(var(--tube-width) / 2 - 2px) calc(var(--tube-width) / 2 - 2px);
+    }
+
+    /* Liquid Meniscus Wave at the Top Layer */
+    .water-layer.is-top {
+      border-radius: 4px 4px 0 0;
+    }
+    .water-layer.is-top:first-child {
+      border-radius: 4px 4px calc(var(--tube-width) / 2 - 2px) calc(var(--tube-width) / 2 - 2px);
+    }
+
+    .water-layer.is-top::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.85);
+    }
+
+    /* Floating Micro Bubbles in Liquid */
+    .bubble {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: rise 2s infinite ease-in;
+    }
+    @keyframes rise {
+      0% { transform: translateY(0) scale(0.6); opacity: 0; }
+      50% { opacity: 0.8; }
+      100% { transform: translateY(-24px) scale(1.1); opacity: 0; }
+    }
+
+    /* Dynamic Water Stream During Pour */
+    #pour-stream {
+      position: fixed;
+      width: 6px;
+      height: 0;
+      border-radius: 3px;
+      z-index: 40;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s, height 0.25s ease-in;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    /* Win Popup Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 17, 32, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 35px rgba(59, 130, 246, 0.3);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 340px;
+      padding: 32px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      transform: scale(0.9) translateY(20px);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .win-trophy {
+      font-size: 54px;
+      line-height: 1;
+      animation: bounce 1.2s infinite alternate;
+      filter: drop-shadow(0 8px 16px rgba(234, 179, 8, 0.4));
+    }
+
+    @keyframes bounce {
+      0% { transform: translateY(0) rotate(-4deg); }
+      100% { transform: translateY(-10px) rotate(4deg); }
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .modal-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .modal-stats {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      width: 100%;
+      margin: 8px 0;
+    }
+
+    .modal-stat-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 10px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .modal-stat-box .val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+    .modal-stat-box .lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    .btn-next-level {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      color: #fff;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-next-level:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(59, 130, 246, 0.5);
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 120;
+    }
+
+    /* Footer / Helper */
+    footer {
+      position: relative;
+      z-index: 10;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-glow glow-1" id="glow1"></div>
+  <div class="ambient-glow glow-2" id="glow2"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="title-row">
+      <div class="brand">
+        <span class="emoji">🧪</span>
+        <span>Water Sort</span>
+      </div>
+      <div class="stats-badges">
+        <div class="badge">
+          <span class="badge-label">Level</span>
+          <span class="badge-val" id="level-display">1</span>
+        </div>
+        <div class="badge">
+          <span class="badge-label">Moves</span>
+          <span class="badge-val" id="moves-display">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="controls-bar">
+      <button class="btn-action" id="btn-undo" title="Undo last move" disabled>
+        <span>↩️</span> Undo
+      </button>
+      <button class="btn-action" id="btn-restart" title="Restart current level">
+        <span>🔄</span> Reset
+      </button>
+      <button class="btn-action highlight" id="btn-add-tube" title="Add extra empty tube">
+        <span>🧪</span> +Tube
+      </button>
+    </div>
+  </header>
+
+  <!-- Game Board -->
+  <main id="game-board"></main>
+
+  <div id="pour-stream"></div>
+
+  <!-- Win Modal -->
+  <div class="modal-overlay" id="win-modal">
+    <div class="modal-card">
+      <div class="win-trophy">🏆</div>
+      <div class="modal-title">Level Cleared!</div>
+      <div class="modal-subtitle">Brilliant sorting! All glass tubes are cleanly separated.</div>
+      <div class="modal-stats">
+        <div class="modal-stat-box">
+          <span class="val" id="modal-moves">0</span>
+          <span class="lbl">Moves</span>
+        </div>
+        <div class="modal-stat-box">
+          <span class="val" id="modal-level">1</span>
+          <span class="lbl">Level</span>
+        </div>
+      </div>
+      <button class="btn-next-level" id="btn-next-level">Next Level &rarr;</button>
+    </div>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <footer>Tap a tube to lift, then tap another to pour matching colors</footer>
+
+  <script>
+    /* ══════════════════════════════════════════════════════════════════
+       WATER COLOR SORT PUZZLE ENGINE
+       - Fully dynamic level generator with BFS solvability verification
+       - Difficulty scaling (tubes & colors grow each level)
+       - Web Audio sound synthesizer (zero external audio files)
+       - Smooth pour physics, selection lift, undo history, extra tube
+    ══════════════════════════════════════════════════════════════════ */
+
+    const CAPACITY = 4;
+    const STORAGE_KEY = 'caseily_watercolor_level';
+
+    // Game State
+    let currentLevel = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10);
+    let tubes = [];
+    let initialTubes = [];
+    let history = [];
+    let moves = 0;
+    let selectedTubeIndex = null;
+    let isAnimating = false;
+    let extraTubesAdded = 0;
+    let colorPalette = [];
+
+    // Audio Context (Synthesizer for liquid sloshes & win chimes)
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) audioCtx = new AudioClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSound(type) {
+      if (!audioCtx) return;
+      try {
+        const t = audioCtx.currentTime;
+        if (type === 'select') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, t);
+          osc.frequency.exponentialRampToValueAtTime(620, t + 0.08);
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.linearRampToValueAtTime(0.01, t + 0.08);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(t);
+          osc.stop(t + 0.08);
+        } else if (type === 'pour') {
+          // Bubble / water trickle sound
+          for (let i = 0; i < 3; i++) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            const f = 380 + Math.random() * 260 + i * 120;
+            osc.frequency.setValueAtTime(f, t + i * 0.06);
+            osc.frequency.exponentialRampToValueAtTime(f * 1.5, t + i * 0.06 + 0.1);
+            gain.gain.setValueAtTime(0.08, t + i * 0.06);
+            gain.gain.linearRampToValueAtTime(0.001, t + i * 0.06 + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t + i * 0.06);
+            osc.stop(t + i * 0.06 + 0.1);
+          }
+        } else if (type === 'invalid') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, t);
+          osc.frequency.linearRampToValueAtTime(110, t + 0.12);
+          gain.gain.setValueAtTime(0.09, t);
+          gain.gain.linearRampToValueAtTime(0.01, t + 0.12);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(t);
+          osc.stop(t + 0.12);
+        } else if (type === 'win') {
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 arpeggio
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t + idx * 0.1);
+            gain.gain.setValueAtTime(0.18, t + idx * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.1 + 0.45);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t + idx * 0.1);
+            osc.stop(t + idx * 0.1 + 0.45);
+          });
+        }
+      } catch (e) {
+        // Audio policy fallback
+      }
+    }
+
+    // Dynamic HSL Palette Generation
+    function generatePalette(numColors, lvl) {
+      const palette = [];
+      const offset = (lvl * 53) % 360;
+      for (let i = 0; i < numColors; i++) {
+        const hue = Math.round((offset + i * (360 / numColors)) % 360);
+        palette.push({
+          id: i,
+          hue: hue,
+          gradient: `linear-gradient(180deg, hsl(${hue}, 88%, 56%) 0%, hsl(${hue}, 82%, 42%) 100%)`,
+          solid: `hsl(${hue}, 85%, 48%)`,
+          glow: `hsla(${hue}, 90%, 55%, 0.45)`
+        });
+      }
+      return palette;
+    }
+
+    // Fast BFS Solvability Verifier
+    function isSolvedState(ts) {
+      return ts.every(t => t.length === 0 || (t.length === CAPACITY && t.every(c => c === t[0])));
+    }
+
+    function checkSolvableBFS(state, maxVisits = 4500) {
+      const serialize = (ts) => ts.map(t => t.join(',')).sort().join('|');
+      const queue = [state];
+      const visited = new Set([serialize(state)]);
+      let count = 0;
+
+      while (queue.length > 0) {
+        const cur = queue.shift();
+        if (isSolvedState(cur)) return true;
+        if (++count > maxVisits) return false;
+
+        for (let i = 0; i < cur.length; i++) {
+          if (cur[i].length === 0) continue;
+          const src = cur[i];
+          const color = src[src.length - 1];
+          let colorCount = 0;
+          for (let k = src.length - 1; k >= 0 && src[k] === color; k--) colorCount++;
+
+          for (let j = 0; j < cur.length; j++) {
+            if (i === j) continue;
+            const dst = cur[j];
+            if (dst.length === CAPACITY) continue;
+            if (dst.length > 0 && dst[dst.length - 1] !== color) continue;
+            if (dst.length === 0 && src.length === colorCount && src.length === CAPACITY) continue;
+
+            const moveCount = Math.min(colorCount, CAPACITY - dst.length);
+            const nextState = cur.map((t, idx) => {
+              if (idx === i) return t.slice(0, t.length - moveCount);
+              if (idx === j) return [...t, ...Array(moveCount).fill(color)];
+              return t;
+            });
+
+            const key = serialize(nextState);
+            if (!visited.has(key)) {
+              visited.add(key);
+              queue.push(nextState);
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    // Solvable Random Level Generator with Difficulty Scaling
+    function generateSolvableLevel(lvl) {
+      // Scaling: Level 1 has 3 colors; increases every 2 levels up to max 8 colors
+      const numColors = Math.min(3 + Math.floor((lvl - 1) / 2), 8);
+      colorPalette = generatePalette(numColors, lvl);
+
+      let candidate = null;
+      let attempts = 0;
+
+      while (attempts++ < 30) {
+        // Create pool of 4 of each color
+        const pool = [];
+        for (let c = 0; c < numColors; c++) {
+          for (let k = 0; k < CAPACITY; k++) pool.push(c);
+        }
+
+        // Fisher-Yates shuffle
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        // Divide into N full tubes + 2 empty tubes
+        const candidateTubes = [];
+        for (let c = 0; c < numColors; c++) {
+          candidateTubes.push(pool.slice(c * CAPACITY, (c + 1) * CAPACITY));
+        }
+        candidateTubes.push([], []); // 2 empty tubes
+
+        // Discard if already solved or if any tube starts pre-solved
+        if (isSolvedState(candidateTubes)) continue;
+        const hasPreSolvedTube = candidateTubes.some(t => t.length === CAPACITY && t.every(c => c === t[0]));
+        if (hasPreSolvedTube && numColors > 3) continue;
+
+        // Verify solvability with BFS
+        if (checkSolvableBFS(candidateTubes)) {
+          candidate = candidateTubes;
+          break;
+        }
+      }
+
+      // Safe fallback if random didn't finish within budget (reverse shuffle)
+      if (!candidate) {
+        let fallback = Array.from({ length: numColors }, (_, i) => [i, i, i, i]);
+        fallback.push([], []);
+        for (let step = 0; step < 50; step++) {
+          const nonEmpties = fallback.map((t, idx) => ({ t, idx })).filter(o => o.t.length > 0);
+          const { t: b, idx: bIdx } = nonEmpties[Math.floor(Math.random() * nonEmpties.length)];
+          const color = b[b.length - 1];
+          let streak = 0;
+          for (let k = b.length - 1; k >= 0 && b[k] === color; k--) streak++;
+          const validDest = fallback.map((t, idx) => ({ t, idx })).filter(o => o.idx !== bIdx && o.t.length < CAPACITY);
+          if (validDest.length === 0) continue;
+          const { idx: aIdx } = validDest[Math.floor(Math.random() * validDest.length)];
+          const maxK = Math.min(streak, CAPACITY - fallback[aIdx].length);
+          let allowed = [];
+          if (b.length <= maxK) allowed.push(b.length);
+          for (let k = 1; k < streak && k <= maxK; k++) allowed.push(k);
+          if (allowed.length === 0) continue;
+          const k = allowed[Math.floor(Math.random() * allowed.length)];
+          fallback = fallback.map((t, idx) => {
+            if (idx === bIdx) return t.slice(0, t.length - k);
+            if (idx === aIdx) return [...t, ...Array(k).fill(color)];
+            return t;
+          });
+        }
+        candidate = fallback;
+      }
+
+      return candidate;
+    }
+
+    // UI Rendering
+    function renderBoard() {
+      const board = document.getElementById('game-board');
+      board.innerHTML = '';
+
+      tubes.forEach((tube, tubeIndex) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tube-wrapper';
+        wrapper.id = `tube-${tubeIndex}`;
+        if (selectedTubeIndex === tubeIndex) wrapper.classList.add('selected');
+
+        wrapper.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleTubeTap(tubeIndex);
+        });
+
+        // Top Glass Rim
+        const rim = document.createElement('div');
+        rim.className = 'tube-rim';
+        wrapper.appendChild(rim);
+
+        // Glass Body
+        const glass = document.createElement('div');
+        glass.className = 'tube-glass';
+
+        // Colored water layers
+        tube.forEach((colorId, layerIndex) => {
+          const layer = document.createElement('div');
+          layer.className = 'water-layer';
+          if (layerIndex === tube.length - 1) layer.classList.add('is-top');
+
+          const col = colorPalette[colorId];
+          if (col) {
+            layer.style.background = col.gradient;
+          }
+
+          // Subtle bubble on non-empty layer
+          if (Math.random() > 0.6) {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const bSize = 3 + Math.floor(Math.random() * 4);
+            bubble.style.width = `${bSize}px`;
+            bubble.style.height = `${bSize}px`;
+            bubble.style.left = `${10 + Math.random() * 26}px`;
+            bubble.style.bottom = `${4 + Math.random() * 12}px`;
+            layer.appendChild(bubble);
+          }
+
+          glass.appendChild(layer);
+        });
+
+        wrapper.appendChild(glass);
+        board.appendChild(wrapper);
+      });
+
+      // Update Header Badges
+      document.getElementById('level-display').textContent = currentLevel;
+      document.getElementById('moves-display').textContent = moves;
+      document.getElementById('btn-undo').disabled = history.length === 0 || isAnimating;
+      document.getElementById('btn-add-tube').disabled = extraTubesAdded >= 2 || isAnimating;
+
+      // Dynamic ambient glow colors based on first 2 palette colors
+      if (colorPalette.length >= 2) {
+        document.getElementById('glow1').style.background = colorPalette[0].solid;
+        document.getElementById('glow2').style.background = colorPalette[1].solid;
+      }
+    }
+
+    // Interaction & Tube Tap Handler
+    function handleTubeTap(tappedIndex) {
+      initAudio();
+      if (isAnimating) return;
+
+      const tappedTube = tubes[tappedIndex];
+
+      // No tube currently selected
+      if (selectedTubeIndex === null) {
+        if (tappedTube.length === 0) {
+          playSound('invalid');
+          shakeTube(tappedIndex);
+          return;
+        }
+        selectedTubeIndex = tappedIndex;
+        playSound('select');
+        renderBoard();
+        return;
+      }
+
+      // Tapped the already selected tube -> Deselect
+      if (selectedTubeIndex === tappedIndex) {
+        selectedTubeIndex = null;
+        playSound('select');
+        renderBoard();
+        return;
+      }
+
+      // Tapped a different target tube -> Attempt pour
+      const sourceIndex = selectedTubeIndex;
+      const sourceTube = tubes[sourceIndex];
+      const targetTube = tubes[tappedIndex];
+
+      const sourceTopColor = sourceTube[sourceTube.length - 1];
+      const targetTopColor = targetTube.length > 0 ? targetTube[targetTube.length - 1] : null;
+
+      // Count consecutive top colors in source
+      let sourceCount = 0;
+      for (let i = sourceTube.length - 1; i >= 0 && sourceTube[i] === sourceTopColor; i--) {
+        sourceCount++;
+      }
+
+      const targetSpace = CAPACITY - targetTube.length;
+
+      // Pour validity rules
+      const isValidPour = targetSpace > 0 && (targetTube.length === 0 || targetTopColor === sourceTopColor);
+
+      if (isValidPour) {
+        const pourAmount = Math.min(sourceCount, targetSpace);
+        executePour(sourceIndex, tappedIndex, pourAmount, sourceTopColor);
+      } else {
+        // If target tube is not empty, smoothly switch selection to it
+        if (targetTube.length > 0) {
+          selectedTubeIndex = tappedIndex;
+          playSound('select');
+          renderBoard();
+        } else {
+          playSound('invalid');
+          shakeTube(tappedIndex);
+        }
+      }
+    }
+
+    function shakeTube(idx) {
+      const el = document.getElementById(`tube-${idx}`);
+      if (el) {
+        el.classList.add('invalid-shake');
+        setTimeout(() => el.classList.remove('invalid-shake'), 400);
+      }
+    }
+
+    // Smooth Pour Animation & Execution
+    function executePour(srcIdx, dstIdx, amount, colorId) {
+      isAnimating = true;
+      selectedTubeIndex = null;
+
+      // Record snapshot into undo history
+      history.push({
+        tubes: JSON.parse(JSON.stringify(tubes)),
+        moves: moves
+      });
+
+      const srcEl = document.getElementById(`tube-${srcIdx}`);
+      const dstEl = document.getElementById(`tube-${dstIdx}`);
+
+      // Calculate tilt direction
+      const srcRect = srcEl.getBoundingClientRect();
+      const dstRect = dstEl.getBoundingClientRect();
+      const pourLeft = dstRect.left < srcRect.left;
+
+      srcEl.classList.add(pourLeft ? 'pouring-left' : 'pouring-right');
+      playSound('pour');
+
+      // Pour Stream Positioning
+      const stream = document.getElementById('pour-stream');
+      const col = colorPalette[colorId];
+      if (col) {
+        stream.style.background = col.solid;
+        stream.style.color = col.solid;
+      }
+
+      const streamX = pourLeft ? srcRect.left + 8 : srcRect.right - 8;
+      const streamY = srcRect.top + 16;
+      stream.style.left = `${streamX}px`;
+      stream.style.top = `${streamY}px`;
+      stream.style.height = `${Math.max(40, dstRect.top - srcRect.top + 30)}px`;
+      stream.style.opacity = '1';
+
+      setTimeout(() => {
+        // Apply state changes
+        for (let i = 0; i < amount; i++) {
+          tubes[srcIdx].pop();
+          tubes[dstIdx].push(colorId);
+        }
+        moves++;
+
+        // Reset visual animations
+        stream.style.opacity = '0';
+        stream.style.height = '0';
+        srcEl.classList.remove('pouring-left', 'pouring-right');
+
+        setTimeout(() => {
+          isAnimating = false;
+          renderBoard();
+          checkLevelWin();
+        }, 150);
+      }, 350);
+    }
+
+    // Check Win Condition
+    function checkLevelWin() {
+      const won = tubes.every(t => t.length === 0 || (t.length === CAPACITY && t.every(c => c === t[0])));
+      if (won) {
+        playSound('win');
+        triggerConfetti();
+
+        // Update stats and modal
+        document.getElementById('modal-moves').textContent = moves;
+        document.getElementById('modal-level').textContent = currentLevel;
+        document.getElementById('win-modal').classList.add('active');
+
+        // Increment and save level
+        currentLevel++;
+        localStorage.setItem(STORAGE_KEY, currentLevel.toString());
+      }
+    }
+
+    // Undo Last Move
+    function undoMove() {
+      initAudio();
+      if (history.length === 0 || isAnimating) return;
+      const prev = history.pop();
+      tubes = prev.tubes;
+      moves = prev.moves;
+      selectedTubeIndex = null;
+      playSound('select');
+      renderBoard();
+    }
+
+    // Restart Current Level
+    function restartLevel() {
+      initAudio();
+      if (isAnimating) return;
+      tubes = JSON.parse(JSON.stringify(initialTubes));
+      history = [];
+      moves = 0;
+      selectedTubeIndex = null;
+      playSound('select');
+      renderBoard();
+    }
+
+    // Add Extra Tube Feature
+    function addExtraTube() {
+      initAudio();
+      if (extraTubesAdded >= 2 || isAnimating) return;
+      history.push({
+        tubes: JSON.parse(JSON.stringify(tubes)),
+        moves: moves
+      });
+      tubes.push([]);
+      extraTubesAdded++;
+      playSound('select');
+      renderBoard();
+    }
+
+    // Start / Initialize Level
+    function startLevel(lvl) {
+      currentLevel = lvl;
+      tubes = generateSolvableLevel(lvl);
+      initialTubes = JSON.parse(JSON.stringify(tubes));
+      history = [];
+      moves = 0;
+      selectedTubeIndex = null;
+      extraTubesAdded = 0;
+      isAnimating = false;
+      document.getElementById('win-modal').classList.remove('active');
+      renderBoard();
+    }
+
+    // Celebratory Confetti Animation
+    function triggerConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const particleColors = colorPalette.map(c => c.solid).concat(['#ffd700', '#ffffff', '#38bdf8']);
+
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          r: 4 + Math.random() * 6,
+          color: particleColors[Math.floor(Math.random() * particleColors.length)],
+          vx: (Math.random() - 0.5) * 14,
+          vy: (Math.random() - 0.8) * 18,
+          gravity: 0.35,
+          alpha: 1,
+          decay: 0.012 + Math.random() * 0.01
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+        particles.forEach(p => {
+          if (p.alpha > 0) {
+            active = true;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.alpha -= p.decay;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        });
+        if (active) requestAnimationFrame(draw);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      requestAnimationFrame(draw);
+    }
+
+    // Event Listeners
+    document.getElementById('btn-undo').addEventListener('click', undoMove);
+    document.getElementById('btn-restart').addEventListener('click', restartLevel);
+    document.getElementById('btn-add-tube').addEventListener('click', addExtraTube);
+    document.getElementById('btn-next-level').addEventListener('click', () => {
+      initAudio();
+      startLevel(currentLevel);
+    });
+
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('confetti-canvas');
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    // Start game on load
+    startLevel(currentLevel);
+  </script>
+</body>
+</html>

@@ -611,3 +611,598 @@ export function MemoryMatchGame() {
     </MultiplayerMenu>
   )
 }
+
+// ═══════════════════════════════════════════════════════
+// WATER COLOR SORT
+// ═══════════════════════════════════════════════════════
+const CAPACITY = 4;
+const STORAGE_KEY = 'caseily_watersort_level';
+
+function isSolvedWaterState(ts) {
+  return ts.every(t => t.length === 0 || (t.length === CAPACITY && t.every(c => c === t[0])));
+}
+
+function solveWaterBFS(state, maxVisits = 4500) {
+  const serialize = (ts) => ts.map(t => t.join(',')).sort().join('|');
+  const queue = [state];
+  const visited = new Set([serialize(state)]);
+  let count = 0;
+
+  while (queue.length > 0) {
+    const cur = queue.shift();
+    if (isSolvedWaterState(cur)) return true;
+    if (++count > maxVisits) return false;
+
+    for (let i = 0; i < cur.length; i++) {
+      if (cur[i].length === 0) continue;
+      const src = cur[i];
+      const color = src[src.length - 1];
+      let colorCount = 0;
+      for (let k = src.length - 1; k >= 0 && src[k] === color; k--) colorCount++;
+
+      for (let j = 0; j < cur.length; j++) {
+        if (i === j) continue;
+        const dst = cur[j];
+        if (dst.length === CAPACITY) continue;
+        if (dst.length > 0 && dst[dst.length - 1] !== color) continue;
+        if (dst.length === 0 && src.length === colorCount && src.length === CAPACITY) continue;
+
+        const moveCount = Math.min(colorCount, CAPACITY - dst.length);
+        const nextState = cur.map((t, idx) => {
+          if (idx === i) return t.slice(0, t.length - moveCount);
+          if (idx === j) return [...t, ...Array(moveCount).fill(color)];
+          return t;
+        });
+
+        const key = serialize(nextState);
+        if (!visited.has(key)) {
+          visited.add(key);
+          queue.push(nextState);
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function generateWaterPalette(numColors, lvl) {
+  const palette = [];
+  const offset = (lvl * 53) % 360;
+  for (let i = 0; i < numColors; i++) {
+    const hue = Math.round((offset + i * (360 / numColors)) % 360);
+    palette.push({
+      id: i,
+      hue: hue,
+      gradient: `linear-gradient(180deg, hsl(${hue}, 88%, 56%) 0%, hsl(${hue}, 82%, 42%) 100%)`,
+      solid: `hsl(${hue}, 85%, 48%)`,
+      glow: `hsla(${hue}, 90%, 55%, 0.45)`
+    });
+  }
+  return palette;
+}
+
+function generateWaterLevel(lvl) {
+  const numColors = Math.min(3 + Math.floor((lvl - 1) / 2), 8);
+  const palette = generateWaterPalette(numColors, lvl);
+
+  let candidate = null;
+  let attempts = 0;
+
+  while (attempts++ < 30) {
+    const pool = [];
+    for (let c = 0; c < numColors; c++) {
+      for (let k = 0; k < CAPACITY; k++) pool.push(c);
+    }
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    const candidateTubes = [];
+    for (let c = 0; c < numColors; c++) {
+      candidateTubes.push(pool.slice(c * CAPACITY, (c + 1) * CAPACITY));
+    }
+    candidateTubes.push([], []);
+
+    if (isSolvedWaterState(candidateTubes)) continue;
+    const hasPreSolved = candidateTubes.some(t => t.length === CAPACITY && t.every(c => c === t[0]));
+    if (hasPreSolved && numColors > 3) continue;
+
+    if (solveWaterBFS(candidateTubes)) {
+      candidate = candidateTubes;
+      break;
+    }
+  }
+
+  if (!candidate) {
+    let fallback = Array.from({ length: numColors }, (_, i) => [i, i, i, i]);
+    fallback.push([], []);
+    for (let step = 0; step < 50; step++) {
+      const nonEmpties = fallback.map((t, idx) => ({ t, idx })).filter(o => o.t.length > 0);
+      const { t: b, idx: bIdx } = nonEmpties[Math.floor(Math.random() * nonEmpties.length)];
+      const color = b[b.length - 1];
+      let streak = 0;
+      for (let k = b.length - 1; k >= 0 && b[k] === color; k--) streak++;
+      const validDest = fallback.map((t, idx) => ({ t, idx })).filter(o => o.idx !== bIdx && o.t.length < CAPACITY);
+      if (validDest.length === 0) continue;
+      const { idx: aIdx } = validDest[Math.floor(Math.random() * validDest.length)];
+      const maxK = Math.min(streak, CAPACITY - fallback[aIdx].length);
+      let allowed = [];
+      if (b.length <= maxK) allowed.push(b.length);
+      for (let k = 1; k < streak && k <= maxK; k++) allowed.push(k);
+      if (allowed.length === 0) continue;
+      const k = allowed[Math.floor(Math.random() * allowed.length)];
+      fallback = fallback.map((t, idx) => {
+        if (idx === bIdx) return t.slice(0, t.length - k);
+        if (idx === aIdx) return [...t, ...Array(k).fill(color)];
+        return t;
+      });
+    }
+    candidate = fallback;
+  }
+
+  return { tubes: candidate, palette, numColors };
+}
+
+export function WaterSortGame() {
+  const [level, setLevel] = React.useState(() => {
+    return parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10);
+  });
+  const [gameData, setGameData] = React.useState(() => generateWaterLevel(level));
+  const [tubes, setTubes] = React.useState(gameData.tubes);
+  const [initialTubes, setInitialTubes] = React.useState(gameData.tubes);
+  const [palette, setPalette] = React.useState(gameData.palette);
+  const [history, setHistory] = React.useState([]);
+  const [moves, setMoves] = React.useState(0);
+  const [selectedIdx, setSelectedIdx] = React.useState(null);
+  const [isPouring, setIsPouring] = React.useState(false);
+  const [pouringInfo, setPouringInfo] = React.useState(null); // { src, dst, dir, color }
+  const [extraTubesCount, setExtraTubesCount] = React.useState(0);
+  const [won, setWon] = React.useState(false);
+  const audioCtxRef = React.useRef(null);
+
+  const initAudio = () => {
+    if (!audioCtxRef.current) {
+      const AudioClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioClass) audioCtxRef.current = new AudioClass();
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+  };
+
+  const playSfx = (type) => {
+    if (!audioCtxRef.current) return;
+    try {
+      const ctx = audioCtxRef.current;
+      const t = ctx.currentTime;
+      if (type === 'tap') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, t);
+        osc.frequency.exponentialRampToValueAtTime(620, t + 0.08);
+        gain.gain.setValueAtTime(0.12, t);
+        gain.gain.linearRampToValueAtTime(0.01, t + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.08);
+      } else if (type === 'pour') {
+        for (let i = 0; i < 3; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const f = 380 + Math.random() * 240 + i * 110;
+          osc.frequency.setValueAtTime(f, t + i * 0.06);
+          osc.frequency.exponentialRampToValueAtTime(f * 1.4, t + i * 0.06 + 0.1);
+          gain.gain.setValueAtTime(0.08, t + i * 0.06);
+          gain.gain.linearRampToValueAtTime(0.001, t + i * 0.06 + 0.1);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t + i * 0.06);
+          osc.stop(t + i * 0.06 + 0.1);
+        }
+      } else if (type === 'win') {
+        [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, t + idx * 0.1);
+          gain.gain.setValueAtTime(0.16, t + idx * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.1 + 0.4);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t + idx * 0.1);
+          osc.stop(t + idx * 0.1 + 0.4);
+        });
+      }
+    } catch (e) {}
+  };
+
+  const loadLevel = (lvl) => {
+    const data = generateWaterLevel(lvl);
+    setGameData(data);
+    setTubes(data.tubes);
+    setInitialTubes(data.tubes);
+    setPalette(data.palette);
+    setHistory([]);
+    setMoves(0);
+    setSelectedIdx(null);
+    setIsPouring(false);
+    setPouringInfo(null);
+    setExtraTubesCount(0);
+    setWon(false);
+  };
+
+  const handleTubeClick = (idx) => {
+    initAudio();
+    if (isPouring || won) return;
+
+    const tube = tubes[idx];
+
+    // Nothing selected yet
+    if (selectedIdx === null) {
+      if (tube.length === 0) return;
+      setSelectedIdx(idx);
+      playSfx('tap');
+      return;
+    }
+
+    // Clicked same tube -> deselect
+    if (selectedIdx === idx) {
+      setSelectedIdx(null);
+      playSfx('tap');
+      return;
+    }
+
+    // Pour candidate
+    const srcIdx = selectedIdx;
+    const src = tubes[srcIdx];
+    const dst = tubes[idx];
+
+    const srcTop = src[src.length - 1];
+    const dstTop = dst.length > 0 ? dst[dst.length - 1] : null;
+
+    let srcCount = 0;
+    for (let k = src.length - 1; k >= 0 && src[k] === srcTop; k--) srcCount++;
+
+    const dstSpace = CAPACITY - dst.length;
+    const isValid = dstSpace > 0 && (dst.length === 0 || dstTop === srcTop);
+
+    if (isValid) {
+      const amount = Math.min(srcCount, dstSpace);
+      const dir = idx < srcIdx ? 'left' : 'right';
+
+      setIsPouring(true);
+      setSelectedIdx(null);
+      setPouringInfo({ src: srcIdx, dst: idx, dir, color: srcTop });
+      playSfx('pour');
+
+      // Record undo history
+      setHistory(prev => [...prev, { tubes: JSON.parse(JSON.stringify(tubes)), moves }]);
+
+      setTimeout(() => {
+        setTubes(prev => {
+          const next = prev.map(t => [...t]);
+          for (let i = 0; i < amount; i++) {
+            next[srcIdx].pop();
+            next[idx].push(srcTop);
+          }
+          return next;
+        });
+        setMoves(m => m + 1);
+        setIsPouring(false);
+        setPouringInfo(null);
+
+        // Check Win
+        setTimeout(() => {
+          setTubes(currentTubes => {
+            if (isSolvedWaterState(currentTubes)) {
+              setWon(true);
+              playSfx('win');
+              const nextLvl = level + 1;
+              localStorage.setItem(STORAGE_KEY, nextLvl.toString());
+            }
+            return currentTubes;
+          });
+        }, 100);
+      }, 350);
+    } else {
+      if (dst.length > 0) {
+        setSelectedIdx(idx);
+        playSfx('tap');
+      } else {
+        setSelectedIdx(null);
+      }
+    }
+  };
+
+  const handleUndo = () => {
+    initAudio();
+    if (history.length === 0 || isPouring) return;
+    const prev = history[history.length - 1];
+    setHistory(h => h.slice(0, -1));
+    setTubes(prev.tubes);
+    setMoves(prev.moves);
+    setSelectedIdx(null);
+    playSfx('tap');
+  };
+
+  const handleRestart = () => {
+    initAudio();
+    if (isPouring) return;
+    setTubes(JSON.parse(JSON.stringify(initialTubes)));
+    setHistory([]);
+    setMoves(0);
+    setSelectedIdx(null);
+    setWon(false);
+    playSfx('tap');
+  };
+
+  const handleAddTube = () => {
+    initAudio();
+    if (extraTubesCount >= 2 || isPouring) return;
+    setHistory(prev => [...prev, { tubes: JSON.parse(JSON.stringify(tubes)), moves }]);
+    setTubes(prev => [...prev, []]);
+    setExtraTubesCount(c => c + 1);
+    playSfx('tap');
+  };
+
+  const handleNextLevel = () => {
+    initAudio();
+    const nextLvl = level + 1;
+    setLevel(nextLvl);
+    loadLevel(nextLvl);
+  };
+
+  return (
+    <div style={{ width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', alignItems: 'center', userSelect: 'none' }}>
+      {/* Top Header Row */}
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', padding: '0 4px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: '800', color: 'var(--ink-strong)', boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+            Level <strong style={{ color: 'var(--accent)' }}>{level}</strong>
+          </span>
+          <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: '800', color: 'var(--ink-strong)', boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+            Moves <strong style={{ color: '#0ea5e9' }}>{moves}</strong>
+          </span>
+        </div>
+
+        {/* Action Controls */}
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            onClick={handleUndo}
+            disabled={history.length === 0 || isPouring}
+            style={{ padding: '6px 12px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--ink-strong)', fontWeight: '700', fontSize: '12px', cursor: history.length === 0 ? 'not-allowed' : 'pointer', opacity: history.length === 0 ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            ↩️ Undo
+          </button>
+          <button
+            onClick={handleRestart}
+            disabled={isPouring}
+            style={{ padding: '6px 12px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--ink-strong)', fontWeight: '700', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            🔄 Reset
+          </button>
+          <button
+            onClick={handleAddTube}
+            disabled={extraTubesCount >= 2 || isPouring}
+            style={{ padding: '6px 12px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15))', border: '1px solid rgba(59,130,246,0.3)', color: 'var(--accent)', fontWeight: '800', fontSize: '12px', cursor: extraTubesCount >= 2 ? 'not-allowed' : 'pointer', opacity: extraTubesCount >= 2 ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            🧪 +Tube
+          </button>
+        </div>
+      </div>
+
+      {/* Glass Tubes Board */}
+      <div style={{ width: '100%', minHeight: '320px', background: 'radial-gradient(ellipse at top, rgba(59,130,246,0.06), transparent 70%)', borderRadius: '24px', padding: '32px 12px 20px 12px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '28px 16px', position: 'relative' }}>
+        {tubes.map((tube, tubeIdx) => {
+          const isSelected = selectedIdx === tubeIdx;
+          const isPouringSrc = pouringInfo && pouringInfo.src === tubeIdx;
+          const pourDir = pouringInfo ? pouringInfo.dir : 'right';
+
+          let transform = 'translateY(0) scale(1)';
+          let zIndex = 1;
+          if (isSelected) {
+            transform = 'translateY(-22px) scale(1.04)';
+            zIndex = 10;
+          } else if (isPouringSrc) {
+            transform = pourDir === 'left' ? 'translateY(-28px) translateX(-10px) rotate(-38deg)' : 'translateY(-28px) translateX(10px) rotate(38deg)';
+            zIndex = 20;
+          }
+
+          return (
+            <div
+              key={tubeIdx}
+              onClick={() => handleTubeClick(tubeIdx)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                transform,
+                zIndex
+              }}
+            >
+              {/* Glass Rim Top Lip */}
+              <div
+                style={{
+                  width: '58px',
+                  height: '8px',
+                  borderRadius: '4px',
+                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(200, 220, 255, 0.4) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.7)',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.12)',
+                  zIndex: 3,
+                  marginBottom: '-2px'
+                }}
+              />
+
+              {/* Glass Tube Body */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '50px',
+                  height: '170px',
+                  borderRadius: '0 0 25px 25px',
+                  border: isSelected ? '3px solid var(--accent)' : '3px solid rgba(255, 255, 255, 0.45)',
+                  borderTop: 'none',
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 50%, rgba(255, 255, 255, 0.12) 100%)',
+                  boxShadow: isSelected ? '0 12px 28px rgba(59, 130, 246, 0.35), inset 0 0 12px rgba(255, 255, 255, 0.3)' : '0 8px 20px rgba(0, 0, 0, 0.12), inset 0 0 8px rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  display: 'flex',
+                  flexDirection: 'column-reverse',
+                  overflow: 'hidden',
+                  padding: '0 2px 2px 2px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {/* Specular vertical glossy highlight */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '2px',
+                    width: '4px',
+                    height: '92%',
+                    borderRadius: '2px',
+                    background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.15) 80%, transparent 100%)',
+                    pointerEvents: 'none',
+                    zIndex: 5
+                  }}
+                />
+
+                {/* Right subtle reflection */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    right: '2px',
+                    width: '2px',
+                    height: '85%',
+                    borderRadius: '2px',
+                    background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.05) 80%, transparent 100%)',
+                    pointerEvents: 'none',
+                    zIndex: 5
+                  }}
+                />
+
+                {/* Liquid Layers */}
+                {tube.map((colorId, layerIdx) => {
+                  const col = palette[colorId];
+                  const isTop = layerIdx === tube.length - 1;
+                  const isBottom = layerIdx === 0;
+
+                  return (
+                    <div
+                      key={layerIdx}
+                      style={{
+                        width: '100%',
+                        height: '38px',
+                        background: col ? col.gradient : '#3b82f6',
+                        position: 'relative',
+                        borderRadius: isBottom && isTop ? '4px 4px 22px 22px' : isBottom ? '0 0 22px 22px' : isTop ? '4px 4px 0 0' : '0',
+                        boxShadow: 'inset 0 2px 4px rgba(255, 255, 255, 0.35), inset 0 -2px 4px rgba(0, 0, 0, 0.2)',
+                        transition: 'height 0.25s ease'
+                      }}
+                    >
+                      {/* Top liquid meniscus highlight */}
+                      {isTop && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '3px',
+                            borderRadius: '50%',
+                            background: 'rgba(255, 255, 255, 0.65)',
+                            boxShadow: '0 0 4px rgba(255, 255, 255, 0.9)'
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Win Modal Popup */}
+      {won && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(11, 17, 32, 0.8)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: '24px',
+              padding: '32px 24px',
+              maxWidth: '320px',
+              width: '100%',
+              textAlign: 'center',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5), 0 0 30px rgba(59,130,246,0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '14px'
+            }}
+          >
+            <div style={{ fontSize: '50px', lineHeight: 1 }}>🏆</div>
+            <div style={{ fontSize: '22px', fontWeight: '900', color: 'var(--ink-strong)' }}>Level {level} Solved!</div>
+            <div style={{ fontSize: '13px', color: 'var(--ink-muted)', lineHeight: '1.5' }}>
+              Awesome job! All water colors are perfectly sorted into their matching glass tubes.
+            </div>
+
+            <div style={{ display: 'flex', gap: '16px', margin: '6px 0' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '8px 18px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--accent)' }}>{moves}</div>
+                <div style={{ fontSize: '11px', color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Moves</div>
+              </div>
+              <div style={{ background: 'var(--bg-secondary)', padding: '8px 18px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '18px', fontWeight: '900', color: '#10b981' }}>{level}</div>
+                <div style={{ fontSize: '11px', color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Level</div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleNextLevel}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+                color: '#fff',
+                border: 'none',
+                padding: '14px 20px',
+                borderRadius: '16px',
+                fontSize: '15px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                boxShadow: '0 8px 20px rgba(59, 130, 246, 0.4)'
+              }}
+            >
+              Next Level &rarr;
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

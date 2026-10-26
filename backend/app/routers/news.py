@@ -5,6 +5,7 @@ import json
 import os
 from datetime import datetime
 from ..db import news_collection
+from ..image_utils import process_and_upload_image
 from .reviews import _require_admin
 
 router = APIRouter(prefix="/api", tags=["news"])
@@ -47,16 +48,34 @@ async def create_news(
     
     photo_filename = None
     if photo and photo.filename:
-        ext = os.path.splitext(photo.filename)[1] or ".png"
-        photo_filename = f"news_{news_id}{ext}"
-        try:
-            from ..db import fs
-            if fs is not None:
-                fs.put(photo.file, filename=photo_filename, content_type=photo.content_type)
+        if photo.content_type.startswith("image/"):
+            file_bytes = await photo.read()
+            processed = process_and_upload_image(file_bytes, "news")
+            if processed:
+                photo_filename = processed
             else:
+                ext = os.path.splitext(photo.filename)[1] or ".png"
+                photo_filename = f"news_{news_id}{ext}"
+                try:
+                    from ..db import fs
+                    if fs is not None:
+                        import io
+                        fs.put(io.BytesIO(file_bytes), filename=photo_filename, content_type=photo.content_type)
+                    else:
+                        photo_filename = None
+                except Exception as e:
+                    photo_filename = None
+        else:
+            ext = os.path.splitext(photo.filename)[1] or ".png"
+            photo_filename = f"news_{news_id}{ext}"
+            try:
+                from ..db import fs
+                if fs is not None:
+                    fs.put(photo.file, filename=photo_filename, content_type=photo.content_type)
+                else:
+                    photo_filename = None
+            except Exception as e:
                 photo_filename = None
-        except Exception as e:
-            photo_filename = None
 
     article = {
         "id": news_id,

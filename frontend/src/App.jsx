@@ -7,6 +7,7 @@ import TicTacToe from './TicTacToe'
 const TicTacToeGame = lazy(() => import('./InsiderGames').then(m => ({ default: m.TicTacToeGame })))
 const ConnectFourGame = lazy(() => import('./InsiderGames').then(m => ({ default: m.ConnectFourGame })))
 const MemoryMatchGame = lazy(() => import('./InsiderGames').then(m => ({ default: m.MemoryMatchGame })))
+const WaterSortGame = lazy(() => import('./InsiderGames').then(m => ({ default: m.WaterSortGame })))
 const ReelsPage = lazy(() => import('./ReelsPage'))
 import CommunityWall from './components/CommunityWall'
 import OptimizedImage from './components/OptimizedImage'
@@ -1694,6 +1695,13 @@ function App() {
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('caseily_user', JSON.stringify(currentUser));
+      if (window.Tawk_API && typeof window.Tawk_API.setAttributes === 'function') {
+        window.Tawk_API.setAttributes({
+          name: currentUser.name || 'Member',
+          phone: currentUser.phone || '',
+          id: currentUser.id || ''
+        }, function(error) {});
+      }
     } else {
       localStorage.removeItem('caseily_user');
     }
@@ -2007,11 +2015,6 @@ function App() {
 
   async function handleReviewSubmit(e) {
     e.preventDefault()
-    if (!currentUser) {
-      setReviewError('Only registered or signed-up members can write reviews.')
-      setShowAuthModal(true)
-      return
-    }
     if (reviewForm.stars === 0) {
       setReviewError('Please select a star rating before submitting.')
       return
@@ -2201,31 +2204,6 @@ function App() {
   }
 
   const renderReviewForm = () => {
-    if (!currentUser) {
-      return (
-        <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto' }}>
-          <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
-          <div style={{ backgroundColor: 'var(--bg-elevated)', borderRadius: '32px', padding: '36px 24px', textAlign: 'center', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', margin: '0 auto 16px auto' }}>
-              🔒
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '8px' }}>Registered Members Only</h3>
-            <p style={{ color: 'var(--ink-muted)', fontSize: '15px', maxWidth: '440px', margin: '0 auto 20px auto', lineHeight: 1.5 }}>
-              Only registered or signed-up members have access to write reviews and post feedback. Please log in or sign up to continue.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} style={{ padding: '12px 24px', borderRadius: '14px', background: '#1e3fd1', color: '#fff', fontSize: '15px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(30,63,209,0.25)' }}>
-                Log In
-              </button>
-              <button onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }} style={{ padding: '12px 24px', borderRadius: '14px', background: '#f1f5f9', color: '#334155', fontSize: '15px', fontWeight: '700', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
-                Sign Up
-              </button>
-            </div>
-          </div>
-        </section>
-      )
-    }
-
     return (
       <section id="write-review" style={{ padding: '0 20px', maxWidth: '800px', margin: '20px auto' }}>
         <h2 style={{ margin: '0 0 16px 8px', fontSize: '28px', fontWeight: '900', color: 'var(--ink-strong)', letterSpacing: '-0.5px' }}>Write a review</h2>
@@ -2238,13 +2216,10 @@ function App() {
             </div>
           ) : (
             <form onSubmit={handleReviewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ fontSize: '13px', color: 'var(--ink-muted)', fontWeight: '600' }}>
-                Reviewing as <span style={{ color: 'var(--accent)', fontWeight: '700' }}>{currentUser.name}</span> ({currentUser.phone})
-              </div>
               <div className="review-form-grid">
                 <input
                   type="text" placeholder="Your name *" required
-                  value={reviewForm.name || currentUser.name || ''} onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
+                  value={reviewForm.name} onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
                   style={{ padding: '14px 18px', borderRadius: '16px', border: '1px solid var(--border)', fontSize: '15px', outline: 'none', background: 'var(--bg-default)', color: 'var(--ink-strong)' }}
                 />
                 <input
@@ -3561,6 +3536,7 @@ function App() {
 
   if (currentPath === '/insider-games') {
     const games = [
+      { name: 'Water Color Sort', emoji: '🧪', id: 'water-sort', desc: 'Sort colors into tubes until each tube holds one color!' },
       { name: 'Tic Tac Toe', emoji: '❌', id: 'tic-tac-toe', desc: 'Classic 3×3 grid. Beat the computer!' },
       { name: 'Connect Four', emoji: '🔴', id: 'connect-four', desc: 'Drop discs & connect 4 in a row!' },
       { name: 'Memory Match', emoji: '🃏', id: 'memory-match', desc: 'Flip cards & find matching pairs!' },
@@ -3595,6 +3571,7 @@ function App() {
     const goBack = () => { window.history.pushState({}, '', '/insider-games'); setCurrentPath('/insider-games'); window.scrollTo(0, 0); }
 
     const gameConfig = {
+      'water-sort': { title: '🧪 Water Color Sort', component: <WaterSortGame />, desc: 'Tap a tube to lift it, then tap another tube to pour. Matching top colors only, or pour into an empty tube. Fill each tube with a single color to win!' },
       'tic-tac-toe': { title: '❌ Tic Tac Toe', component: <TicTacToeGame />, desc: 'Tap any empty square to place your X. Get three in a row (horizontal, vertical, or diagonal) before the computer does!' },
       'connect-four': { title: '🔴 Connect Four', component: <ConnectFourGame />, desc: 'Tap the ▼ arrow to drop your red disc into a column. Connect four discs in a row — horizontally, vertically, or diagonally — to win!' },
       'memory-match': { title: '🃏 Memory Match', component: <MemoryMatchGame />, desc: 'Tap two cards to flip them. If they match, they stay face up. Find all 8 pairs in as few moves as possible!' },
@@ -4467,7 +4444,7 @@ function App() {
       </section>
 
       {/* ─── RESALE VALUE ESTIMATOR PROMO SECTION (MINIMAL) ─── */}
-      <section id="resell-estimator-section" style={{ padding: '8px 20px', maxWidth: '800px', margin: '0 auto' }}>
+      <section id="resell-estimator-section" style={{ padding: '0 20px 16px', maxWidth: '800px', margin: '0 auto', boxSizing: 'border-box', width: '100%' }}>
         <div 
           onClick={() => setShowResaleModal(true)}
           role="button"
@@ -4476,42 +4453,44 @@ function App() {
           style={{
             background: 'linear-gradient(135deg, #1e3fd1 0%, #2563eb 100%)',
             borderRadius: '16px',
-            padding: '14px 18px',
+            padding: '12px 16px',
             color: '#ffffff',
             cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(30, 63, 209, 0.16)',
+            boxShadow: '0 6px 20px rgba(30, 63, 209, 0.18)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '12px',
+            gap: '10px',
+            width: '100%',
+            boxSizing: 'border-box',
             transition: 'transform 0.15s ease, box-shadow 0.15s ease'
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(30, 63, 209, 0.22)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(30, 63, 209, 0.16)'; }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 10px 28px rgba(30, 63, 209, 0.24)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(30, 63, 209, 0.18)'; }}
         >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-              <span style={{ fontSize: '15px' }}>📱</span>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: '18px', lineHeight: 1.1, flexShrink: 0, marginTop: '1px' }}>📱</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <h3 style={{
-                fontSize: '14.5px',
+                fontSize: '13.5px',
                 fontWeight: '800',
-                margin: 0,
+                margin: '0 0 2px 0',
                 lineHeight: 1.25,
                 color: '#ffffff',
                 letterSpacing: '-0.2px'
               }}>
                 Want to know the resell value price of your phone?
               </h3>
+              <p style={{
+                fontSize: '11.5px',
+                margin: 0,
+                opacity: 0.9,
+                color: '#eff6ff',
+                lineHeight: 1.25
+              }}>
+                Instant valuation for any phone in INR.
+              </p>
             </div>
-            <p style={{
-              fontSize: '12px',
-              margin: 0,
-              opacity: 0.9,
-              color: '#eff6ff',
-              lineHeight: 1.3
-            }}>
-              Instant valuation for any phone in INR.
-            </p>
           </div>
 
           <div style={{
@@ -4521,12 +4500,12 @@ function App() {
             gap: '4px',
             background: '#ffffff',
             color: '#1e3fd1',
-            padding: '8px 14px',
+            padding: '8px 12px',
             borderRadius: '10px',
-            fontWeight: '700',
-            fontSize: '12px',
+            fontWeight: '800',
+            fontSize: '11.5px',
             whiteSpace: 'nowrap',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
           }}>
             Check Value →
           </div>

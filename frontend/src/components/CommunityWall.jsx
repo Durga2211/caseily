@@ -57,7 +57,7 @@ const S = {
     width: '100%', maxWidth: 400, margin: '0 auto', display: 'flex',
     flexDirection: 'column', alignItems: 'center', position: 'relative',
     fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif",
-    padding: '32px 32px 100px 16px', boxSizing: 'border-box',
+    padding: '24px 16px 0 16px', boxSizing: 'border-box',
     overflow: 'visible',
   },
   header: {
@@ -332,7 +332,7 @@ export default function CommunityWall({ reviews = REVIEWS_DATA, onBackgroundClic
       </div>
 
       {/* Dots */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }} onClick={(e) => e.stopPropagation()}>
         {filtered.map((_, i) => (
           <div key={i} onClick={() => setCurrentIndex(i)} style={{
             width: safeIndex === i ? 20 : 8, height: 8, borderRadius: 100,

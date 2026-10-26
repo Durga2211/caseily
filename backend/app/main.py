@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import StreamingResponse
-from .routers import tracking, reviews, insiders, reels, chat, notifications, news, auth, drops, events
+from .routers import tracking, reviews, insiders, reels, chat, notifications, news, auth, drops, events, games
 from .db import fs
 import gridfs
 
@@ -13,6 +14,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.include_router(tracking.router)
 app.include_router(reviews.router)
@@ -24,6 +26,7 @@ app.include_router(news.router)
 app.include_router(drops.router)
 app.include_router(auth.router, prefix="/api/auth")
 app.include_router(events.router, prefix="/api")
+app.include_router(games.router)
 
 @app.get("/uploads/{filename}")
 async def get_upload(filename: str):

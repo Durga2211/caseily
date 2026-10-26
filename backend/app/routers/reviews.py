@@ -5,6 +5,7 @@ import os
 import shutil
 from datetime import datetime
 from ..db import reviews_collection
+from ..image_utils import process_and_upload_image
 
 router = APIRouter(prefix="/api", tags=["reviews"])
 
@@ -35,16 +36,28 @@ async def submit_review(
     photo_filename = None
 
     if photo and photo.filename:
-        ext = os.path.splitext(photo.filename)[1] or ".png"
-        photo_filename = f"review_{review_id}{ext}"
-        try:
-            from ..db import fs
-            if fs is not None:
-                fs.put(photo.file, filename=photo_filename, content_type=photo.content_type)
-            else:
+        if not photo.content_type.startswith("image/"):
+            raise HTTPException(400, "Only image files are allowed")
+            
+        file_bytes = await photo.read()
+        if len(file_bytes) > 10 * 1024 * 1024:
+            raise HTTPException(400, "File size exceeds 10MB limit")
+            
+        processed_data = process_and_upload_image(file_bytes, filename_prefix="review")
+        if processed_data:
+            photo_filename = processed_data
+        else:
+            ext = os.path.splitext(photo.filename)[1] or ".png"
+            photo_filename = f"review_{review_id}{ext}"
+            try:
+                from ..db import fs
+                if fs is not None:
+                    import io
+                    fs.put(io.BytesIO(file_bytes), filename=photo_filename, content_type=photo.content_type)
+                else:
+                    photo_filename = None
+            except Exception as e:
                 photo_filename = None
-        except Exception as e:
-            photo_filename = None
 
     review = {
         "id": review_id,
@@ -66,12 +79,15 @@ async def submit_review(
 
 
 @router.get("/reviews/approved")
-async def get_approved_reviews():
+async def get_approved_reviews(skip: int = 0, limit: int = 10):
     """Get all approved reviews (public)."""
     if reviews_collection is None:
         return {"reviews": []}
         
-    cursor = reviews_collection.find({"status": "approved"}, {"_id": 0}).sort("created_at", -1)
+    cursor = reviews_collection.find(
+        {"status": "approved"}, 
+        {"_id": 0, "id": 1, "name": 1, "city": 1, "stars": 1, "quote": 1, "photo": 1, "created_at": 1}
+    ).sort("created_at", -1).skip(skip).limit(limit)
     return {"reviews": list(cursor)}
 
 

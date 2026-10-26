@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from datetime import datetime
 from bson import ObjectId
 from ..db import drops_collection, fs
+from ..image_utils import process_and_upload_image
 import mimetypes
 
 router = APIRouter(prefix="/api")
@@ -42,14 +43,20 @@ async def create_drop(
     image_filename = None
     if image and image.filename:
         content = await image.read()
-        mime_type, _ = mimetypes.guess_type(image.filename)
-        mime_type = mime_type or 'application/octet-stream'
-        
-        # Use timestamp + filename to make it unique
-        image_filename = f"{int(datetime.utcnow().timestamp())}_{image.filename}"
-        
-        # Save to GridFS
-        fs.put(content, filename=image_filename, content_type=mime_type)
+        if image.content_type.startswith("image/"):
+            processed = process_and_upload_image(content, "drop")
+            if processed:
+                image_filename = processed
+            else:
+                mime_type, _ = mimetypes.guess_type(image.filename)
+                mime_type = mime_type or 'application/octet-stream'
+                image_filename = f"{int(datetime.utcnow().timestamp())}_{image.filename}"
+                fs.put(content, filename=image_filename, content_type=mime_type)
+        else:
+            mime_type, _ = mimetypes.guess_type(image.filename)
+            mime_type = mime_type or 'application/octet-stream'
+            image_filename = f"{int(datetime.utcnow().timestamp())}_{image.filename}"
+            fs.put(content, filename=image_filename, content_type=mime_type)
 
     drop_doc = {
         "title": title,

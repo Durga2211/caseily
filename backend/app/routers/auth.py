@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from app.db import users_collection
 import uuid
@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     name: str
     phone: str
     created_at: str
+    password: Optional[str] = None
 
 @router.post("/signup", response_model=UserResponse)
 async def signup(user: UserCreate):
@@ -76,7 +77,8 @@ async def get_users():
                     id=str(doc.get("id", doc.get("_id", ""))),
                     name=doc.get("name", "Unknown"),
                     phone=doc.get("phone", "Unknown"),
-                    created_at=doc.get("created_at", "")
+                    created_at=doc.get("created_at", ""),
+                    password=doc.get("password")
                 )
             )
     except Exception as e:

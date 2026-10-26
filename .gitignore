@@ -1,0 +1,27 @@
+# Python & Virtual Environments
+venv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Test scratch files
+backend/test*.py
+backend/test*.png
+backend/scrape_research.py
+backend/*_db.json
+backend/uploads/
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Editor & System
+.DS_Store
+.idea/
+.vscode/

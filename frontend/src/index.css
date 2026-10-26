@@ -25,3 +25,14 @@ body {
   background: linear-gradient(170deg, #0b1120 0%, #101827 40%, #0f172a 100%);
   color: #e2e8f0;
 }
+
+/* Tawk.to Chat Widget Launcher enlargement */
+iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height: 100vh"]) {
+  transform: scale(1.25) !important;
+  transform-origin: bottom right !important;
+  transition: transform 0.2s ease !important;
+}
+
+iframe[src*="tawk.to"]:not([style*="height: 100%"]):not([style*="height: 100vh"]):hover {
+  transform: scale(1.32) !important;
+}
