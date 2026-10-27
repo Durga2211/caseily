@@ -281,8 +281,9 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                 playsInline
                 webkit-playsinline="true"
                 x5-playsinline="true"
-                preload="auto"
+                preload={isCurrent ? "auto" : "metadata"}
                 muted={muted}
+                crossOrigin="anonymous"
                 onWaiting={() => setBuffering(prev => ({ ...prev, [reel.id]: true }))}
                 onPlaying={() => setBuffering(prev => ({ ...prev, [reel.id]: false }))}
                 onCanPlay={() => setBuffering(prev => ({ ...prev, [reel.id]: false }))}

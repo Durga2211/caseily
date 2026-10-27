@@ -508,6 +508,12 @@ function AdminDashboard({ onReelsUpdated }) {
       setReelError('Please select a video file')
       return
     }
+    // Client-side file size check (50 MB max)
+    const MAX_SIZE = 50 * 1024 * 1024
+    if (reelVideoFile.size > MAX_SIZE) {
+      setReelError(`Video file too large (${(reelVideoFile.size / (1024*1024)).toFixed(1)}MB). Maximum is 50MB.`)
+      return
+    }
     setUploadingReel(true)
     setReelError('')
     setReelSuccess('')
@@ -515,13 +521,29 @@ function AdminDashboard({ onReelsUpdated }) {
       const form = new FormData()
       form.append('caption', reelCaption)
       form.append('video', reelVideoFile)
-      const res = await fetch(`${API_URL}/api/admin/reels`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form
+
+      // Use XMLHttpRequest for upload progress tracking
+      const result = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', `${API_URL}/api/admin/reels`)
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100)
+            setReelSuccess(`Uploading... ${pct}%`)
+          }
+        }
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText)
+            if (xhr.status >= 200 && xhr.status < 300) resolve(data)
+            else reject(new Error(data.detail || 'Upload failed'))
+          } catch { reject(new Error('Upload failed')) }
+        }
+        xhr.onerror = () => reject(new Error('Network error during upload'))
+        xhr.send(form)
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || 'Upload failed')
+
       setReelCaption('')
       setReelVideoFile(null)
       const fileInput = document.getElementById('reel-video-input')
@@ -2223,7 +2245,7 @@ function App() {
   }, [])
 
   const fetchBackendReels = () => {
-    fetch(`${API_URL}/api/reels`)
+    fetch(`${API_URL}/api/reels`, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
       .then(r => r.json())
       .then(data => setBackendReels(data.reels || []))
       .catch(() => {})
@@ -2233,7 +2255,19 @@ function App() {
     fetchBackendReels()
     const onUpdated = () => fetchBackendReels()
     window.addEventListener('caseily_reels_updated', onUpdated)
-    return () => window.removeEventListener('caseily_reels_updated', onUpdated)
+
+    // Poll every 15 seconds so new admin uploads appear quickly
+    const pollInterval = setInterval(fetchBackendReels, 15000)
+
+    // Re-fetch on tab focus (instant update when user switches back)
+    const onFocus = () => fetchBackendReels()
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      window.removeEventListener('caseily_reels_updated', onUpdated)
+      window.removeEventListener('focus', onFocus)
+      clearInterval(pollInterval)
+    }
   }, [])
 
   const resolveVideoUrl = (video, isLocalPromo) => {

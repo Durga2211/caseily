@@ -25,6 +25,7 @@ if MONGO_URI:
     drops_collection = db["exclusive_drops"]
     events_collection = db["events"]
     stage_messages_collection = db["stage_messages"]
+    reels_collection = db["reels"]
 else:
     print("WARNING: MONGO_URI not found in environment. Database connection will fail.")
     client = None
@@ -40,3 +41,4 @@ else:
     drops_collection = None
     events_collection = None
     stage_messages_collection = None
+    reels_collection = None

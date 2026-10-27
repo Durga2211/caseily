@@ -38,7 +38,32 @@ os.makedirs(os.path.join(LOCAL_UPLOADS, "reels"), exist_ok=True)
 
 @app.api_route("/uploads/{filename:path}", methods=["GET", "HEAD"])
 async def get_upload(filename: str):
-    # 1. Check local uploads folder (e.g. reels/abc.mp4)
+    # 1. Check GridFS first (persistent storage — works on Vercel)
+    if fs is not None:
+        try:
+            grid_out = fs.get_last_version(filename=filename)
+            content_type = grid_out.content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+
+            def iterfile():
+                while True:
+                    chunk = grid_out.read(1024 * 1024)  # 1MB chunks for video streaming
+                    if not chunk:
+                        break
+                    yield chunk
+
+            return StreamingResponse(
+                iterfile(),
+                media_type=content_type,
+                headers={
+                    "Accept-Ranges": "bytes",
+                    "Cache-Control": "public, max-age=31536000, immutable",
+                    "Content-Length": str(grid_out.length),
+                }
+            )
+        except Exception:
+            pass
+
+    # 2. Fallback: Check local uploads folder (dev only — ephemeral on Vercel)
     local_path = os.path.join(LOCAL_UPLOADS, filename)
     if os.path.exists(local_path) and os.path.isfile(local_path):
         media_type, _ = mimetypes.guess_type(local_path)
@@ -47,20 +72,6 @@ async def get_upload(filename: str):
             media_type=media_type or "application/octet-stream",
             headers={"Accept-Ranges": "bytes", "Cache-Control": "public, max-age=31536000"}
         )
-
-    # 2. Check GridFS
-    if fs is not None:
-        try:
-            grid_out = fs.get_last_version(filename=filename)
-            return StreamingResponse(
-                grid_out, 
-                media_type=grid_out.content_type,
-                headers={
-                    "Cache-Control": "public, max-age=31536000, immutable"
-                }
-            )
-        except Exception:
-            pass
 
     raise HTTPException(status_code=404, detail="File not found")
 
