@@ -12,28 +12,47 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
   const [paused, setPaused] = useState({})
   const [buffering, setBuffering] = useState({})
   const [hasErrors, setHasErrors] = useState({})
-  const [showMuteHint, setShowMuteHint] = useState(true)
+  const [retried, setRetried] = useState({})
+  const [progress, setProgress] = useState({})
+  const [toastMessage, setToastMessage] = useState('')
+  const [showHeartBurst, setShowHeartBurst] = useState({})
 
   const containerRef = useRef(null)
   const videoRefs = useRef([])
   const lastTapRef = useRef(0)
   const tapTimeoutRef = useRef(null)
 
+  // Hide Tawk.to live chat widget while Reels viewer is active so it never overlaps UI
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    try {
+      if (window.Tawk_API && typeof window.Tawk_API.hideWidget === 'function') {
+        window.Tawk_API.hideWidget()
+      }
+    } catch {}
+
+    return () => {
+      document.body.style.overflow = ''
+      try {
+        if (window.Tawk_API && typeof window.Tawk_API.showWidget === 'function') {
+          window.Tawk_API.showWidget()
+        }
+      } catch {}
+    }
   }, [])
 
-  // Fade out mute hint after 4 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => setShowMuteHint(false), 4000)
-    return () => clearTimeout(timer)
-  }, [])
+  // Show a quick toast notification
+  const showToast = (msg) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(''), 2500)
+  }
 
   // Initialize likes from data
   useEffect(() => {
     const initLikes = {}
-    allReels.forEach(r => { initLikes[r.id] = r.likes || Math.floor(Math.random() * 500) + 50 })
+    allReels.forEach(r => {
+      initLikes[r.id] = r.likes || 0
+    })
     setLikes(initLikes)
   }, [allReels])
 
@@ -45,7 +64,7 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
     videoRefs.current.forEach((otherV, idx) => {
       if (otherV && idx !== index) {
         otherV.pause()
-        otherV.currentTime = 0
+        try { otherV.currentTime = 0 } catch {}
       }
     })
 
@@ -83,7 +102,7 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
     const options = {
       root: containerRef.current,
       rootMargin: '0px',
-      threshold: 0.55
+      threshold: 0.6
     }
 
     const observer = new IntersectionObserver((entries) => {
@@ -120,6 +139,13 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
     if (liked[reelId]) return
     setLiked(prev => ({ ...prev, [reelId]: true }))
     setLikes(prev => ({ ...prev, [reelId]: (prev[reelId] || 0) + 1 }))
+
+    // Trigger heart burst
+    setShowHeartBurst(prev => ({ ...prev, [reelId]: true }))
+    setTimeout(() => {
+      setShowHeartBurst(prev => ({ ...prev, [reelId]: false }))
+    }, 900)
+
     if (API_URL) {
       fetch(`${API_URL}/api/reels/${reelId}/like`, { method: 'POST' }).catch(() => {})
     }
@@ -152,123 +178,217 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
     }
   }
 
+  // Video time update for progress bar
+  const handleTimeUpdate = (reelId, index) => {
+    const v = videoRefs.current[index]
+    if (!v || !v.duration) return
+    const pct = (v.currentTime / v.duration) * 100
+    setProgress(prev => ({ ...prev, [reelId]: pct }))
+  }
+
+  // Handle video error with auto-retry once
+  const handleVideoError = (reel, index) => {
+    console.warn("Video load error for reel:", reel.id, reel.videoSrc)
+    if (!retried[reel.id]) {
+      setRetried(prev => ({ ...prev, [reel.id]: true }))
+      const v = videoRefs.current[index]
+      if (v) {
+        setTimeout(() => {
+          v.src = reel.videoSrc
+          v.load()
+          v.play().catch(() => {})
+        }, 500)
+      }
+    } else {
+      setHasErrors(prev => ({ ...prev, [reel.id]: true }))
+      setBuffering(prev => ({ ...prev, [reel.id]: false }))
+    }
+  }
+
+  const manualReloadVideo = (reel, index) => {
+    setHasErrors(prev => ({ ...prev, [reel.id]: false }))
+    setBuffering(prev => ({ ...prev, [reel.id]: true }))
+    const v = videoRefs.current[index]
+    if (v) {
+      v.src = reel.videoSrc
+      v.load()
+      v.play().catch(() => {})
+    }
+  }
+
   const loadComments = async (reelId) => {
     if (API_URL) {
       try {
-        const res = await fetch(`${API_URL}/api/reels/${reelId}/comments`)
+        const res = await fetch(`${API_URL}/api/reels/${reelId}/comments`, { cache: 'no-store' })
         const data = await res.json()
         setComments(prev => ({ ...prev, [reelId]: data.comments || [] }))
-      } catch (e) { /* use local */ }
-    }
-    if (!comments[reelId]) {
-      setComments(prev => ({ ...prev, [reelId]: [] }))
+      } catch {
+        setComments(prev => ({ ...prev, [reelId]: [] }))
+      }
     }
   }
 
   const submitComment = async () => {
     if (!commentText.trim() || !currentReel) return
-    const id = currentReel.id
-    const newComment = { id: Date.now().toString(), name: 'You', text: commentText, created_at: new Date().toISOString() }
-    setComments(prev => ({ ...prev, [id]: [...(prev[id] || []), newComment] }))
+    const newComment = { name: 'You', text: commentText.trim(), created_at: new Date().toISOString() }
+
+    setComments(prev => ({
+      ...prev,
+      [currentReel.id]: [...(prev[currentReel.id] || []), newComment]
+    }))
+    const txt = commentText
     setCommentText('')
 
     if (API_URL) {
-      fetch(`${API_URL}/api/reels/${id}/comment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'User', text: newComment.text })
-      }).catch(() => {})
+      try {
+        await fetch(`${API_URL}/api/reels/${currentReel.id}/comment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'Guest', text: txt })
+        })
+      } catch (e) {
+        console.error('Comment submission error:', e)
+      }
     }
   }
 
   const formatCount = (n) => {
+    if (!n) return '0'
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
-    return n || 0
-  }
-
-  const descriptions = [
-    'Military-grade drop protection tested from 10ft. Available in multiple finishes. 🛒',
-    'Ultra-slim aerodynamic profile. MagSafe snap aligned. Limited batch drop! ✨',
-    'Handcrafted precision engineered with tactile aerospace buttons. Free shipping across India! 🇮🇳',
-    'Fresh arrival! Trending design built for daily drops and high-pace adventures. 🔥',
-    'Creator edition collab. Scratch-resistant frosted finish that resists yellowing! 🎨',
-    'Customer top pick! Rated 4.9⭐ for drop absorption and grip texture. 💯'
-  ]
-
-  if (!allReels || allReels.length === 0) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-        <p>No reels available right now.</p>
-        <button onClick={onClose} style={{ marginTop: '16px', padding: '10px 20px', borderRadius: '8px', background: '#1e3fd1', color: '#fff', border: 'none', cursor: 'pointer' }}>Close</button>
-      </div>
-    )
+    return n.toString()
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
-      {/* Top Header Bar */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 8px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)' }}>
-        <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.4)', border: 'none', color: '#fff', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-        </button>
-        <span style={{ color: '#fff', fontSize: '18px', fontWeight: '800', letterSpacing: '0.5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Reels</span>
-        <button onClick={() => { setMuted(!muted); setShowMuteHint(false); }} style={{ background: 'rgba(0,0,0,0.4)', border: 'none', color: '#fff', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {muted ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-          )}
-        </button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, backgroundColor: '#000', display: 'flex', flexDirection: 'column' }}>
+      {/* Top Header Overlay */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '70px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'auto' }}>
+          <span style={{ color: '#fff', fontWeight: '800', fontSize: '18px', letterSpacing: '-0.3px', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+            Caseily Reels
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'auto' }}>
+          {/* Mute/Unmute Toggle Button */}
+          <button
+            onClick={() => setMuted(!muted)}
+            title={muted ? "Tap to unmute" : "Tap to mute"}
+            style={{
+              background: 'rgba(0,0,0,0.45)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              borderRadius: '20px',
+              padding: '6px 14px',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              fontWeight: '700',
+              cursor: 'pointer'
+            }}
+          >
+            {muted ? (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                <span>Unmute</span>
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                <span>Mute</span>
+              </>
+            )}
+          </button>
+
+          {/* Close Reels Button */}
+          <button
+            onClick={onClose}
+            aria-label="Close Reels"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              color: '#fff',
+              fontSize: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
-      {/* Floating Mute Hint Pill */}
-      {muted && showMuteHint && (
-        <div
-          onClick={() => { setMuted(false); setShowMuteHint(false); }}
-          style={{
-            position: 'absolute',
-            top: '70px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 35,
-            background: 'rgba(0,0,0,0.75)',
-            backdropFilter: 'blur(8px)',
-            color: '#fff',
-            padding: '6px 14px',
-            borderRadius: '20px',
-            fontSize: '12px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            border: '1px solid rgba(255,255,255,0.2)',
-            animation: 'fadeIn 0.3s ease'
-          }}
-        >
-          <span>🔇</span> Tap to Unmute
+      {/* Toast Alert */}
+      {toastMessage && (
+        <div style={{
+          position: 'absolute',
+          top: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(15, 23, 42, 0.9)',
+          backdropFilter: 'blur(8px)',
+          color: '#fff',
+          padding: '8px 18px',
+          borderRadius: '24px',
+          fontSize: '13px',
+          fontWeight: '600',
+          zIndex: 50,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          border: '1px solid rgba(255,255,255,0.15)'
+        }}>
+          {toastMessage}
         </div>
       )}
 
-      {/* Scrollable Reels Container */}
+      {/* Main Snap-Scroll Container (100dvh for mobile address bar resilience) */}
       <div
         ref={containerRef}
-        style={{ flex: 1, position: 'relative', overflowY: 'scroll', scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         className="reels-scroller"
+        style={{
+          flex: 1,
+          height: '100dvh',
+          width: '100%',
+          overflowY: 'scroll',
+          scrollSnapType: 'y mandatory',
+          scrollBehavior: 'smooth',
+          position: 'relative'
+        }}
       >
         {allReels.map((reel, index) => {
-          const reelComments = comments[reel.id] || []
-          const isLiked = liked[reel.id]
-          const likeCount = likes[reel.id] || 0
-          const isCurrent = currentIndex === index
-          const isPaused = paused[reel.id]
+          const isCurrent = index === currentIndex
           const isBuffering = buffering[reel.id]
+          const isPaused = paused[reel.id]
+          const isLiked = liked[reel.id]
           const hasError = hasErrors[reel.id]
+          const likeCount = likes[reel.id] || 0
+          const reelComments = comments[reel.id] || []
+          const reelProgress = progress[reel.id] || 0
+
+          // Smart preloading: active + next reel get auto preload, others metadata
+          const preloadMode = isCurrent ? 'auto' : (index === currentIndex + 1 ? 'auto' : 'metadata')
 
           return (
             <div
               key={reel.id || index}
-              style={{ height: '100vh', width: '100%', scrollSnapAlign: 'start', position: 'relative', backgroundColor: '#0b1120' }}
+              style={{
+                height: '100dvh',
+                width: '100%',
+                scrollSnapAlign: 'start',
+                position: 'relative',
+                backgroundColor: '#0b1120',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden'
+              }}
               onClick={() => handleVideoTap(reel.id, index)}
             >
               {/* HTML5 Video Player */}
@@ -277,39 +397,62 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                 data-index={index}
                 data-id={reel.id}
                 src={reel.videoSrc}
+                poster={reel.thumbnailUrl || reel.thumbnail_url}
                 loop
                 playsInline
                 webkit-playsinline="true"
                 x5-playsinline="true"
-                preload={isCurrent ? "auto" : "metadata"}
+                preload={preloadMode}
                 muted={muted}
-                crossOrigin="anonymous"
+                onTimeUpdate={() => handleTimeUpdate(reel.id, index)}
                 onWaiting={() => setBuffering(prev => ({ ...prev, [reel.id]: true }))}
                 onPlaying={() => setBuffering(prev => ({ ...prev, [reel.id]: false }))}
                 onCanPlay={() => setBuffering(prev => ({ ...prev, [reel.id]: false }))}
-                onError={(e) => {
-                  console.error("Video error on reel:", reel.id, reel.videoSrc, e)
-                  setHasErrors(prev => ({ ...prev, [reel.id]: true }))
+                onError={() => handleVideoError(reel, index)}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: hasError ? 'none' : 'block'
                 }}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: hasError ? 'none' : 'block' }}
               />
 
-              {/* Error fallback card */}
+              {/* Error fallback card (only if video completely failed after automatic retry) */}
               {hasError && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0b1120', color: '#fff', padding: '20px', textAlign: 'center' }}>
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#0b1120',
+                  color: '#fff',
+                  padding: '24px',
+                  textAlign: 'center',
+                  zIndex: 10
+                }}>
                   <div style={{ fontSize: '48px', marginBottom: '12px' }}>📹</div>
-                  <div style={{ fontSize: '16px', fontWeight: '800', marginBottom: '6px' }}>Video Preview</div>
-                  <div style={{ fontSize: '13px', color: '#94a3b8', maxWidth: '280px', marginBottom: '16px' }}>{reel.text}</div>
+                  <div style={{ fontSize: '17px', fontWeight: '800', marginBottom: '6px' }}>Video Failed to Play</div>
+                  <div style={{ fontSize: '13px', color: '#94a3b8', maxWidth: '300px', marginBottom: '20px', lineHeight: '1.4' }}>
+                    {reel.text || 'Unable to stream this video stream.'}
+                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setHasErrors(prev => ({ ...prev, [reel.id]: false }))
-                      if (videoRefs.current[index]) {
-                        videoRefs.current[index].load()
-                        videoRefs.current[index].play().catch(() => {})
-                      }
+                      manualReloadVideo(reel, index)
                     }}
-                    style={{ padding: '8px 16px', borderRadius: '8px', background: '#1e3fd1', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '13px' }}
+                    style={{
+                      padding: '10px 22px',
+                      borderRadius: '12px',
+                      background: '#1e3fd1',
+                      color: '#fff',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontWeight: '700',
+                      fontSize: '14px',
+                      boxShadow: '0 4px 14px rgba(30, 63, 209, 0.4)'
+                    }}
                   >
                     ↻ Reload Video
                   </button>
@@ -325,159 +468,337 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
 
               {/* Pause Icon Indicator */}
               {isPaused && isCurrent && (
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', pointerEvents: 'none', zIndex: 14 }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '72px',
+                  height: '72px',
+                  borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.55)',
+                  backdropFilter: 'blur(8px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  pointerEvents: 'none',
+                  zIndex: 14
+                }}>
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                 </div>
               )}
 
-              {/* Like heart burst animation */}
-              {isLiked && isCurrent && (
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '80px', animation: 'fadeOut 0.8s ease forwards', pointerEvents: 'none', zIndex: 25 }}>❤️</div>
+              {/* Double-tap Heart Burst Animation */}
+              {showHeartBurst[reel.id] && isCurrent && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  fontSize: '90px',
+                  animation: 'heartBurst 0.9s ease forwards',
+                  pointerEvents: 'none',
+                  zIndex: 25
+                }}>
+                  ❤️
+                </div>
               )}
 
               {/* Right Side Action Buttons */}
-              <div style={{ position: 'absolute', right: '12px', bottom: '130px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px', zIndex: 20 }}>
-                {/* Like */}
-                <button onClick={(e) => { e.stopPropagation(); handleLike(reel.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill={isLiked ? '#ef4444' : 'none'} stroke={isLiked ? '#ef4444' : '#fff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+              <div style={{
+                position: 'absolute',
+                right: '12px',
+                bottom: '120px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '18px',
+                zIndex: 20
+              }}>
+                {/* Like Button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleLike(reel.id); }}
+                  aria-label="Like reel"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                >
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.4)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform 0.15s ease'
+                  }}>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill={isLiked ? '#ef4444' : 'none'} stroke={isLiked ? '#ef4444' : '#fff'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
                   </div>
-                  <span style={{ color: '#fff', fontSize: '12px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{formatCount(likeCount)}</span>
+                  <span style={{ color: '#fff', fontSize: '12px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                    {formatCount(likeCount)}
+                  </span>
                 </button>
 
-                {/* Comment */}
-                <button onClick={(e) => { e.stopPropagation(); setShowComments(true); loadComments(reel.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                {/* Comment Button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowComments(true); loadComments(reel.id); }}
+                  aria-label="View comments"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                >
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.4)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
                   </div>
-                  <span style={{ color: '#fff', fontSize: '12px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{reelComments.length}</span>
+                  <span style={{ color: '#fff', fontSize: '12px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                    {reelComments.length}
+                  </span>
                 </button>
 
-                {/* Share */}
-                <button onClick={(e) => {
-                  e.stopPropagation()
-                  if (navigator.share) {
-                    navigator.share({ title: 'Caseily Reel', text: reel.text, url: window.location.href }).catch(() => {})
-                  } else {
-                    navigator.clipboard.writeText(window.location.href)
-                    alert('Reel link copied to clipboard!')
-                  }
-                }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                {/* Share Button (Web Share API + Clipboard fallback) */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const shareUrl = window.location.origin + '/reels'
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'Caseily Reel',
+                        text: reel.text || 'Watch this reel on Caseily!',
+                        url: shareUrl
+                      }).catch(() => {})
+                    } else {
+                      try {
+                        navigator.clipboard.writeText(shareUrl)
+                        showToast('✓ Link copied to clipboard!')
+                      } catch {
+                        showToast('Reel URL: ' + shareUrl)
+                      }
+                    }
+                  }}
+                  aria-label="Share reel"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                >
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.4)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
                   </div>
                   <span style={{ color: '#fff', fontSize: '12px', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>Share</span>
                 </button>
-
-                {/* Info / Description toggle */}
-                <button onClick={(e) => { e.stopPropagation(); setShowDesc(!showDesc); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
-                  </div>
-                </button>
               </div>
 
-              {/* Bottom Info Section (Username, Caption, Music) */}
-              <div style={{ position: 'absolute', bottom: '0', left: '0', right: '70px', padding: '80px 16px 28px', background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', zIndex: 15, pointerEvents: 'none' }}>
+              {/* Bottom Caption Overlay */}
+              <div style={{
+                position: 'absolute',
+                bottom: '12px',
+                left: '0',
+                right: '80px',
+                padding: '80px 16px 20px',
+                background: 'linear-gradient(transparent, rgba(0,0,0,0.88))',
+                zIndex: 15,
+                pointerEvents: 'none'
+              }}>
                 <div style={{ pointerEvents: 'auto' }}>
-                  {/* Profile Row */}
+                  {/* Account Badge */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #e040fb, #ff5722)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '14px', border: '2px solid #fff' }}>C</div>
-                    <span style={{ color: '#fff', fontWeight: '800', fontSize: '14px', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>caseily.official</span>
-                    <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.8)', borderRadius: '6px', padding: '3px 12px', color: '#fff', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>Follow</button>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #e040fb, #ff5722)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: '800',
+                      fontSize: '14px',
+                      border: '2px solid #fff'
+                    }}>
+                      C
+                    </div>
+                    <span style={{ color: '#fff', fontWeight: '800', fontSize: '14px', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                      caseily.official
+                    </span>
                   </div>
 
                   {/* Caption */}
-                  <div style={{ color: '#fff', fontSize: '13px', lineHeight: '1.4', marginBottom: '8px', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                  <div style={{ color: '#fff', fontSize: '13px', lineHeight: '1.45', marginBottom: '8px', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
                     {reel.text}
-                    {isCurrent && showDesc && (
-                      <div style={{ marginTop: '8px', color: 'rgba(255,255,255,0.9)', fontSize: '12px', lineHeight: '1.5' }}>
-                        {descriptions[index % descriptions.length]}
-                        <div style={{ marginTop: '6px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ color: '#8ecafc' }}>#caseily</span>
-                          <span style={{ color: '#8ecafc' }}>#phonecase</span>
-                          <span style={{ color: '#8ecafc' }}>#premium</span>
-                          <span style={{ color: '#8ecafc' }}>#trending</span>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Audio Bar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Audio Track */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3" fill="#fff"></circle><circle cx="18" cy="16" r="3" fill="#fff"></circle></svg>
-                    <div style={{ overflow: 'hidden', flex: 1 }}>
-                      <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', whiteSpace: 'nowrap', animation: 'scrollText 9s linear infinite' }}>
-                        Original Audio — caseily.official • Trending 🎵
-                      </div>
-                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px' }}>
+                      Original Audio — caseily.official 🎵
+                    </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Thin Bottom Progress Bar (Instagram-like) */}
+              <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'rgba(255,255,255,0.25)',
+                zIndex: 25
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${reelProgress}%`,
+                  background: '#fff',
+                  transition: 'width 0.1s linear'
+                }} />
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Comments Bottom Sheet */}
+      {/* Comments Drawer */}
       {showComments && currentReel && (
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '60vh', background: 'var(--bg-card, #fff)', borderRadius: '20px 20px 0 0', zIndex: 40, display: 'flex', flexDirection: 'column', animation: 'slideUp 0.3s ease' }}>
-          <div style={{ padding: '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border, #e5e7eb)' }}>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: 'var(--ink-strong, #111)' }}>Comments ({(comments[currentReel.id] || []).length})</h3>
-            <button onClick={() => setShowComments(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--ink-strong, #111)' }}>✕</button>
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          maxHeight: '60vh',
+          background: '#0f172a',
+          color: '#fff',
+          borderRadius: '24px 24px 0 0',
+          zIndex: 40,
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 -8px 30px rgba(0,0,0,0.5)',
+          animation: 'slideUp 0.25s ease'
+        }}>
+          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800' }}>
+              Comments ({(comments[currentReel.id] || []).length})
+            </h3>
+            <button
+              onClick={() => setShowComments(false)}
+              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#fff' }}
+            >
+              ✕
+            </button>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px', maxHeight: '40vh' }}>
+
+          <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px', maxHeight: '38vh' }}>
             {(!comments[currentReel.id] || comments[currentReel.id].length === 0) ? (
-              <div style={{ textAlign: 'center', padding: '30px', color: 'var(--ink-muted, #999)', fontSize: '14px' }}>No comments yet. Be the first! 💬</div>
+              <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8', fontSize: '14px' }}>
+                No comments yet. Say something! 💬
+              </div>
             ) : (
               (comments[currentReel.id] || []).map((c, i) => (
-                <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: `hsl(${(c.name || 'A').charCodeAt(0) * 37 % 360}, 60%, 50%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '13px', flexShrink: 0 }}>{(c.name || 'A')[0]}</div>
+                <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: `hsl(${(c.name || 'A').charCodeAt(0) * 37 % 360}, 60%, 50%)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontWeight: '700',
+                    fontSize: '13px',
+                    flexShrink: 0
+                  }}>
+                    {(c.name || 'A')[0]}
+                  </div>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--ink-strong, #111)' }}>{c.name}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--ink-muted, #555)', marginTop: '2px', lineHeight: '1.4' }}>{c.text}</div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff' }}>{c.name}</div>
+                    <div style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '2px', lineHeight: '1.4' }}>{c.text}</div>
                   </div>
                 </div>
               ))
             )}
           </div>
-          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border, #e5e7eb)', display: 'flex', gap: '10px' }}>
+
+          <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '10px' }}>
             <input
               type="text"
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submitComment()}
               placeholder="Add a comment..."
-              style={{ flex: 1, padding: '10px 14px', borderRadius: '24px', border: '1px solid var(--border, #e5e7eb)', outline: 'none', fontSize: '14px', background: 'var(--bg-secondary, #f5f5f5)', color: 'var(--ink-strong, #111)' }}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                borderRadius: '24px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                outline: 'none',
+                fontSize: '14px',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#fff'
+              }}
             />
-            <button onClick={submitComment} style={{ background: 'var(--accent, #1e5fd1)', color: '#fff', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <button
+              onClick={submitComment}
+              style={{
+                background: '#1e5fd1',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
           </div>
         </div>
       )}
 
-      {/* Description overlay */}
-      {showDesc && !showComments && (
-        <div onClick={() => setShowDesc(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 18 }}></div>
-      )}
-
-      {/* CSS Styles */}
+      {/* Global Reel Animations and Styles */}
       <style>{`
         .reels-scroller::-webkit-scrollbar { display: none; }
         .reel-spinner {
-          width: 36px;
-          height: 36px;
+          width: 38px;
+          height: 38px;
           border: 3px solid rgba(255, 255, 255, 0.2);
           border-top-color: #fff;
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeOut { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
+        @keyframes heartBurst {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+        }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes scrollText { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
       `}</style>
     </div>
   )

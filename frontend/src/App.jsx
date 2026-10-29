@@ -12,6 +12,7 @@ const ReelsPage = lazy(() => import('./ReelsPage'))
 import CommunityWall from './components/CommunityWall'
 import OptimizedImage from './components/OptimizedImage'
 import imageCompression from 'browser-image-compression'
+import { uploadReelVideo } from './utils/videoUpload'
 // ─── DATA ───────────────────────────────────────────────────────────────
 const FALLBACK_REVIEWS = [
   { name: "Renu Thakkar", time: "2 hours ago", text: "We plugged Caseily tracking into our Shopify store and \"where is my order?\" tickets dropped by 60% in the first month. Customers love the live status page.", likes: 245, comments: 18 },
@@ -487,17 +488,44 @@ function AdminDashboard({ onReelsUpdated }) {
   const [loadingReels, setLoadingReels] = useState(false)
   const [reelCaption, setReelCaption] = useState('')
   const [reelVideoFile, setReelVideoFile] = useState(null)
+  const [reelPreviewUrl, setReelPreviewUrl] = useState('')
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStatusText, setUploadStatusText] = useState('')
   const [uploadingReel, setUploadingReel] = useState(false)
   const [reelError, setReelError] = useState('')
   const [reelSuccess, setReelSuccess] = useState('')
+  const [reuploadingId, setReuploadingId] = useState(null)
   const isLoggedIn = !!token
+
+  // Generate and cleanup object URL for local video preview
+  useEffect(() => {
+    if (!reelVideoFile) {
+      setReelPreviewUrl('')
+      return
+    }
+    const url = URL.createObjectURL(reelVideoFile)
+    setReelPreviewUrl(url)
+    return () => {
+      URL.revokeObjectURL(url)
+    }
+  }, [reelVideoFile])
 
   async function fetchAdminReels() {
     setLoadingReels(true)
     try {
-      const res = await fetch(`${API_URL}/api/reels`)
-      const data = await res.json()
-      setAdminReels(data.reels || [])
+      // Admin endpoint includes reels with status="missing" so they can be re-uploaded
+      const res = await fetch(`${API_URL}/api/admin/reels`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        cache: 'no-store'
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setAdminReels(data.reels || [])
+      } else {
+        const fallbackRes = await fetch(`${API_URL}/api/reels`, { cache: 'no-store' })
+        const fallbackData = await fallbackRes.json()
+        setAdminReels(fallbackData.reels || [])
+      }
     } catch (err) { console.error(err) }
     setLoadingReels(false)
   }
@@ -505,62 +533,137 @@ function AdminDashboard({ onReelsUpdated }) {
   async function handleCreateReel(e) {
     e.preventDefault()
     if (!reelVideoFile) {
-      setReelError('Please select a video file')
+      setReelError('Please select a video file (.mp4, .mov, or .webm)')
       return
     }
-    // Client-side file size check (50 MB max)
-    const MAX_SIZE = 50 * 1024 * 1024
-    if (reelVideoFile.size > MAX_SIZE) {
-      setReelError(`Video file too large (${(reelVideoFile.size / (1024*1024)).toFixed(1)}MB). Maximum is 50MB.`)
+    if (!reelCaption.trim()) {
+      setReelError('Please provide a caption')
       return
     }
+
     setUploadingReel(true)
     setReelError('')
     setReelSuccess('')
-    try {
-      const form = new FormData()
-      form.append('caption', reelCaption)
-      form.append('video', reelVideoFile)
+    setUploadProgress(0)
+    setUploadStatusText('Preparing video upload...')
 
-      // Use XMLHttpRequest for upload progress tracking
-      const result = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.open('POST', `${API_URL}/api/admin/reels`)
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100)
-            setReelSuccess(`Uploading... ${pct}%`)
-          }
+    try {
+      // 1. Upload video directly to persistent storage (Cloudinary / CDN)
+      const uploadRes = await uploadReelVideo({
+        file: reelVideoFile,
+        token,
+        API_URL,
+        onProgress: (pct, msg) => {
+          setUploadProgress(pct)
+          setUploadStatusText(msg)
         }
-        xhr.onload = () => {
-          try {
-            const data = JSON.parse(xhr.responseText)
-            if (xhr.status >= 200 && xhr.status < 300) resolve(data)
-            else reject(new Error(data.detail || 'Upload failed'))
-          } catch { reject(new Error('Upload failed')) }
-        }
-        xhr.onerror = () => reject(new Error('Network error during upload'))
-        xhr.send(form)
       })
+
+      setUploadStatusText('Saving reel metadata to database...')
+
+      // 2. Save metadata to MongoDB
+      const res = await fetch(`${API_URL}/api/admin/reels`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          caption: reelCaption.trim(),
+          video_url: uploadRes.video_url,
+          thumbnail_url: uploadRes.thumbnail_url,
+          duration: uploadRes.duration || 0,
+          mime_type: uploadRes.mime_type || 'video/mp4',
+          storage_id: uploadRes.storage_id || null
+        })
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Failed to save reel metadata')
+      }
+
+      const saved = await res.json()
+
+      // Optimistic state update
+      if (saved.reel) {
+        setAdminReels(prev => [saved.reel, ...prev.filter(r => r.id !== saved.reel.id)])
+      }
 
       setReelCaption('')
       setReelVideoFile(null)
+      setReelPreviewUrl('')
       const fileInput = document.getElementById('reel-video-input')
       if (fileInput) fileInput.value = ''
-      setReelSuccess('Reel uploaded successfully! It is now live on the main page and reels section.')
+      setReelSuccess('✓ Reel published successfully! It is now live on the website and full-screen player.')
+
       fetchAdminReels()
       window.dispatchEvent(new Event('caseily_reels_updated'))
       if (onReelsUpdated) onReelsUpdated()
     } catch (err) {
-      setReelError(err.message)
+      setReelError(err.message || 'Upload failed')
     } finally {
       setUploadingReel(false)
+      setUploadProgress(0)
+      setUploadStatusText('')
+    }
+  }
+
+  async function handleReuploadVideo(reelId, file) {
+    if (!file) return
+    setReuploadingId(reelId)
+    setReelError('')
+    setReelSuccess('')
+    setUploadProgress(0)
+    setUploadStatusText(`Re-uploading video for reel ${reelId}...`)
+
+    try {
+      const uploadRes = await uploadReelVideo({
+        file,
+        token,
+        API_URL,
+        onProgress: (pct, msg) => {
+          setUploadProgress(pct)
+          setUploadStatusText(msg)
+        }
+      })
+
+      const res = await fetch(`${API_URL}/api/admin/reels/${reelId}/reupload`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          video_url: uploadRes.video_url,
+          thumbnail_url: uploadRes.thumbnail_url,
+          storage_id: uploadRes.storage_id || null,
+          duration: uploadRes.duration || 0,
+          mime_type: uploadRes.mime_type || 'video/mp4'
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to update reel record with new video')
+      }
+
+      setReelSuccess('✓ Video recovered and re-uploaded! The reel is now published and active.')
+      fetchAdminReels()
+      window.dispatchEvent(new Event('caseily_reels_updated'))
+      if (onReelsUpdated) onReelsUpdated()
+    } catch (err) {
+      setReelError(err.message || 'Re-upload failed')
+    } finally {
+      setReuploadingId(null)
+      setUploadProgress(0)
+      setUploadStatusText('')
     }
   }
 
   async function handleDeleteReel(id) {
-    if (!window.confirm('Delete this reel?')) return
+    if (!window.confirm('Delete this reel permanently?')) return
+    // Optimistic delete
+    setAdminReels(prev => prev.filter(r => r.id !== id))
     try {
       const res = await fetch(`${API_URL}/api/admin/reels/${id}`, {
         method: 'DELETE',
@@ -1279,15 +1382,24 @@ function AdminDashboard({ onReelsUpdated }) {
               </div>
             </div>
 
+            {/* Cloudinary Setup Warning Banner */}
+            {!import.meta.env.VITE_CLOUDINARY_CLOUD_NAME && (
+              <div style={{ padding: '14px 18px', borderRadius: '12px', background: '#fff7ed', border: '1px solid #fed7aa', marginBottom: '20px', fontSize: '13px', color: '#92400e', lineHeight: '1.6' }}>
+                <strong>⚠️ Cloudinary not configured — uploads may fail or videos will not persist on Vercel.</strong><br />
+                To fix: add <code style={{ background: '#fef3c7', padding: '1px 5px', borderRadius: '4px' }}>CLOUDINARY_CLOUD_NAME</code>, <code style={{ background: '#fef3c7', padding: '1px 5px', borderRadius: '4px' }}>CLOUDINARY_API_KEY</code>, and <code style={{ background: '#fef3c7', padding: '1px 5px', borderRadius: '4px' }}>CLOUDINARY_API_SECRET</code> to <strong>backend/.env</strong> and to your <strong>Vercel environment variables</strong>.<br />
+                Then optionally add <code style={{ background: '#fef3c7', padding: '1px 5px', borderRadius: '4px' }}>VITE_CLOUDINARY_CLOUD_NAME</code> and <code style={{ background: '#fef3c7', padding: '1px 5px', borderRadius: '4px' }}>VITE_CLOUDINARY_UPLOAD_PRESET</code> to <strong>frontend/.env</strong> for large-file direct browser uploads.
+              </div>
+            )}
+
             {/* Upload Form Card */}
             <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '32px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>📤</span> Upload New Reel Video
+              <h3 style={{ fontSize: '17px', fontWeight: '800', marginBottom: '16px', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📤</span> Upload & Publish New Reel
               </h3>
 
               {reelSuccess && (
                 <div style={{ padding: '12px 16px', borderRadius: '10px', background: '#dcfce7', color: '#16a34a', fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>
-                  ✓ {reelSuccess}
+                  {reelSuccess}
                 </div>
               )}
               {reelError && (
@@ -1296,16 +1408,16 @@ function AdminDashboard({ onReelsUpdated }) {
                 </div>
               )}
 
-              <form onSubmit={handleCreateReel} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={handleCreateReel} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>
-                    Select Video File (.mp4, .mov, .webm) *
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px' }}>
+                    Select Short Vertical Video (.mp4, .mov, .webm) *
                   </label>
                   <input
                     id="reel-video-input"
                     type="file"
-                    accept="video/*"
-                    required
+                    accept="video/mp4,video/webm,video/quicktime,video/*"
+                    disabled={uploadingReel}
                     onChange={e => {
                       const file = e.target.files?.[0]
                       setReelVideoFile(file || null)
@@ -1313,98 +1425,227 @@ function AdminDashboard({ onReelsUpdated }) {
                     }}
                     style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }}
                   />
-                  {reelVideoFile && (
-                    <div style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px', fontWeight: '600' }}>
-                      ✓ Selected: {reelVideoFile.name} ({(reelVideoFile.size / (1024 * 1024)).toFixed(2)} MB)
+
+                  {/* Video Selection Preview Card */}
+                  {reelVideoFile && reelPreviewUrl && (
+                    <div style={{ marginTop: '16px', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                      <div style={{ width: '90px', height: '160px', borderRadius: '8px', overflow: 'hidden', background: '#0b1120', flexShrink: 0, boxShadow: '0 4px 10px rgba(0,0,0,0.15)' }}>
+                        <video
+                          src={reelPreviewUrl}
+                          controls
+                          muted
+                          playsInline
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a' }}>{reelVideoFile.name}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                          Size: {(reelVideoFile.size / (1024 * 1024)).toFixed(2)} MB • Format: {reelVideoFile.type || 'video'}
+                        </div>
+                        <div style={{ marginTop: '10px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReelVideoFile(null)
+                              setReelPreviewUrl('')
+                              const input = document.getElementById('reel-video-input')
+                              if (input) input.value = ''
+                            }}
+                            style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '6px', background: '#fee2e2', color: '#dc2626', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                          >
+                            ✕ Remove / Pick another
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>
                     Caption / Description *
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Unboxing our new Frosted Titanium case 🔥"
                     required
+                    disabled={uploadingReel}
                     value={reelCaption}
                     onChange={e => setReelCaption(e.target.value)}
                     style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
 
+                {/* Upload Progress Bar */}
+                {uploadingReel && (
+                  <div style={{ padding: '14px', background: '#eff6ff', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '700', color: '#1e3fd1', marginBottom: '6px' }}>
+                      <span>{uploadStatusText || 'Uploading reel...'}</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', background: '#dbeafe', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${uploadProgress}%`, height: '100%', background: '#1e3fd1', transition: 'width 0.2s ease' }} />
+                    </div>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={uploadingReel}
+                  disabled={uploadingReel || !reelVideoFile}
                   style={{
-                    padding: '12px 20px',
+                    padding: '14px 20px',
                     borderRadius: '10px',
-                    background: uploadingReel ? '#94a3b8' : '#1e3fd1',
+                    background: (uploadingReel || !reelVideoFile) ? '#94a3b8' : '#1e3fd1',
                     color: '#fff',
                     fontWeight: '700',
                     fontSize: '15px',
                     border: 'none',
-                    cursor: uploadingReel ? 'not-allowed' : 'pointer',
+                    cursor: (uploadingReel || !reelVideoFile) ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px'
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(30, 63, 209, 0.25)'
                   }}
                 >
-                  {uploadingReel ? '⏳ Uploading Video (Please wait)...' : '🚀 Publish Reel to Main Page'}
+                  {uploadingReel ? `⏳ ${uploadStatusText || 'Publishing Reel...'}` : '🚀 Publish Reel to Main Page & Viewer'}
                 </button>
               </form>
             </div>
 
-            {/* Reels List */}
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', marginBottom: '16px' }}>
-              Published Reels ({adminReels.length})
-            </h3>
+            {/* Published Reels List */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--ink-strong)', margin: 0 }}>
+                Published Reels ({adminReels.length})
+              </h3>
+              <button
+                onClick={fetchAdminReels}
+                style={{ padding: '6px 14px', borderRadius: '8px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                ↻ Refresh List
+              </button>
+            </div>
 
             {loadingReels ? (
               <p style={{ textAlign: 'center', color: '#64748b', padding: '30px' }}>Loading reels...</p>
             ) : adminReels.length === 0 ? (
-              <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', textAlign: 'center', color: '#64748b' }}>
+              <div style={{ background: '#fff', padding: '32px', borderRadius: '16px', textAlign: 'center', color: '#64748b', border: '1px dashed #cbd5e1' }}>
                 No reels published yet. Upload your first short video above!
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '22px' }}>
                 {adminReels.map(reel => {
-                  const videoUrl = reel.is_local_promo ? `/${reel.video}` : `${API_URL}/uploads/${reel.video}`
+                  const isMissing = reel.status === 'missing'
+                  const videoUrl = isMissing ? '' : (reel.video_url || (reel.is_local_promo ? `/${reel.video}` : (reel.video?.startsWith('http') ? reel.video : `${API_URL}/uploads/${reel.video}`)))
+                  const posterUrl = reel.thumbnail_url || (videoUrl && videoUrl.includes('cloudinary.com') ? videoUrl.replace(/\.[^/.]+$/, '.jpg').replace('/video/upload/', '/video/upload/so_0,f_jpg,q_auto,w_720/') : null)
+
                   return (
-                    <div key={reel.id} style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
-                      <div style={{ position: 'relative', width: '100%', height: '280px', background: '#0b1120' }}>
-                        <video
-                          src={videoUrl}
-                          controls
-                          playsInline
-                          preload="metadata"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
+                    <div
+                      key={reel.id}
+                      style={{
+                        background: 'var(--bg-card)',
+                        borderRadius: '16px',
+                        border: isMissing ? '2px dashed #f59e0b' : '1px solid #e2e8f0',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      {/* 9:16 Video Player Card */}
+                      <div style={{ position: 'relative', width: '100%', height: '340px', background: '#0b1120' }}>
+                        {isMissing ? (
+                          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center', color: '#fff' }}>
+                            <div style={{ fontSize: '40px', marginBottom: '8px' }}>⚠️</div>
+                            <div style={{ fontWeight: '800', color: '#f59e0b', fontSize: '15px', marginBottom: '4px' }}>Video File Missing</div>
+                            <div style={{ fontSize: '12px', color: '#94a3b8', maxWidth: '200px', marginBottom: '14px' }}>
+                              Original video was not saved in persistent cloud storage.
+                            </div>
+                            <label style={{
+                              padding: '8px 16px',
+                              borderRadius: '8px',
+                              background: '#f59e0b',
+                              color: '#000',
+                              fontWeight: '700',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'inline-block'
+                            }}>
+                              {reuploadingId === reel.id ? 'Uploading...' : '↻ Re-upload Video'}
+                              <input
+                                type="file"
+                                accept="video/*"
+                                style={{ display: 'none' }}
+                                disabled={reuploadingId === reel.id}
+                                onChange={e => {
+                                  const file = e.target.files?.[0]
+                                  if (file) handleReuploadVideo(reel.id, file)
+                                }}
+                              />
+                            </label>
+                          </div>
+                        ) : (
+                          <video
+                            src={videoUrl}
+                            poster={posterUrl}
+                            controls
+                            playsInline
+                            preload="metadata"
+                            muted
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        )}
                       </div>
+
                       <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
-                          <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--ink-strong)', marginBottom: '6px' }}>
+                          <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--ink-strong)', marginBottom: '6px', lineHeight: '1.4' }}>
                             {reel.caption}
                           </div>
-                          <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-                            {reel.created_at ? new Date(reel.created_at).toLocaleDateString() : 'Active'} • {reel.likes || 0} likes
+                          <div style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>{reel.created_at ? new Date(reel.created_at).toLocaleDateString() : 'Active'}</span>
+                            <span>•</span>
+                            <span>{reel.likes || 0} likes</span>
+                            {isMissing && <span style={{ color: '#f59e0b', fontWeight: '700' }}>(Missing)</span>}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-                          <a
-                            href="/reels"
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ flex: 1, padding: '8px', textAlign: 'center', borderRadius: '8px', background: '#f1f5f9', color: '#1e3fd1', fontWeight: '600', fontSize: '13px', textDecoration: 'none' }}
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                          <button
+                            onClick={() => {
+                              window.history.pushState({}, '', '/reels')
+                              setCurrentPath('/reels')
+                              window.scrollTo(0, 0)
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '8px',
+                              textAlign: 'center',
+                              borderRadius: '8px',
+                              background: '#f1f5f9',
+                              color: '#1e3fd1',
+                              fontWeight: '700',
+                              fontSize: '13px',
+                              border: 'none',
+                              cursor: 'pointer'
+                            }}
                           >
                             View in Player ↗
-                          </a>
+                          </button>
                           {!reel.is_local_promo && (
                             <button
                               onClick={() => handleDeleteReel(reel.id)}
-                              style={{ padding: '8px 14px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', fontWeight: '600', fontSize: '13px', border: 'none', cursor: 'pointer' }}
+                              style={{
+                                padding: '8px 14px',
+                                borderRadius: '8px',
+                                background: '#fee2e2',
+                                color: '#dc2626',
+                                fontWeight: '700',
+                                fontSize: '13px',
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
                             >
                               Delete
                             </button>
@@ -2247,7 +2488,10 @@ function App() {
   const fetchBackendReels = () => {
     fetch(`${API_URL}/api/reels`, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
       .then(r => r.json())
-      .then(data => setBackendReels(data.reels || []))
+      .then(data => {
+        const list = Array.isArray(data.reels) ? data.reels : []
+        setBackendReels(list.filter(r => r.status !== 'missing'))
+      })
       .catch(() => {})
   }
 
@@ -2256,8 +2500,8 @@ function App() {
     const onUpdated = () => fetchBackendReels()
     window.addEventListener('caseily_reels_updated', onUpdated)
 
-    // Poll every 15 seconds so new admin uploads appear quickly
-    const pollInterval = setInterval(fetchBackendReels, 15000)
+    // Real-time polling every 10 seconds so new admin uploads appear instantly
+    const pollInterval = setInterval(fetchBackendReels, 10000)
 
     // Re-fetch on tab focus (instant update when user switches back)
     const onFocus = () => fetchBackendReels()
@@ -2279,19 +2523,26 @@ function App() {
     return `${base}/uploads/${clean}`;
   };
 
-  const sortedBackendReels = [...backendReels].sort((a, b) => {
-    if (!a.is_local_promo && b.is_local_promo) return -1;
-    if (a.is_local_promo && !b.is_local_promo) return 1;
-    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-  });
+  const sortedBackendReels = [...backendReels]
+    .filter(r => r.status !== 'missing')
+    .sort((a, b) => {
+      if (!a.is_local_promo && b.is_local_promo) return -1;
+      if (a.is_local_promo && !b.is_local_promo) return 1;
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
 
-  const computedAllReels = (sortedBackendReels.length > 0 ? sortedBackendReels : FALLBACK_REELS).map((r, i) => ({ 
-    id: r.id, 
-    videoSrc: resolveVideoUrl(r.video || r.videoSrc, r.is_local_promo), 
-    text: r.caption || r.text || 'Caseily Reels', 
-    likes: r.likes || 180 + i * 15,
-    index: i 
-  }));
+  const computedAllReels = (sortedBackendReels.length > 0 ? sortedBackendReels : FALLBACK_REELS).map((r, i) => {
+    const vUrl = r.video_url || resolveVideoUrl(r.video || r.videoSrc, r.is_local_promo)
+    const tUrl = r.thumbnail_url || (vUrl && vUrl.includes('cloudinary.com') ? vUrl.replace(/\.[^/.]+$/, '.jpg').replace('/video/upload/', '/video/upload/so_0,f_jpg,q_auto,w_720/') : null)
+    return {
+      id: r.id, 
+      videoSrc: vUrl,
+      thumbnailUrl: tUrl,
+      text: r.caption || r.text || 'Caseily Reels', 
+      likes: r.likes || 180 + i * 15,
+      index: i 
+    }
+  });
 
   async function handleReviewSubmit(e) {
     e.preventDefault()
@@ -2455,15 +2706,26 @@ function App() {
     return now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
 
-  const combinedReviews = approvedReviews.map(r => ({
-    name: r.name || 'Anonymous',
-    time: formatReviewDate(r.created_at, r.quote.length),
-    text: r.quote,
-    image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
-    likes: (r.quote.length * 7) % 200 + 15,
-    comments: (r.quote.length * 3) % 20 + 2,
-    stars: r.stars || 5
-  }));
+  const FALLBACK_REVIEWS = [
+    { name: 'Sarah Jenkins', time: 'Oct 27, 2026, 10:15 AM', text: "I was honestly blown away by the quality. The attention to detail is just incredible, and the customer service team was so helpful when I had questions. I've already recommended this to three of my friends. Will definitely be purchasing again soon! The packaging was also totally premium.", image: null, likes: 147, comments: 14, stars: 5 },
+    { name: 'Michael Chen', time: 'Oct 21, 2026, 3:40 PM', text: "Best purchase I've made this year. It fits perfectly into my daily workflow and saves me hours of time every single week. The build quality feels solid and durable. Honestly, I can't imagine going back to how I did things before. Worth every penny.", image: null, likes: 98, comments: 8, stars: 5 },
+    { name: 'Emily Davis', time: 'Oct 8, 2026, 9:22 AM', text: "Really love the aesthetic and how smooth everything operates. It took me a little bit to get used to the new features, but once I did, it was smooth sailing. The community around this is also amazing. So many helpful tips and tricks shared daily.", image: null, likes: 76, comments: 11, stars: 5 },
+    { name: 'David Wilson', time: 'Sep 29, 2026, 6:05 PM', text: "Exceeded all my expectations. The video tutorials were super helpful to get started quickly. I'm seeing immediate results and my team is much happier. Highly recommend giving this a try if you're on the fence.", image: null, likes: 112, comments: 7, stars: 5 },
+    { name: 'Priya Sharma', time: 'Oct 24, 2026, 11:30 AM', text: "Absolutely love everything about this! The quality is top-notch and the design is sleek. I've been using it daily and it hasn't let me down once. Customer support was also incredibly responsive when I had a question. 10/10 would recommend to anyone looking for the best.", image: null, likes: 189, comments: 19, stars: 5 },
+    { name: 'Rahul Nair', time: 'Oct 15, 2026, 8:00 AM', text: "Caseily delivered well beyond what I expected. The packaging was pristine, and the product itself is just stunning. Shipping was faster than I thought possible. Already planning my next order!", image: null, likes: 64, comments: 5, stars: 5 },
+  ];
+
+  const combinedReviews = approvedReviews.length > 0
+    ? approvedReviews.map(r => ({
+        name: r.name || 'Anonymous',
+        time: formatReviewDate(r.created_at, r.quote.length),
+        text: r.quote,
+        image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
+        likes: (r.quote.length * 7) % 200 + 15,
+        comments: (r.quote.length * 3) % 20 + 2,
+        stars: r.stars || 5
+      }))
+    : FALLBACK_REVIEWS;
 
   const handleSendStageMessage = async (e) => {
     e.preventDefault()
@@ -4758,6 +5020,7 @@ function App() {
             >
               <video
                 src={reel.videoSrc}
+                poster={reel.thumbnailUrl}
                 muted
                 loop
                 playsInline
