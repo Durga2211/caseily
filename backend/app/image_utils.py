@@ -2,9 +2,19 @@ import os
 import uuid
 import io
 import base64
-from PIL import Image, ImageOps
-import boto3
-from botocore.config import Config
+
+try:
+    from PIL import Image, ImageOps
+except ImportError:
+    Image = None
+    ImageOps = None
+
+try:
+    import boto3
+    from botocore.config import Config
+except ImportError:
+    boto3 = None
+    Config = None
 
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
 S3_ACCESS_KEY_ID = os.getenv("S3_ACCESS_KEY_ID")
@@ -44,6 +54,8 @@ def process_and_upload_image(file_bytes: bytes, filename_prefix: str = "img"):
     Process image: Fix EXIF, generate 3 WebP versions, generate blur placeholder,
     upload to S3, return dictionary with URLs and metadata.
     """
+    if Image is None or ImageOps is None:
+        return None
     try:
         img = Image.open(io.BytesIO(file_bytes))
         img = ImageOps.exif_transpose(img)
