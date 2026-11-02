@@ -16,18 +16,7 @@ import { uploadReelVideo } from './utils/videoUpload'
 import {
   DIWALI_THEME,
   DIWALI_CONFIG,
-  DiwaliHeaderDecoration,
-  DiwaliHero,
-  DiwaliSaleCountdown,
-  DiwaliOffers,
-  DiwaliCollection,
-  DiwaliGifting,
-  DiwaliLoyaltyBanner,
-  DiwaliCommunity,
-  DiwaliLightDiya,
-  DiwaliGreetingModal,
-  DiwaliFooter,
-  RangoliDivider
+  DiwaliHeaderDecoration
 } from './components/diwali'
 // ─── DATA ───────────────────────────────────────────────────────────────
 const FALLBACK_REVIEWS = [
@@ -2187,23 +2176,8 @@ function App() {
   const [authForm, setAuthForm] = useState({ name: '', phone: '', password: '' });
   const [authError, setAuthError] = useState('');
 
-  // ─── Diwali 2026 Festive State ──────────────────────────────────────────
+  // ─── Diwali 2026 Minimal Festive State ─────────────────────────────────
   const [diwaliToast, setDiwaliToast] = useState('');
-  const [showDiwaliGreeting, setShowDiwaliGreeting] = useState(() => {
-    if (!DIWALI_THEME) return false;
-    try {
-      return localStorage.getItem('caseily_diwali_greeted_2026') !== 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const handleCloseDiwaliGreeting = () => {
-    setShowDiwaliGreeting(false);
-    try {
-      localStorage.setItem('caseily_diwali_greeted_2026', 'true');
-    } catch {}
-  };
 
   const triggerDiwaliToast = (msg) => {
     setDiwaliToast(msg);
@@ -4882,63 +4856,72 @@ function App() {
           </marquee>
         </div>
 
-        {/* ─── HERO TITLE / DIWALI HERO ─── */}
-        {DIWALI_THEME ? (
-          <DiwaliHero
-            onExploreCollection={() => scrollTo('diwali-collection')}
-            onScrollToDiya={() => scrollTo('light-a-diya')}
-          />
-        ) : (
-          <div style={{ width: '100%', padding: '0', backgroundColor: '#0178fd', flex: 1 }}>
-            <img src="/hero-image-v3.png" alt="Caseily Hero" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
-          </div>
-        )}
-      </div>
+        {/* ─── HERO TITLE ─── */}
+        <div style={{ width: '100%', padding: '0', backgroundColor: '#0178fd', flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <img src="/hero-image-v3.png" alt="Caseily Hero" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
 
-      {/* ─── DIWALI FESTIVE MAIN FLOW ─── */}
-      {DIWALI_THEME && (
-        <div style={{ position: 'relative', zIndex: 10, marginTop: '-20px' }}>
-          {/* 1. Live Countdown Sale Banner */}
-          <DiwaliSaleCountdown onCtaClick={() => scrollTo('diwali-collection')} />
+          {/* Minimal Diwali Celebration Accents on Original Hero */}
+          {DIWALI_THEME && (
+            <>
+              {/* Subtle floating diya - Top Left */}
+              <div className="floating-diya" style={{
+                position: 'absolute',
+                top: '12px',
+                left: '12px',
+                zIndex: 3,
+                filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+                pointerEvents: 'none'
+              }}>
+                <svg width="34" height="34" viewBox="0 0 100 100">
+                  <ellipse cx="50" cy="65" rx="36" ry="16" fill="#EA580C" />
+                  <ellipse cx="50" cy="60" rx="30" ry="10" fill="#F5B301" />
+                  <path className="diya-flame" d="M50 20 C42 34 40 44 44 54 C48 60 52 60 56 54 C60 44 58 34 50 20 Z" fill="#FEF08A" />
+                </svg>
+              </div>
 
-          {/* 2. Festive Offers Cards */}
-          <DiwaliOffers onShowToast={triggerDiwaliToast} />
+              {/* Subtle floating diya - Top Right */}
+              <div className="floating-diya" style={{
+                position: 'absolute',
+                top: '16px',
+                right: '12px',
+                zIndex: 3,
+                animationDelay: '1.6s',
+                filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+                pointerEvents: 'none'
+              }}>
+                <svg width="30" height="30" viewBox="0 0 100 100">
+                  <ellipse cx="50" cy="65" rx="36" ry="16" fill="#C2410C" />
+                  <ellipse cx="50" cy="60" rx="30" ry="10" fill="#F5B301" />
+                  <path className="diya-flame" d="M50 20 C42 34 40 44 44 54 C48 60 52 60 56 54 C60 44 58 34 50 20 Z" fill="#FEF08A" />
+                </svg>
+              </div>
 
-          {/* 3. Section Divider & Festive Collection */}
-          <RangoliDivider
-            title="Diwali Edition Collection"
-            subtitle="Limited festival designs with 24K gold foil and tempered glass"
-          />
-          <DiwaliCollection
-            onAddToCart={(item) => triggerDiwaliToast(`🛍️ ${item.name} added to cart! Use DIWALI26 for 26% OFF.`)}
-          />
-
-          {/* 4. Gifting Studio */}
-          <DiwaliGifting
-            onNavigateToBulk={() => { window.history.pushState({}, '', '/bulk-order'); setCurrentPath('/bulk-order'); window.scrollTo(0, 0); }}
-            onShowToast={triggerDiwaliToast}
-          />
-
-          {/* 5. Loyalty Points 2X Banner */}
-          <DiwaliLoyaltyBanner
-            onNavigateToLoyalty={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}
-          />
-
-          {/* 6. Light a Community Diya */}
-          <DiwaliLightDiya onShowToast={triggerDiwaliToast} />
-
-          {/* 7. Community Photo Contest & Poll */}
-          <DiwaliCommunity
-            onNavigateToCreatorsClub={() => { window.history.pushState({}, '', '/creators-club'); setCurrentPath('/creators-club'); window.scrollTo(0, 0); }}
-            onShowToast={triggerDiwaliToast}
-          />
-
-          <RangoliDivider
-            title="Explore Caseily"
-            subtitle="Live parcel tracking, community reviews, and creator drops"
-          />
+              {/* Minimal festive pill badge */}
+              <div style={{
+                position: 'absolute',
+                bottom: '12px',
+                right: '12px',
+                background: 'rgba(7, 13, 30, 0.8)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid #F5B301',
+                borderRadius: '999px',
+                padding: '4px 12px',
+                color: '#FDE047',
+                fontSize: '11px',
+                fontWeight: '800',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+                zIndex: 3
+              }}>
+                <span>🪔</span>
+                <span>Happy Diwali · Code DIWALI26</span>
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       <section id="track" style={{ position: 'relative', zIndex: 10, marginTop: '-40px', padding: '0 20px 40px' }}>
         
@@ -5454,8 +5437,27 @@ function App() {
       </div>
       )}
 
-      {/* ─── FOOTER ─── */}
-      {DIWALI_THEME && <DiwaliFooter />}
+      {/* ─── MINIMAL FESTIVE FOOTER WISH BANNER ─── */}
+      {DIWALI_THEME && (
+        <div style={{
+          textAlign: 'center',
+          padding: '12px 16px',
+          background: 'linear-gradient(90deg, #070d1e 0%, #1e3a8a 50%, #070d1e 100%)',
+          color: '#FFFBEB',
+          fontSize: '13px',
+          fontWeight: '700',
+          borderTop: '1px solid rgba(245, 179, 1, 0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          flexWrap: 'wrap'
+        }}>
+          <span>🪔</span>
+          <span>Happy Diwali from Caseily! Wishing you joy, prosperity & light · Use code <strong style={{ color: '#FDE047', letterSpacing: '0.05em' }}>DIWALI26</strong> for 26% off</span>
+          <span>✨</span>
+        </div>
+      )}
       <footer className="footer-large">
         <div className="container">
           <div className="footer-large-grid">
@@ -5685,19 +5687,7 @@ function App() {
         </div>
       )}
 
-      {/* ─── DIWALI GREETING MODAL & TOAST ─── */}
-      {DIWALI_THEME && (
-        <DiwaliGreetingModal
-          isOpen={showDiwaliGreeting}
-          onClose={handleCloseDiwaliGreeting}
-          onExplore={() => {
-            handleCloseDiwaliGreeting();
-            scrollTo('diwali-collection');
-          }}
-        />
-      )}
-
-      {/* Diwali Toast Notification */}
+      {/* Diwali Toast Notification (when coupon is tapped) */}
       {diwaliToast && (
         <div className="diwali-toast" role="status" aria-live="polite">
           {diwaliToast}
