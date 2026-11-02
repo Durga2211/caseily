@@ -1,0 +1,304 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   DIWALI 2026 FESTIVE THEME STYLES - CASEILY
+   Controlled by DIWALI_THEME flag in diwaliConfig.js
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rozha+One&family=Yatra+One&display=swap');
+
+:root {
+  --diwali-gold: #F5B301;
+  --diwali-gold-light: #FDE047;
+  --diwali-gold-glow: rgba(245, 179, 1, 0.45);
+  --diwali-saffron: #FF9933;
+  --diwali-marigold: #F97316;
+  --diwali-magenta: #BE185D;
+  --diwali-navy: #070d1e;
+  --diwali-navy-surface: #0b1533;
+  --diwali-card-border: rgba(245, 179, 1, 0.28);
+}
+
+/* Diwali Display Heading Font */
+.diwali-font {
+  font-family: 'Rozha One', 'Cinzel Decorative', 'Yatra One', Georgia, serif;
+  letter-spacing: 0.02em;
+}
+
+.diwali-font-alt {
+  font-family: 'Cinzel Decorative', 'Rozha One', Georgia, serif;
+}
+
+/* ─── FESTIVE DARK MODE OVERRIDE (Navy + Gold) ─── */
+[data-theme="dark"].diwali-active body,
+.diwali-active[data-theme="dark"] body {
+  background: radial-gradient(circle at 50% 0%, #151e3f 0%, #080c1d 60%, #030611 100%) !important;
+  color: #f8fafc !important;
+}
+
+/* ─── ANIMATED FESTIVE TICKER ─── */
+.diwali-ticker-bar {
+  background: linear-gradient(90deg, #0b1533 0%, #1e3a8a 35%, #7c2d12 70%, #0b1533 100%);
+  border-bottom: 1.5px solid rgba(245, 179, 1, 0.35);
+  box-shadow: 0 4px 18px rgba(245, 179, 1, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.diwali-ticker-bar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(245, 179, 1, 0.25), transparent);
+  animation: diwaliShimmer 4s infinite linear;
+}
+
+@keyframes diwaliShimmer {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* ─── TORAN / MARIGOLD GARLAND ─── */
+.diwali-toran-wrapper {
+  position: relative;
+  width: 100%;
+  pointer-events: none;
+  z-index: 45;
+  overflow: hidden;
+  height: 28px;
+  margin-bottom: -6px;
+}
+
+.diwali-fairy-lights {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0 8px;
+  position: relative;
+}
+
+.fairy-bulb {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  position: relative;
+  display: inline-block;
+  animation: fairyTwinkle 2.2s infinite ease-in-out;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.fairy-bulb:nth-child(2n) {
+  animation-delay: 0.4s;
+  animation-duration: 1.8s;
+}
+
+.fairy-bulb:nth-child(3n) {
+  animation-delay: 0.9s;
+  animation-duration: 2.5s;
+}
+
+.fairy-bulb:nth-child(4n) {
+  animation-delay: 1.3s;
+  animation-duration: 2s;
+}
+
+@keyframes fairyTwinkle {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+    filter: drop-shadow(0 0 2px currentColor);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 9px currentColor);
+  }
+}
+
+/* ─── FLICKERING DIYA FLAME ─── */
+.diya-flame {
+  transform-origin: center bottom;
+  animation: flameFlicker 1.6s infinite alternate ease-in-out;
+}
+
+@keyframes flameFlicker {
+  0% {
+    transform: scale(1) rotate(-1.5deg);
+    filter: drop-shadow(0 -2px 6px #F5B301) drop-shadow(0 -5px 12px #FF9933);
+  }
+  25% {
+    transform: scale(1.08, 0.94) rotate(2deg);
+  }
+  50% {
+    transform: scale(0.96, 1.05) rotate(-2deg);
+    filter: drop-shadow(0 -3px 8px #F5B301) drop-shadow(0 -7px 16px #FF9933);
+  }
+  75% {
+    transform: scale(1.04, 0.98) rotate(1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 -2px 5px #F5B301) drop-shadow(0 -4px 10px #FF9933);
+  }
+}
+
+/* ─── FLOATING DIYA EFFECT ─── */
+.floating-diya {
+  animation: floatDiya 4s infinite ease-in-out;
+}
+
+@keyframes floatDiya {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1.5deg);
+  }
+}
+
+/* ─── GOLD GLOW BADGE ─── */
+.festive-pill-badge {
+  background: linear-gradient(135deg, #FF9933 0%, #F5B301 100%);
+  color: #070d1e;
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(245, 179, 1, 0.6);
+  border: 1px solid #FFFBEB;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ─── GOLD BORDER GLOW CARD ─── */
+.diwali-card {
+  position: relative;
+  background: linear-gradient(145deg, rgba(11, 21, 51, 0.92) 0%, rgba(7, 13, 30, 0.96) 100%);
+  border: 1.5px solid rgba(245, 179, 1, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3), 0 0 15px -3px rgba(245, 179, 1, 0.15);
+  backdrop-filter: blur(12px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s;
+}
+
+.diwali-card:hover {
+  border-color: rgba(245, 179, 1, 0.65);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.4), 0 0 25px rgba(245, 179, 1, 0.3);
+}
+
+/* ─── GOLD CTA BUTTON ─── */
+.diwali-gold-btn {
+  background: linear-gradient(135deg, #F5B301 0%, #FF9933 50%, #F59E0B 100%);
+  color: #070d1e !important;
+  font-weight: 800;
+  border: 1px solid #FEF08A;
+  box-shadow: 0 4px 18px rgba(245, 179, 1, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diwali-gold-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 179, 1, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.diwali-gold-btn:active {
+  transform: translateY(1px);
+}
+
+/* ─── TOAST NOTIFICATION ─── */
+.diwali-toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #070d1e 0%, #1e3a8a 100%);
+  color: #FFFBEB;
+  border: 1.5px solid #F5B301;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 179, 1, 0.4);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: diwaliToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+@keyframes diwaliToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* ─── DIWALI MODAL BACKDROP & DIALOG ─── */
+.diwali-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000000;
+  padding: 16px;
+  animation: diwaliFadeIn 0.25s ease-out;
+}
+
+.diwali-modal-card {
+  background: radial-gradient(circle at 50% 0%, #152347 0%, #080f24 70%, #040814 100%);
+  border: 2px solid #F5B301;
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(245, 179, 1, 0.35);
+  color: #ffffff;
+  width: 100%;
+  max-width: 440px;
+  padding: 28px 24px;
+  position: relative;
+  text-align: center;
+  animation: diwaliZoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes diwaliFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes diwaliZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ─── ACCESSIBILITY: PREFERS REDUCED MOTION ─── */
+@media (prefers-reduced-motion: reduce) {
+  .diya-flame,
+  .floating-diya,
+  .fairy-bulb,
+  .diwali-ticker-bar::after,
+  .diwali-toast,
+  .diwali-modal-overlay,
+  .diwali-modal-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}

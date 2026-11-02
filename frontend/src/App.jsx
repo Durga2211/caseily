@@ -13,6 +13,22 @@ import CommunityWall from './components/CommunityWall'
 import OptimizedImage from './components/OptimizedImage'
 import imageCompression from 'browser-image-compression'
 import { uploadReelVideo } from './utils/videoUpload'
+import {
+  DIWALI_THEME,
+  DIWALI_CONFIG,
+  DiwaliHeaderDecoration,
+  DiwaliHero,
+  DiwaliSaleCountdown,
+  DiwaliOffers,
+  DiwaliCollection,
+  DiwaliGifting,
+  DiwaliLoyaltyBanner,
+  DiwaliCommunity,
+  DiwaliLightDiya,
+  DiwaliGreetingModal,
+  DiwaliFooter,
+  RangoliDivider
+} from './components/diwali'
 // ─── DATA ───────────────────────────────────────────────────────────────
 const FALLBACK_REVIEWS = [
   { name: "Renu Thakkar", time: "2 hours ago", text: "We plugged Caseily tracking into our Shopify store and \"where is my order?\" tickets dropped by 60% in the first month. Customers love the live status page.", likes: 245, comments: 18 },
@@ -2171,6 +2187,29 @@ function App() {
   const [authForm, setAuthForm] = useState({ name: '', phone: '', password: '' });
   const [authError, setAuthError] = useState('');
 
+  // ─── Diwali 2026 Festive State ──────────────────────────────────────────
+  const [diwaliToast, setDiwaliToast] = useState('');
+  const [showDiwaliGreeting, setShowDiwaliGreeting] = useState(() => {
+    if (!DIWALI_THEME) return false;
+    try {
+      return localStorage.getItem('caseily_diwali_greeted_2026') !== 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleCloseDiwaliGreeting = () => {
+    setShowDiwaliGreeting(false);
+    try {
+      localStorage.setItem('caseily_diwali_greeted_2026', 'true');
+    } catch {}
+  };
+
+  const triggerDiwaliToast = (msg) => {
+    setDiwaliToast(msg);
+    setTimeout(() => setDiwaliToast(''), 3500);
+  };
+
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('caseily_user', JSON.stringify(currentUser));
@@ -2404,6 +2443,11 @@ function App() {
   useEffect(() => {
     localStorage.setItem('caseily-theme', theme)
     document.documentElement.setAttribute('data-theme', theme)
+    if (DIWALI_THEME) {
+      document.documentElement.classList.add('diwali-active');
+    } else {
+      document.documentElement.classList.remove('diwali-active');
+    }
   }, [theme])
   const [reviewTab, setReviewTab] = useState('b2b')
   const [openFaq, setOpenFaq] = useState(0)
@@ -4716,6 +4760,9 @@ function App() {
     <div className="app-wrapper">
       <SplashScreen />
 
+      {/* ─── DIWALI HEADER DECORATION (Toran & Twinkling Lights) ─── */}
+      {DIWALI_THEME && <DiwaliHeaderDecoration />}
+
       <div style={{ backgroundColor: 'transparent', position: 'relative', zIndex: 1 }}>
         {/* ─── NAVBAR ─── */}
         <nav className="navbar" style={{ backgroundColor: 'var(--bg-card)', borderBottom: '1px solid #e2e8f0' }}>
@@ -4761,8 +4808,8 @@ function App() {
             <button className="theme-toggle" onClick={translateToHindi} aria-label="Translate to Hindi" title="Translate to Hindi" style={{ marginRight: '8px', color: 'var(--ink-strong)' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
             </button>
-            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ color: 'var(--ink-strong)' }}>
-              {theme === 'light' ? '🌙' : '☀️'}
+            <button className="theme-toggle" onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" title={DIWALI_THEME ? "Diwali Theme Toggle" : "Toggle Theme"} style={{ color: 'var(--ink-strong)' }}>
+              {DIWALI_THEME ? (theme === 'light' ? '🪔' : '☀️') : (theme === 'light' ? '🌙' : '☀️')}
             </button>
             <button onClick={() => setShowAuthModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: 'var(--ink-strong)', marginRight: '8px' }} title="Profile">
               👤
@@ -4804,8 +4851,8 @@ function App() {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, justifyContent: 'flex-end', position: 'relative' }} ref={shortcutRef}>
-            <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontSize: '20px', display: 'flex', alignItems: 'center' }}>
-              {theme === 'light' ? '🌙' : '☀️'}
+            <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" title={DIWALI_THEME ? "Diwali Theme Toggle" : "Toggle Theme"} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontSize: '20px', display: 'flex', alignItems: 'center' }}>
+              {DIWALI_THEME ? (theme === 'light' ? '🪔' : '☀️') : (theme === 'light' ? '🌙' : '☀️')}
             </button>
             <button onClick={() => setShowAuthModal(true)} aria-label="Profile" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -4825,17 +4872,73 @@ function App() {
         </div>
 
         {/* ─── ANNOUNCEMENT BAR ─── */}
-        <div style={{ width: '100%', backgroundColor: '#1e3a8a', color: '#ffffff', padding: '8px 0', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-          <marquee scrollamount="12" style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '0.1em', textTransform: 'uppercase', width: '100%' }}>
-            🎉 FLAT 21% OFFER ON ALL SILICON CASES — GET YOURS NOW 🎉 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎉 FLAT 21% OFFER ON ALL SILICON CASES — GET YOURS NOW 🎉
+        <div className={DIWALI_THEME ? "diwali-ticker-bar" : ""} style={{ width: '100%', backgroundColor: DIWALI_THEME ? '#0b1533' : '#1e3a8a', color: '#ffffff', padding: DIWALI_THEME ? '9px 0' : '8px 0', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+          <marquee scrollamount={DIWALI_THEME ? "10" : "12"} style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: DIWALI_THEME ? '0.08em' : '0.1em', textTransform: 'uppercase', width: '100%', color: DIWALI_THEME ? '#FDE047' : '#ffffff' }}>
+            {DIWALI_THEME ? (
+              <>🪔 {DIWALI_CONFIG.tickerText} 🪔 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🪔 {DIWALI_CONFIG.tickerText} 🪔</>
+            ) : (
+              <>🎉 FLAT 21% OFFER ON ALL SILICON CASES — GET YOURS NOW 🎉 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎉 FLAT 21% OFFER ON ALL SILICON CASES — GET YOURS NOW 🎉</>
+            )}
           </marquee>
         </div>
 
-        {/* ─── HERO TITLE ─── */}
-        <div style={{ width: '100%', padding: '0', backgroundColor: '#0178fd', flex: 1 }}>
-          <img src="/hero-image-v3.png" alt="Caseily Hero" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
-        </div>
+        {/* ─── HERO TITLE / DIWALI HERO ─── */}
+        {DIWALI_THEME ? (
+          <DiwaliHero
+            onExploreCollection={() => scrollTo('diwali-collection')}
+            onScrollToDiya={() => scrollTo('light-a-diya')}
+          />
+        ) : (
+          <div style={{ width: '100%', padding: '0', backgroundColor: '#0178fd', flex: 1 }}>
+            <img src="/hero-image-v3.png" alt="Caseily Hero" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
+          </div>
+        )}
       </div>
+
+      {/* ─── DIWALI FESTIVE MAIN FLOW ─── */}
+      {DIWALI_THEME && (
+        <div style={{ position: 'relative', zIndex: 10, marginTop: '-20px' }}>
+          {/* 1. Live Countdown Sale Banner */}
+          <DiwaliSaleCountdown onCtaClick={() => scrollTo('diwali-collection')} />
+
+          {/* 2. Festive Offers Cards */}
+          <DiwaliOffers onShowToast={triggerDiwaliToast} />
+
+          {/* 3. Section Divider & Festive Collection */}
+          <RangoliDivider
+            title="Diwali Edition Collection"
+            subtitle="Limited festival designs with 24K gold foil and tempered glass"
+          />
+          <DiwaliCollection
+            onAddToCart={(item) => triggerDiwaliToast(`🛍️ ${item.name} added to cart! Use DIWALI26 for 26% OFF.`)}
+          />
+
+          {/* 4. Gifting Studio */}
+          <DiwaliGifting
+            onNavigateToBulk={() => { window.history.pushState({}, '', '/bulk-order'); setCurrentPath('/bulk-order'); window.scrollTo(0, 0); }}
+            onShowToast={triggerDiwaliToast}
+          />
+
+          {/* 5. Loyalty Points 2X Banner */}
+          <DiwaliLoyaltyBanner
+            onNavigateToLoyalty={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}
+          />
+
+          {/* 6. Light a Community Diya */}
+          <DiwaliLightDiya onShowToast={triggerDiwaliToast} />
+
+          {/* 7. Community Photo Contest & Poll */}
+          <DiwaliCommunity
+            onNavigateToCreatorsClub={() => { window.history.pushState({}, '', '/creators-club'); setCurrentPath('/creators-club'); window.scrollTo(0, 0); }}
+            onShowToast={triggerDiwaliToast}
+          />
+
+          <RangoliDivider
+            title="Explore Caseily"
+            subtitle="Live parcel tracking, community reviews, and creator drops"
+          />
+        </div>
+      )}
 
       <section id="track" style={{ position: 'relative', zIndex: 10, marginTop: '-40px', padding: '0 20px 40px' }}>
         
@@ -4889,16 +4992,19 @@ function App() {
               <img src="/assets/icons/creators-club.svg" alt="Creators Club" className="quick-link-icon" />
               <span>Creators Club</span>
             </button>
-            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}>
-              <img src="/assets/icons/loyalty-points.svg" alt="Loyalty Points" className="quick-link-icon" />
+            <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}>
+              {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>2X Pts</span>}
+              <img src="/assets/icons/loyalty-points.svg" alt="Loyalty Points" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
               <span>Loyalty Points</span>
             </button>
-            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/bulk-order'); setCurrentPath('/bulk-order'); window.scrollTo(0, 0); }}>
-              <img src="/assets/icons/bulk-order.svg" alt="Bulk Order" className="quick-link-icon" />
+            <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/bulk-order'); setCurrentPath('/bulk-order'); window.scrollTo(0, 0); }}>
+              {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>Gifting</span>}
+              <img src="/assets/icons/bulk-order.svg" alt="Bulk Order" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
               <span>Bulk Order</span>
             </button>
-            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/events'); setCurrentPath('/events'); window.scrollTo(0, 0); }}>
-              <img src="/assets/icons/events.svg" alt="Events" className="quick-link-icon" />
+            <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/events'); setCurrentPath('/events'); window.scrollTo(0, 0); }}>
+              {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>Festive</span>}
+              <img src="/assets/icons/events.svg" alt="Events" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
               <span>Events</span>
             </button>
           </div>
@@ -5310,7 +5416,24 @@ function App() {
 
       {/* ─── BOTTOM NAV PILL ─── */}
       {currentPath !== '/insiders' && (
-      <div className="mobile-dashboard" style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'var(--bg-card)', borderRadius: '32px', padding: '12px 24px', display: 'flex', alignItems: 'center', boxShadow: '0 12px 32px rgba(0,0,0,0.2)', border: '1px solid var(--border)', zIndex: 99999, width: 'max-content', maxWidth: '90vw', justifyContent: 'space-between', backdropFilter: 'blur(20px)' }}>
+      <div className="mobile-dashboard" style={{
+        position: 'fixed',
+        bottom: '24px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        backgroundColor: 'var(--bg-card)',
+        borderRadius: '32px',
+        padding: '12px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        boxShadow: DIWALI_THEME ? '0 12px 32px rgba(0,0,0,0.35), 0 0 16px rgba(245, 179, 1, 0.25)' : '0 12px 32px rgba(0,0,0,0.2)',
+        border: DIWALI_THEME ? '1.5px solid rgba(245, 179, 1, 0.5)' : '1px solid var(--border)',
+        zIndex: 99999,
+        width: 'max-content',
+        maxWidth: '90vw',
+        justifyContent: 'space-between',
+        backdropFilter: 'blur(20px)'
+      }}>
         <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: activeSection === 'track' ? 'var(--accent)' : 'transparent', color: activeSection === 'track' ? '#ffffff' : 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => scrollTo('track')}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
         </div>
@@ -5332,6 +5455,7 @@ function App() {
       )}
 
       {/* ─── FOOTER ─── */}
+      {DIWALI_THEME && <DiwaliFooter />}
       <footer className="footer-large">
         <div className="container">
           <div className="footer-large-grid">
@@ -5558,6 +5682,25 @@ function App() {
               </form>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ─── DIWALI GREETING MODAL & TOAST ─── */}
+      {DIWALI_THEME && (
+        <DiwaliGreetingModal
+          isOpen={showDiwaliGreeting}
+          onClose={handleCloseDiwaliGreeting}
+          onExplore={() => {
+            handleCloseDiwaliGreeting();
+            scrollTo('diwali-collection');
+          }}
+        />
+      )}
+
+      {/* Diwali Toast Notification */}
+      {diwaliToast && (
+        <div className="diwali-toast" role="status" aria-live="polite">
+          {diwaliToast}
         </div>
       )}
 
