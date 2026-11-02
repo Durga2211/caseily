@@ -22,22 +22,11 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
   const lastTapRef = useRef(0)
   const tapTimeoutRef = useRef(null)
 
-  // Hide Tawk.to live chat widget while Reels viewer is active so it never overlaps UI
+  // Lock body scroll while Reels viewer is active
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    try {
-      if (window.Tawk_API && typeof window.Tawk_API.hideWidget === 'function') {
-        window.Tawk_API.hideWidget()
-      }
-    } catch {}
-
     return () => {
       document.body.style.overflow = ''
-      try {
-        if (window.Tawk_API && typeof window.Tawk_API.showWidget === 'function') {
-          window.Tawk_API.showWidget()
-        }
-      } catch {}
     }
   }, [])
 

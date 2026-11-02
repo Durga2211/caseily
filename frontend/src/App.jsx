@@ -2174,13 +2174,6 @@ function App() {
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('caseily_user', JSON.stringify(currentUser));
-      if (window.Tawk_API && typeof window.Tawk_API.setAttributes === 'function') {
-        window.Tawk_API.setAttributes({
-          name: currentUser.name || 'Member',
-          phone: currentUser.phone || '',
-          id: currentUser.id || ''
-        }, function(error) {});
-      }
     } else {
       localStorage.removeItem('caseily_user');
     }
@@ -4879,10 +4872,6 @@ function App() {
               <span>Track Your Order</span>
             </button>
             <button className="quick-link-btn" onClick={() => { 
-              if (!currentUser) {
-                setShowAuthModal(true);
-                return;
-              }
               window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); 
             }}>
               <img src="/assets/icons/post-review.svg" alt="Post a Review" className="quick-link-icon" />
