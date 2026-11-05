@@ -604,8 +604,7 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                 bottom: '12px',
                 left: '0',
                 right: '80px',
-                padding: '80px 16px 20px',
-                background: 'linear-gradient(transparent, rgba(0,0,0,0.88))',
+                padding: '0 16px 20px',
                 zIndex: 15,
                 pointerEvents: 'none'
               }}>
@@ -652,20 +651,20 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                     }}>
                       C
                     </div>
-                    <span style={{ color: '#fff', fontWeight: '800', fontSize: '14px', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                    <span style={{ color: '#fff', fontWeight: '800', fontSize: '14px', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
                       caseily.official
                     </span>
                   </div>
 
                   {/* Caption */}
-                  <div style={{ color: '#fff', fontSize: '13px', lineHeight: '1.45', marginBottom: '8px', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                  <div style={{ color: '#fff', fontSize: '13px', lineHeight: '1.45', marginBottom: '8px', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
                     {reel.text}
                   </div>
 
                   {/* Audio Track */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3" fill="#fff"></circle><circle cx="18" cy="16" r="3" fill="#fff"></circle></svg>
-                    <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))' }}><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3" fill="#fff"></circle><circle cx="18" cy="16" r="3" fill="#fff"></circle></svg>
+                    <span style={{ color: 'rgba(255,255,255,0.95)', fontSize: '12px', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
                       Original Audio — caseily.official 🎵
                     </span>
                   </div>
