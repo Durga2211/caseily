@@ -4938,7 +4938,7 @@ function App() {
                 <img src="/banner_wallet.png" alt="Caseilyplus+" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
               </div>
               <div style={{ width: '50%', flexShrink: 0, aspectRatio: '16/9' }}>
-                <img src="/banner_apple.png" alt="Apple Event" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
+                <img src="/banner_diwali_madness.png" alt="Caseilyplus+ Plug into the madness" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }} />
               </div>
             </div>
           </div>
