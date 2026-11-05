@@ -318,7 +318,7 @@ function ReelViewer({ initialNum, allReels, onClose }) {
           autoPlay
           loop
           playsInline
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
         />
 
         <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '40px 16px 24px', background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', color: '#fff', fontSize: '15px', fontWeight: 'bold', zIndex: 2 }}>

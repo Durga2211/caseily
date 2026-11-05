@@ -372,7 +372,7 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                 width: '100%',
                 scrollSnapAlign: 'start',
                 position: 'relative',
-                backgroundColor: '#0b1120',
+                backgroundColor: '#000',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -401,7 +401,7 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
+                  objectFit: 'contain',
                   display: hasError ? 'none' : 'block'
                 }}
               />
@@ -610,8 +610,32 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                 pointerEvents: 'none'
               }}>
                 <div style={{ pointerEvents: 'auto' }}>
-                  {/* Account Badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  {/* Account Badge - Click to return to Home Page */}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (onClose) {
+                        onClose()
+                      } else {
+                        window.history.pushState({}, '', '/')
+                        window.location.href = '/'
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title="Visit Caseily Home"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      marginBottom: '8px',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      transition: 'transform 0.15s ease, opacity 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+                  >
                     <div style={{
                       width: '36px',
                       height: '36px',
@@ -623,7 +647,8 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                       color: '#fff',
                       fontWeight: '800',
                       fontSize: '14px',
-                      border: '2px solid #fff'
+                      border: '2px solid #fff',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
                     }}>
                       C
                     </div>
