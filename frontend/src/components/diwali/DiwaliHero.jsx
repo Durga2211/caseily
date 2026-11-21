@@ -324,3 +324,4 @@ export default function DiwaliHero({ onExploreCollection, onScrollToDiya }) {
     </section>
   );
 }
+

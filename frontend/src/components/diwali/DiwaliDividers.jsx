@@ -128,3 +128,4 @@ export function DiwaliCorner({ position = 'top-left' }) {
     </div>
   );
 }
+

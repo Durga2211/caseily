@@ -289,3 +289,4 @@ export default function DiwaliGifting({ onNavigateToBulk, onShowToast }) {
     </section>
   );
 }
+

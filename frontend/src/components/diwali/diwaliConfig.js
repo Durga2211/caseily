@@ -10,7 +10,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-export const DIWALI_THEME = true;
+export const DIWALI_THEME = false;
 
 export const DIWALI_CONFIG = {
   festivalName: 'Diwali 2026',

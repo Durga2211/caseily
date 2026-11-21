@@ -154,3 +154,4 @@ export default function DiwaliGreetingModal({ isOpen, onClose, onExplore }) {
     </div>
   );
 }
+

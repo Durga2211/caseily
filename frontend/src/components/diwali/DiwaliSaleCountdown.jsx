@@ -181,3 +181,4 @@ export default function DiwaliSaleCountdown({ onCtaClick }) {
     </section>
   );
 }
+

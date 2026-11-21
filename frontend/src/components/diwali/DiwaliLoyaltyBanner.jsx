@@ -96,3 +96,4 @@ export default function DiwaliLoyaltyBanner({ onNavigateToLoyalty }) {
     </section>
   );
 }
+

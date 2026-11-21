@@ -13,3 +13,4 @@ export { default as DiwaliFooter } from './DiwaliFooter';
 export { RangoliDivider, DiwaliCorner } from './DiwaliDividers';
 export { diwaliAudio } from './DiwaliAudio';
 import './diwali.css';
+

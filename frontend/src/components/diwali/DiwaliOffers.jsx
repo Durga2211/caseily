@@ -237,3 +237,4 @@ export default function DiwaliOffers({ onShowToast }) {
     </section>
   );
 }
+
