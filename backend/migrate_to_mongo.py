@@ -24,10 +24,12 @@ def migrate():
         with open(reviews_file, "r") as f:
             reviews = json.load(f)
             if reviews:
-                # Remove existing to prevent duplicates during testing
-                reviews_collection.delete_many({}) 
-                reviews_collection.insert_many(reviews)
-                print(f"✅ Migrated {len(reviews)} reviews to MongoDB.")
+                # Upsert to prevent losing newly added reviews while ensuring older ones recur
+                for r in reviews:
+                    r_id = r.get("id")
+                    if r_id:
+                        reviews_collection.update_one({"id": r_id}, {"$set": r}, upsert=True)
+                print(f"✅ Upserted/Synced {len(reviews)} reviews into MongoDB.")
             else:
                 print("No reviews to migrate.")
     else:

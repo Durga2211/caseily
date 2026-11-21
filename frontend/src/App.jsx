@@ -2471,7 +2471,7 @@ function App() {
 
   const [drops, setDrops] = useState([])
   useEffect(() => {
-    fetch(`${API_URL}/api/reviews/approved`)
+    fetch(`${API_URL}/api/reviews/approved?limit=500`)
       .then(r => r.json())
       .then(data => setApprovedReviews(data.reviews || []))
       .catch(() => {})
@@ -2595,6 +2595,10 @@ function App() {
       setReviewSuccess(true)
       setReviewForm({ name: '', city: '', stars: 0, quote: '' })
       setReviewPhoto(null)
+      fetch(`${API_URL}/api/reviews/approved?limit=500`)
+        .then(r => r.json())
+        .then(data => { if (data.reviews) setApprovedReviews(data.reviews) })
+        .catch(() => {})
       setTimeout(() => setReviewSuccess(false), 4000)
     } catch (err) {
       setReviewError(err.message)
@@ -2731,7 +2735,7 @@ function App() {
         name: r.name || 'Anonymous',
         time: formatReviewDate(r.created_at, r.quote.length),
         text: r.quote,
-        image: r.photo ? `${API_URL}/uploads/${r.photo}` : null,
+        image: r.photo ? (r.photo.startsWith('http') ? r.photo : `${API_URL}/uploads/${r.photo}`) : null,
         likes: (r.quote.length * 7) % 200 + 15,
         comments: (r.quote.length * 3) % 20 + 2,
         stars: r.stars || 5

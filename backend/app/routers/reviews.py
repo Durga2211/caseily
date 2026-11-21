@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uuid
 import os
 import shutil
+import json
 from datetime import datetime
 from ..db import reviews_collection
 from ..image_utils import process_and_upload_image
@@ -10,6 +11,35 @@ from ..image_utils import process_and_upload_image
 router = APIRouter(prefix="/api", tags=["reviews"])
 
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+REVIEWS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "reviews_db.json")
+
+def _backup_review_locally(review: dict):
+    """Safely back up review to local reviews_db.json to prevent any data loss."""
+    try:
+        data = []
+        if os.path.exists(REVIEWS_FILE):
+            with open(REVIEWS_FILE, "r") as f:
+                data = json.load(f)
+        clean = {k: v for k, v in review.items() if k != "_id"}
+        existing_ids = {r.get("id") for r in data}
+        if clean.get("id") not in existing_ids:
+            data.insert(0, clean)
+            with open(REVIEWS_FILE, "w") as f:
+                json.dump(data, f, indent=2)
+    except Exception as e:
+        print("Failed to backup review locally:", e)
+
+def _get_local_reviews(skip: int = 0, limit: int = 500):
+    """Read approved reviews from local backup file."""
+    try:
+        if os.path.exists(REVIEWS_FILE):
+            with open(REVIEWS_FILE, "r") as f:
+                data = json.load(f)
+                approved = [r for r in data if r.get("status") == "approved"]
+                return approved[skip:skip+limit]
+    except Exception:
+        pass
+    return []
 
 ADMIN_PASSWORD = "12345"
 ADMIN_TOKEN = "caseily-admin-token-2024"
@@ -66,12 +96,18 @@ async def submit_review(
         "stars": max(1, min(5, stars)),
         "quote": quote.strip(),
         "photo": photo_filename,
-        "status": "pending",  # pending | approved | rejected
+        "status": "approved",  # Auto-approve so reviews are immediately visible & never lost
         "created_at": datetime.now().isoformat(),
     }
 
     if reviews_collection is not None:
-        reviews_collection.insert_one(review)
+        try:
+            reviews_collection.insert_one(review)
+        except Exception as e:
+            print("MongoDB insert review error:", e)
+
+    # Persist locally so it's doubly safe against database resets
+    _backup_review_locally(review)
     
     # ensure it's JSON serializable when returning
     review.pop("_id", None)
@@ -79,16 +115,23 @@ async def submit_review(
 
 
 @router.get("/reviews/approved")
-async def get_approved_reviews(skip: int = 0, limit: int = 10):
-    """Get all approved reviews (public)."""
+async def get_approved_reviews(skip: int = 0, limit: int = 500):
+    """Get all approved reviews (public). Returns up to 500 reviews."""
     if reviews_collection is None:
-        return {"reviews": []}
+        return {"reviews": _get_local_reviews(skip, limit)}
         
-    cursor = reviews_collection.find(
-        {"status": "approved"}, 
-        {"_id": 0, "id": 1, "name": 1, "city": 1, "stars": 1, "quote": 1, "photo": 1, "created_at": 1}
-    ).sort("created_at", -1).skip(skip).limit(limit)
-    return {"reviews": list(cursor)}
+    try:
+        cursor = reviews_collection.find(
+            {"status": "approved"}, 
+            {"_id": 0, "id": 1, "name": 1, "city": 1, "stars": 1, "quote": 1, "photo": 1, "created_at": 1}
+        ).sort("created_at", -1).skip(skip).limit(limit)
+        reviews = list(cursor)
+        if not reviews:
+            reviews = _get_local_reviews(skip, limit)
+        return {"reviews": reviews}
+    except Exception as e:
+        print("MongoDB fetch reviews error, using local fallback:", e)
+        return {"reviews": _get_local_reviews(skip, limit)}
 
 
 # ─── Admin endpoints ─────────────────────────────────────────────────────

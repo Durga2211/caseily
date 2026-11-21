@@ -36,6 +36,25 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCAL_UPLOADS = os.path.join(BASE_DIR, "uploads")
 os.makedirs(os.path.join(LOCAL_UPLOADS, "reels"), exist_ok=True)
 
+@app.on_event("startup")
+async def startup_sync_reviews():
+    """Ensure all reviews from persistent local reviews_db.json recur in MongoDB on startup."""
+    from .db import reviews_collection
+    if reviews_collection is not None:
+        try:
+            reviews_file = os.path.join(BASE_DIR, "reviews_db.json")
+            if os.path.exists(reviews_file):
+                import json
+                with open(reviews_file, "r") as f:
+                    file_reviews = json.load(f)
+                existing_ids = set(reviews_collection.distinct("id"))
+                to_insert = [r for r in file_reviews if r.get("id") and r.get("id") not in existing_ids]
+                if to_insert:
+                    reviews_collection.insert_many(to_insert)
+                    print(f"✅ Auto-seeded {len(to_insert)} missing reviews into MongoDB on startup.")
+        except Exception as e:
+            print("Startup reviews sync error:", e)
+
 @app.api_route("/uploads/{filename:path}", methods=["GET", "HEAD"])
 async def get_upload(filename: str):
     # 1. Check GridFS first (persistent storage — works on Vercel)
