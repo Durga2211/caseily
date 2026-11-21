@@ -16,11 +16,111 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
   const [progress, setProgress] = useState({})
   const [toastMessage, setToastMessage] = useState('')
   const [showHeartBurst, setShowHeartBurst] = useState({})
+  const [shareModalReel, setShareModalReel] = useState(null)
 
   const containerRef = useRef(null)
   const videoRefs = useRef([])
   const lastTapRef = useRef(0)
   const tapTimeoutRef = useRef(null)
+  const initialScrollDone = useRef(false)
+
+  const CASEILY_WHATSAPP_NUMBER = '919167788773'
+
+  // Deep linking: read ?id= from URL on load and scroll to that reel
+  useEffect(() => {
+    if (!allReels || allReels.length === 0 || initialScrollDone.current) return
+    const params = new URLSearchParams(window.location.search)
+    const targetId = params.get('id')
+    if (targetId) {
+      const idx = allReels.findIndex(r => String(r.id) === String(targetId))
+      if (idx !== -1) {
+        setCurrentIndex(idx)
+        initialScrollDone.current = true
+        setTimeout(() => {
+          if (containerRef.current && containerRef.current.children[idx]) {
+            containerRef.current.children[idx].scrollIntoView({ behavior: 'auto' })
+          }
+        }, 80)
+        return
+      }
+    }
+    initialScrollDone.current = true
+  }, [allReels])
+
+  // Sync current reel ID into URL so sharing or copying URL always targets the active reel
+  useEffect(() => {
+    const curReel = allReels[currentIndex]
+    if (curReel && curReel.id) {
+      try {
+        const url = new URL(window.location)
+        url.searchParams.set('id', curReel.id)
+        window.history.replaceState({}, '', url.toString())
+      } catch {}
+    }
+  }, [currentIndex, allReels])
+
+  const handleClose = () => {
+    try {
+      const url = new URL(window.location)
+      url.searchParams.delete('id')
+      window.history.replaceState({}, '', url.pathname === '/reels' ? '/' : url.toString())
+    } catch {}
+    if (onClose) onClose()
+    else window.location.href = '/'
+  }
+
+  const getReelShareUrl = (reel) => {
+    const origin = window.location.origin || 'https://caseily.vercel.app'
+    const reelId = reel?.id || allReels[currentIndex]?.id || ''
+    return `${origin}/reels?id=${encodeURIComponent(reelId)}`
+  }
+
+  // Direct share to Caseily's WhatsApp number with pre-filled message and reel link
+  const handleShareToCaseilyWhatsApp = (reel) => {
+    const shareUrl = getReelShareUrl(reel)
+    const caption = reel?.text ? `"${reel.text}"` : 'Phone Case'
+    const text = `Hi Caseily! I'm watching this reel on your website and I'd like to check out / order this case:\n\n📱 Reel: ${caption}\n🔗 Link: ${shareUrl}\n\nPlease share price, availability and ordering details!`
+    const waUrl = `https://wa.me/${CASEILY_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`
+    window.open(waUrl, '_blank')
+  }
+
+  // Share to any WhatsApp contact or group
+  const handleShareToWhatsAppGeneral = (reel) => {
+    const shareUrl = getReelShareUrl(reel)
+    const caption = reel?.text ? `${reel.text}` : 'Check this out on Caseily!'
+    const text = `🔥 Watch this Caseily reel:\n${caption}\n\n👉 ${shareUrl}`
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`
+    window.open(waUrl, '_blank')
+  }
+
+  // Copy unique reel link to clipboard
+  const handleCopyReelLink = (reel) => {
+    const shareUrl = getReelShareUrl(reel)
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl)
+        showToast('✓ Reel link copied to clipboard!')
+      } else {
+        showToast('Reel URL: ' + shareUrl)
+      }
+    } catch {
+      showToast('Reel URL: ' + shareUrl)
+    }
+  }
+
+  // Web Share API fallback
+  const handleNativeShare = (reel) => {
+    const shareUrl = getReelShareUrl(reel)
+    if (navigator.share) {
+      navigator.share({
+        title: 'Caseily Reel',
+        text: reel?.text || 'Watch this reel on Caseily!',
+        url: shareUrl
+      }).catch(() => {})
+    } else {
+      handleCopyReelLink(reel)
+    }
+  }
 
   // Lock body scroll while Reels viewer is active
   useEffect(() => {
@@ -293,7 +393,7 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
 
           {/* Close Reels Button */}
           <button
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close Reels"
             style={{
               width: '36px',
@@ -556,25 +656,41 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
                   </span>
                 </button>
 
-                {/* Share Button (Web Share API + Clipboard fallback) */}
+                {/* WhatsApp Button - Direct 1-tap share to suggested WhatsApp number (+91 9167788773) */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    const shareUrl = window.location.origin + '/reels'
-                    if (navigator.share) {
-                      navigator.share({
-                        title: 'Caseily Reel',
-                        text: reel.text || 'Watch this reel on Caseily!',
-                        url: shareUrl
-                      }).catch(() => {})
-                    } else {
-                      try {
-                        navigator.clipboard.writeText(shareUrl)
-                        showToast('✓ Link copied to clipboard!')
-                      } catch {
-                        showToast('Reel URL: ' + shareUrl)
-                      }
-                    }
+                    handleShareToCaseilyWhatsApp(reel)
+                  }}
+                  aria-label="Share reel to WhatsApp"
+                  title="Inquire or order on WhatsApp (+91 9167788773)"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                >
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    background: 'rgba(37, 211, 102, 0.22)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1.5px solid rgba(37, 211, 102, 0.55)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)',
+                    transition: 'transform 0.15s ease'
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#25D366">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+                    </svg>
+                  </div>
+                  <span style={{ color: '#4ade80', fontSize: '11px', fontWeight: '800', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>WhatsApp</span>
+                </button>
+
+                {/* Share Button (Opens full share options sheet) */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShareModalReel(reel)
                   }}
                   aria-label="Share reel"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
@@ -790,6 +906,296 @@ export default function ReelsPage({ allReels = [], onClose, API_URL }) {
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal Bottom Sheet */}
+      {shareModalReel && (
+        <div
+          onClick={() => setShareModalReel(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            padding: '0'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '460px',
+              backgroundColor: '#0f172a',
+              color: '#fff',
+              borderRadius: '24px 24px 0 0',
+              padding: '18px 20px 28px',
+              boxShadow: '0 -10px 40px rgba(0,0,0,0.7)',
+              borderTop: '1px solid rgba(255,255,255,0.12)',
+              animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            {/* Grab handle */}
+            <div style={{ width: '40px', height: '4px', backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: '2px', margin: '0 auto 14px' }} />
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', letterSpacing: '-0.3px' }}>Share Reel</h3>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                  Choose how you'd like to share this reel
+                </div>
+              </div>
+              <button
+                onClick={() => setShareModalReel(null)}
+                aria-label="Close share sheet"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '15px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Reel Snippet Card */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 12px',
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              borderRadius: '12px',
+              marginBottom: '16px',
+              border: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              <div style={{
+                width: '42px',
+                height: '56px',
+                borderRadius: '8px',
+                backgroundColor: '#1e293b',
+                overflow: 'hidden',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {shareModalReel.thumbnailUrl || shareModalReel.thumbnail_url ? (
+                  <img
+                    src={shareModalReel.thumbnailUrl || shareModalReel.thumbnail_url}
+                    alt="Reel preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '20px' }}>🎬</span>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {shareModalReel.text || 'Caseily Official Reel'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#60a5fa', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {getReelShareUrl(shareModalReel)}
+                </div>
+              </div>
+            </div>
+
+            {/* Share Options List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Option 1: Send to Caseily WhatsApp (Primary Action) */}
+              <button
+                onClick={() => {
+                  handleShareToCaseilyWhatsApp(shareModalReel)
+                  setShareModalReel(null)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '12px 14px',
+                  backgroundColor: 'rgba(37, 211, 102, 0.12)',
+                  border: '1.5px solid rgba(37, 211, 102, 0.4)',
+                  borderRadius: '14px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.15s ease'
+                }}
+              >
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  backgroundColor: '#25D366',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 4px 12px rgba(37, 211, 102, 0.4)'
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '800', color: '#4ade80' }}>
+                    Send to Caseily on WhatsApp
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '2px' }}>
+                    Inquire or order this case directly via +91 9167788773
+                  </div>
+                </div>
+                <span style={{ fontSize: '18px', color: '#4ade80' }}>→</span>
+              </button>
+
+              {/* Option 2: Share to WhatsApp Contacts / Groups */}
+              <button
+                onClick={() => {
+                  handleShareToWhatsAppGeneral(shareModalReel)
+                  setShareModalReel(null)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '12px 14px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '14px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(37, 211, 102, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>
+                    Share to WhatsApp Contacts
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                    Send this reel to friends or groups
+                  </div>
+                </div>
+              </button>
+
+              {/* Option 3: Copy Reel Link */}
+              <button
+                onClick={() => {
+                  handleCopyReelLink(shareModalReel)
+                  setShareModalReel(null)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '12px 14px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '14px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>
+                    Copy Reel Link
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                    Copy specific reel link to clipboard
+                  </div>
+                </div>
+              </button>
+
+              {/* Option 4: System / More Options */}
+              <button
+                onClick={() => {
+                  handleNativeShare(shareModalReel)
+                  setShareModalReel(null)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '12px 14px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '14px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>
+                    More Options...
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                    Share via system apps, messages or AirDrop
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       )}
