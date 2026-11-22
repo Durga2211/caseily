@@ -4885,18 +4885,183 @@ function App() {
             <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} aria-label="Toggle theme" title={DIWALI_THEME ? "Diwali Theme Toggle" : "Toggle Theme"} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontSize: '20px', display: 'flex', alignItems: 'center' }}>
               {DIWALI_THEME ? (theme === 'light' ? '🪔' : '☀️') : (theme === 'light' ? '🌙' : '☀️')}
             </button>
-            <button onClick={() => setShowAuthModal(true)} aria-label="Profile" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center' }}>
+            <button
+              onClick={() => setShortcutMenuOpen(o => !o)}
+              aria-label="Profile and menu"
+              title="Profile & Options"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                color: shortcutMenuOpen ? '#1e5fd1' : 'var(--ink-strong)',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'color 0.15s ease'
+              }}
+            >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             </button>
-            <button onClick={() => setShortcutMenuOpen(o => !o)} aria-label="Menu" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--ink-strong)', display: 'flex', alignItems: 'center' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-            </button>
+
+            {/* Profile Dropdown Menu (Contains Profile actions + Previous 3-dot items) */}
             {shortcutMenuOpen && (
-              <div style={{ position: 'absolute', right: 0, top: '44px', backgroundColor: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', padding: '8px', width: '160px', zIndex: 100, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
-                <button type="button" onClick={() => { setShortcutMenuOpen(false); translateToHindi(); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: 'var(--ink-strong)' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Change lang</button>
-                <button type="button" onClick={() => { setShortcutMenuOpen(false); scrollTo('what-we-provide'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: 'var(--ink-strong)' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>About us</button>
-                <button type="button" onClick={() => { setShortcutMenuOpen(false); scrollTo('faq'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: 'var(--ink-strong)' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Faq</button>
-                <button type="button" onClick={() => { setShortcutMenuOpen(false); window.open('https://twitter.com/caseily', '_blank'); }} style={{ background: 'none', border: 'none', padding: '10px 12px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderRadius: '8px', color: 'var(--ink-strong)' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>Follow us</button>
+              <div style={{
+                position: 'absolute',
+                right: 0,
+                top: '44px',
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: '16px',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
+                padding: '8px',
+                width: '190px',
+                zIndex: 100,
+                border: '1px solid var(--border)',
+                display: 'flex',
+                flexDirection: 'column',
+                animation: 'slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}>
+                {/* Account / Login Section */}
+                {currentUser ? (
+                  <div style={{ padding: '8px 12px 10px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ink-faint)', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.4px' }}>Signed in as</div>
+                    <div style={{ fontSize: '13.5px', fontWeight: '800', color: 'var(--ink-strong)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {currentUser.name || currentUser.phone || 'Caseily Member'}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setShortcutMenuOpen(false); setCurrentUser(null); }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: '6px 0 0 0',
+                        fontSize: '12px',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      Log out
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { setShortcutMenuOpen(false); setAuthMode('login'); setShowAuthModal(true); }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '10px 12px',
+                      textAlign: 'left',
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      borderRadius: '8px',
+                      color: '#1e5fd1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <span>👤</span> Log In / Sign Up
+                  </button>
+                )}
+
+                <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: '4px 0' }} />
+
+                {/* Items previously in the 3-dot menu */}
+                <button
+                  type="button"
+                  onClick={() => { setShortcutMenuOpen(false); translateToHindi(); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '10px 12px',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    color: 'var(--ink-strong)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <span>🌐</span> Change lang
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShortcutMenuOpen(false); scrollTo('what-we-provide'); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '10px 12px',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    color: 'var(--ink-strong)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <span>ℹ️</span> About us
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShortcutMenuOpen(false); scrollTo('faq'); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '10px 12px',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    color: 'var(--ink-strong)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <span>❓</span> FAQ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShortcutMenuOpen(false); window.open('https://twitter.com/caseily', '_blank'); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '10px 12px',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    color: 'var(--ink-strong)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <span>🐦</span> Follow us
+                </button>
               </div>
             )}
           </div>
