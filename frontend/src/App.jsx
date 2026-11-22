@@ -2438,6 +2438,59 @@ function App() {
   const [selectedReview, setSelectedReview] = useState(null)
   const [selectedDeal, setSelectedDeal] = useState(null)
   const [backendReels, setBackendReels] = useState([])
+  const [siteSearchQuery, setSiteSearchQuery] = useState('')
+  const [siteSearchFocused, setSiteSearchFocused] = useState(false)
+  const siteSearchRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (siteSearchRef.current && !siteSearchRef.current.contains(e.target)) {
+        setSiteSearchFocused(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const siteSearchCatalogue = [
+    { id: 'track', title: 'Track Your Order', desc: 'Live AWB courier status & delivery history', icon: '📦', path: '/track-order', keywords: ['track', 'order', 'awb', 'courier', 'status', 'shipping', 'delivery', 'where'] },
+    { id: 'reviews', title: 'Post a Review', desc: 'Rate your case and read community feedback', icon: '⭐', path: '/reviews', keywords: ['review', 'rate', 'feedback', 'stars', 'post', 'comment'] },
+    { id: 'community', title: 'Community Wall', desc: 'Discussions, daily polls and hot takes', icon: '💬', action: () => scrollTo('highlights'), keywords: ['community', 'wall', 'insiders', 'feed', 'chat', 'poll', 'discussion'] },
+    { id: 'reels', title: 'Caseily Reels & Drops', desc: 'Watch durability drop tests and showcases', icon: '🎬', path: '/reels', keywords: ['reels', 'shorts', 'video', 'drops', 'reel', 'watch'] },
+    { id: 'cases', title: 'Shop Phone Cases', desc: 'Browse all cases on our WhatsApp Catalog', icon: '📱', url: 'https://wa.me/c/919167788773', keywords: ['case', 'cases', 'silicon', 'cover', 'phone', 'iphone', 'magsafe', 'shop', 'buy', 'models'] },
+    { id: 'news', title: 'Techblogs & News', desc: 'Smartphone news, leaks and styling guides', icon: '📰', action: () => scrollTo('blog'), keywords: ['blog', 'news', 'tech', 'article', 'leaks'] },
+    { id: 'creators', title: 'Creators Club', desc: 'Creator design challenges and rewards', icon: '👑', path: '/creators-club', keywords: ['creator', 'creators', 'club', 'design', 'influencer'] },
+    { id: 'loyalty', title: 'Loyalty Points', desc: 'Check coin balance and redeem rewards', icon: '🪙', path: '/loyalty-points', keywords: ['loyalty', 'points', 'reward', 'coins', 'cashback'] },
+    { id: 'bulk', title: 'Bulk Order / Corporate', desc: 'Custom branding and wholesale gifting', icon: '🏢', path: '/bulk-order', keywords: ['bulk', 'corporate', 'wholesale', 'b2b', 'gift', 'gifting'] },
+    { id: 'events', title: 'Events & Open Stage', desc: 'Live community audio stages and events', icon: '🎉', path: '/events', keywords: ['event', 'events', 'stage', 'live', 'talk'] },
+    { id: 'welfare', title: 'Social Welfare', desc: 'Caseily environmental and social initiatives', icon: '❤️', path: '/social-welfare', keywords: ['social', 'welfare', 'ngo', 'charity', 'eco', 'green'] }
+  ]
+
+  const handleSiteSearchSubmit = (e) => {
+    if (e) e.preventDefault()
+    const q = siteSearchQuery.trim().toLowerCase()
+    if (!q) return
+    const matches = siteSearchCatalogue.filter(item => 
+      item.title.toLowerCase().includes(q) ||
+      item.desc.toLowerCase().includes(q) ||
+      item.keywords.some(k => k.includes(q) || q.includes(k))
+    )
+    if (matches.length > 0) {
+      const topMatch = matches[0]
+      if (topMatch.path) {
+        window.history.pushState({}, '', topMatch.path)
+        setCurrentPath(topMatch.path)
+        window.scrollTo(0, 0)
+      } else if (topMatch.action) {
+        topMatch.action()
+      } else if (topMatch.url) {
+        window.open(topMatch.url, '_blank')
+      }
+    } else {
+      window.open('https://wa.me/c/919167788773', '_blank')
+    }
+    setSiteSearchFocused(false)
+  }
   const handleLikeToggle = (i, e) => {
     e.stopPropagation();
     setLikedPosts(prev => {
@@ -4860,7 +4913,213 @@ function App() {
           </marquee>
         </div>
 
-        {/* ─── HERO TITLE ─── */}
+        {/* ─── MINIMAL SEARCH BAR (Between Header and Landing Page Poster) ─── */}
+        <div ref={siteSearchRef} style={{ width: '100%', maxWidth: '420px', margin: '14px auto 6px', padding: '0 16px', boxSizing: 'border-box', position: 'relative', zIndex: 40 }}>
+          <form onSubmit={handleSiteSearchSubmit} style={{ position: 'relative', width: '100%' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: 'var(--bg-card)',
+              borderRadius: '999px',
+              padding: '0 14px',
+              height: '46px',
+              boxShadow: siteSearchFocused 
+                ? '0 4px 18px rgba(30, 95, 209, 0.18)' 
+                : '0 2px 8px rgba(0, 0, 0, 0.05)',
+              border: siteSearchFocused 
+                ? '1.5px solid #1e5fd1' 
+                : '1px solid var(--border)',
+              transition: 'all 0.2s ease',
+              gap: '10px'
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={siteSearchFocused ? '#1e5fd1' : 'var(--ink-faint)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                type="text"
+                value={siteSearchQuery}
+                onChange={e => setSiteSearchQuery(e.target.value)}
+                onFocus={() => setSiteSearchFocused(true)}
+                placeholder="Search cases, tracking, reviews, reels..."
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  outline: 'none',
+                  backgroundColor: 'transparent',
+                  color: 'var(--ink-strong)',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  fontFamily: 'inherit'
+                }}
+              />
+              {siteSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSiteSearchQuery('')}
+                  aria-label="Clear search"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '4px',
+                    cursor: 'pointer',
+                    color: 'var(--ink-faint)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px'
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </form>
+
+          {/* Search Suggestions & Quick Results Dropdown */}
+          {siteSearchFocused && (
+            <div style={{
+              position: 'absolute',
+              top: '52px',
+              left: '16px',
+              right: '16px',
+              backgroundColor: 'var(--bg-card)',
+              borderRadius: '18px',
+              boxShadow: '0 12px 36px rgba(0, 0, 0, 0.16)',
+              border: '1px solid var(--border)',
+              padding: '10px',
+              maxHeight: '320px',
+              overflowY: 'auto',
+              zIndex: 100,
+              animation: 'slideDown 0.2s ease'
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.6px', padding: '6px 8px 4px' }}>
+                {siteSearchQuery.trim() ? 'Matching Results' : 'Quick Suggestions'}
+              </div>
+
+              {(siteSearchQuery.trim()
+                ? siteSearchCatalogue.filter(item => 
+                    item.title.toLowerCase().includes(siteSearchQuery.toLowerCase()) ||
+                    item.desc.toLowerCase().includes(siteSearchQuery.toLowerCase()) ||
+                    item.keywords.some(k => k.includes(siteSearchQuery.toLowerCase()))
+                  )
+                : siteSearchCatalogue.slice(0, 5)
+              ).map(item => (
+                <div
+                  key={item.id}
+                  onClick={() => {
+                    if (item.path) {
+                      window.history.pushState({}, '', item.path)
+                      setCurrentPath(item.path)
+                      window.scrollTo(0, 0)
+                    } else if (item.action) {
+                      item.action()
+                    } else if (item.url) {
+                      window.open(item.url, '_blank')
+                    }
+                    setSiteSearchFocused(false)
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '10px 12px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s ease'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <span style={{ fontSize: '20px', flexShrink: 0 }}>{item.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--ink-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.title}
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ink-muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.desc}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '14px', color: 'var(--ink-faint)' }}>→</span>
+                </div>
+              ))}
+
+              {siteSearchQuery.trim() && (
+                <div
+                  onClick={() => {
+                    window.open('https://wa.me/c/919167788773', '_blank')
+                    setSiteSearchFocused(false)
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 12px',
+                    marginTop: '4px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(37, 211, 102, 0.1)',
+                    border: '1px solid rgba(37, 211, 102, 0.3)',
+                    cursor: 'pointer',
+                    color: '#16a34a',
+                    fontSize: '13px',
+                    fontWeight: '700'
+                  }}
+                >
+                  <span>🛍️</span>
+                  <span style={{ flex: 1 }}>Search "{siteSearchQuery}" in WhatsApp Catalog</span>
+                  <span>→</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ─── QUICK LINKS BAR (3x3 Feature Grid moved below Search Bar) ─── */}
+        <div className="quick-links-bar" style={{ margin: '8px auto 20px auto' }}>
+          <button className="quick-link-btn" onClick={() => scrollTo('highlights')}>
+            <img src="/assets/icons/community-wall.svg" alt="Community Wall" className="quick-link-icon" />
+            <span>Community Wall</span>
+          </button>
+          <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/track-order'); setCurrentPath('/track-order'); window.scrollTo(0, 0); }}>
+            <img src="/assets/icons/track-order.svg" alt="Track Your Order" className="quick-link-icon" />
+            <span>Track Your Order</span>
+          </button>
+          <button className="quick-link-btn" onClick={() => { 
+            window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); 
+          }}>
+            <img src="/assets/icons/post-review.svg" alt="Post a Review" className="quick-link-icon" />
+            <span>Post a Review</span>
+          </button>
+          <button className="quick-link-btn" onClick={() => scrollTo('blog')}>
+            <img src="/assets/icons/techblogs-news.svg" alt="Techblogs & News" className="quick-link-icon" />
+            <span>Techblogs & News</span>
+          </button>
+          <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/social-welfare'); setCurrentPath('/social-welfare'); window.scrollTo(0, 0); }}>
+            <img src="/assets/icons/social-welfare.svg" alt="Social Welfare" className="quick-link-icon" />
+            <span>Social Welfare</span>
+          </button>
+          <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/creators-club'); setCurrentPath('/creators-club'); window.scrollTo(0, 0); }}>
+            <img src="/assets/icons/creators-club.svg" alt="Creators Club" className="quick-link-icon" />
+            <span>Creators Club</span>
+          </button>
+          <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}>
+            {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>2X Pts</span>}
+            <img src="/assets/icons/loyalty-points.svg" alt="Loyalty Points" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
+            <span>Loyalty Points</span>
+          </button>
+          <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/bulk-order'); setCurrentPath('/bulk-order'); window.scrollTo(0, 0); }}>
+            {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>Gifting</span>}
+            <img src="/assets/icons/bulk-order.svg" alt="Bulk Order" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
+            <span>Bulk Order</span>
+          </button>
+          <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/events'); setCurrentPath('/events'); window.scrollTo(0, 0); }}>
+            {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>Festive</span>}
+            <img src="/assets/icons/events.svg" alt="Events" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
+            <span>Events</span>
+          </button>
+        </div>
+
+        {/* ─── HERO TITLE (Landing Page Poster) ─── */}
         <div style={{ width: '100%', padding: '0', backgroundColor: '#0178fd', flex: 1, position: 'relative', overflow: 'hidden' }}>
           <img src="/hero-image-v3.png" alt="Caseily Hero" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
 
@@ -4927,7 +5186,7 @@ function App() {
         </div>
       </div>
 
-      <section id="track" style={{ position: 'relative', zIndex: 10, marginTop: '-40px', padding: '0 20px 40px' }}>
+      <section id="track" style={{ position: 'relative', zIndex: 10, marginTop: '24px', padding: '0 20px 40px' }}>
         
         {/* ─── AUTO-MOVING PROMO CAROUSEL ─── */}
         <div className="container" style={{ maxWidth: '800px', margin: '0 auto 24px auto' }}>
@@ -4947,54 +5206,6 @@ function App() {
             </div>
           </div>
         </div>
-
-
-
-
-          {/* ─── QUICK LINKS BAR ─── */}
-          <div className="quick-links-bar">
-            <button className="quick-link-btn" onClick={() => scrollTo('highlights')}>
-              <img src="/assets/icons/community-wall.svg" alt="Community Wall" className="quick-link-icon" />
-              <span>Community Wall</span>
-            </button>
-            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/track-order'); setCurrentPath('/track-order'); window.scrollTo(0, 0); }}>
-              <img src="/assets/icons/track-order.svg" alt="Track Your Order" className="quick-link-icon" />
-              <span>Track Your Order</span>
-            </button>
-            <button className="quick-link-btn" onClick={() => { 
-              window.history.pushState({}, '', '/reviews'); setCurrentPath('/reviews'); window.scrollTo(0, 0); 
-            }}>
-              <img src="/assets/icons/post-review.svg" alt="Post a Review" className="quick-link-icon" />
-              <span>Post a Review</span>
-            </button>
-            <button className="quick-link-btn" onClick={() => scrollTo('blog')}>
-              <img src="/assets/icons/techblogs-news.svg" alt="Techblogs & News" className="quick-link-icon" />
-              <span>Techblogs & News</span>
-            </button>
-            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/social-welfare'); setCurrentPath('/social-welfare'); window.scrollTo(0, 0); }}>
-              <img src="/assets/icons/social-welfare.svg" alt="Social Welfare" className="quick-link-icon" />
-              <span>Social Welfare</span>
-            </button>
-            <button className="quick-link-btn" onClick={() => { window.history.pushState({}, '', '/creators-club'); setCurrentPath('/creators-club'); window.scrollTo(0, 0); }}>
-              <img src="/assets/icons/creators-club.svg" alt="Creators Club" className="quick-link-icon" />
-              <span>Creators Club</span>
-            </button>
-            <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/loyalty-points'); setCurrentPath('/loyalty-points'); window.scrollTo(0, 0); }}>
-              {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>2X Pts</span>}
-              <img src="/assets/icons/loyalty-points.svg" alt="Loyalty Points" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
-              <span>Loyalty Points</span>
-            </button>
-            <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/bulk-order'); setCurrentPath('/bulk-order'); window.scrollTo(0, 0); }}>
-              {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>Gifting</span>}
-              <img src="/assets/icons/bulk-order.svg" alt="Bulk Order" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
-              <span>Bulk Order</span>
-            </button>
-            <button className="quick-link-btn" style={{ position: 'relative' }} onClick={() => { window.history.pushState({}, '', '/events'); setCurrentPath('/events'); window.scrollTo(0, 0); }}>
-              {DIWALI_THEME && <span className="festive-pill-badge" style={{ position: 'absolute', top: '-6px', right: '-4px', fontSize: '8.5px', padding: '1px 5px', zIndex: 2 }}>Festive</span>}
-              <img src="/assets/icons/events.svg" alt="Events" className="quick-link-icon" style={DIWALI_THEME ? { filter: 'drop-shadow(0 0 6px rgba(245, 179, 1, 0.6))' } : {}} />
-              <span>Events</span>
-            </button>
-          </div>
           
       </section>
 

@@ -2047,6 +2047,21 @@ footer { padding: 48px 0; text-align: center; font-size: 14px; font-weight: 500;
   hyphens: none;
 }
 
+[data-theme="dark"] .quick-link-btn {
+  background-color: var(--bg-card);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .quick-link-btn:hover {
+  background-color: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .quick-link-btn span {
+  color: #f1f5f9;
+}
+
 @keyframes slide-left {
   0% { transform: translateX(100vw); }
   100% { transform: translateX(-100%); }
